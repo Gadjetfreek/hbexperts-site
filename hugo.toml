@@ -1,0 +1,35 @@
+baseURL = "https://hbexperts.com/"
+languageCode = "en-us"
+title = "HomeBuyer Experts | Exclusive Buyer Representation"
+theme = "hbe"
+
+[params]
+  description = "Exclusive buyer representation for Northeast Ohio. We represent you — only you."
+  tagline = "When the decision matters, have someone at the table whose only job is protecting your interests."
+  phone = "(330) 328-3170"
+  email = "cwhitehead@hbexperts.com"
+  location = "Northeast Ohio"
+  counties = "Summit, Stark, Medina, Wayne & Cuyahoga Counties"
+
+[menu]
+  [[menu.main]]
+    name = "About"
+    url = "/about/"
+    weight = 1
+  [[menu.main]]
+    name = "Our Approach"
+    url = "/buyer-representation/"
+    weight = 2
+  [[menu.main]]
+    name = "Your Strategy Session"
+    url = "/strategy-session/"
+    weight = 3
+  [[menu.main]]
+    name = "Contact"
+    url = "/contact/"
+    weight = 4
+
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true

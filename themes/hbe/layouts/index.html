@@ -1,0 +1,18 @@
+{{ define "main" }}
+<section class="hero">
+  <div class="hero-content">
+    <h1 class="hero-headline">{{ .Title }}</h1>
+    <p class="hero-tagline">{{ .Site.Params.tagline }}</p>
+    <div class="hero-cta">
+      <a href="/strategy-session/" class="btn btn-primary">Schedule a Conversation</a>
+      <a href="/buyer-representation/" class="btn btn-secondary">Learn Our Approach</a>
+    </div>
+  </div>
+</section>
+
+<section class="value-prop">
+  <div class="container">
+    {{ .Content }}
+  </div>
+</section>
+{{ end }}

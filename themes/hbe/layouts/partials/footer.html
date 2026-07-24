@@ -1,0 +1,16 @@
+<footer class="site-footer">
+  <div class="footer-container">
+    <div class="footer-brand">
+      <p class="footer-name">HomeBuyer Experts</p>
+      <p class="footer-tagline">Exclusive Buyer Representation</p>
+      <p class="footer-region">{{ .Site.Params.counties }}</p>
+    </div>
+    <div class="footer-contact">
+      <p><a href="tel:{{ .Site.Params.phone }}">{{ .Site.Params.phone }}</a></p>
+      <p><a href="mailto:{{ .Site.Params.email }}">{{ .Site.Params.email }}</a></p>
+    </div>
+    <div class="footer-legal">
+      <p>&copy; {{ now.Year }} HomeBuyer Experts. All rights reserved.</p>
+    </div>
+  </div>
+</footer>
