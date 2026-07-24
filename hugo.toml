@@ -33,3 +33,4 @@ theme = "hbe"
   [markup.goldmark]
     [markup.goldmark.renderer]
       unsafe = true
+
