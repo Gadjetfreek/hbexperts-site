@@ -1,11 +1,9 @@
 {{ define "main" }}
-<article class="page">
-  <div class="page-header">
-    <h1>{{ .Title }}</h1>
-    {{ with .Params.subtitle }}<p class="subtitle">{{ . }}</p>{{ end }}
-  </div>
-  <div class="page-content">
-    {{ .Content }}
-  </div>
-</article>
+<div class="page-header">
+  <h1>{{ .Title }}</h1>
+  {{ with .Params.subtitle }}<p class="subtitle">{{ . }}</p>{{ end }}
+</div>
+<div class="page-content">
+  {{ .Content }}
+</div>
 {{ end }}
