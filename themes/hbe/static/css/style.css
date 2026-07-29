@@ -820,6 +820,48 @@ hr { border: none; border-top: 1px solid var(--color-border); margin: 3rem 0; }
   75% { transform: translateX(8px); }
 }
 
+/* Validation highlighting */
+.validation-msg {
+  display: none;
+  color: #c44;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-top: 0.5rem;
+  padding-left: 0.25rem;
+}
+
+.form-group.invalid .validation-msg {
+  display: block;
+  animation: fadeUp 0.3s ease-out;
+}
+
+.form-group.invalid .form-label {
+  color: #c44;
+}
+
+.form-group.invalid .form-input {
+  border-color: #c44;
+  box-shadow: 0 0 0 3px rgba(204, 68, 68, 0.12);
+}
+
+.form-group.invalid .radio-label,
+.form-group.invalid .check-label {
+  border-color: rgba(204, 68, 68, 0.4);
+}
+
+.form-group.invalid .scale-option span {
+  border-color: rgba(204, 68, 68, 0.4);
+}
+
+/* Day cards small text */
+.radio-label small {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--color-text-light);
+  font-weight: 400;
+  margin-top: 0.15rem;
+}
+
 @media (max-width: 768px) {
   .radio-grid { grid-template-columns: 1fr; }
   .radio-grid-narrow { grid-template-columns: 1fr 1fr; max-width: 100%; }

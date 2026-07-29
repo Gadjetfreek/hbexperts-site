@@ -8,7 +8,7 @@
   <div class="container">
     <div class="assessment-intro">
       <p>This brief assessment helps us understand your goals, timeline, and priorities — so your Strategy Session is focused entirely on what matters to you.</p>
-      <p class="assessment-time"><span class="icon">⏱</span> Takes approximately 3–4 minutes</p>
+      <p class="assessment-time"><span class="icon">⏱</span> Takes approximately 4–5 minutes</p>
     </div>
 
     <form id="buyer-assessment" action="https://formsubmit.co/cwhitehead@hbexperts.com" method="POST" class="assessment-form">
@@ -23,14 +23,14 @@
       <div class="progress-bar">
         <div class="progress-fill" id="progress-fill"></div>
       </div>
-      <div class="progress-label"><span id="step-label">Section 1 of 6</span></div>
+      <div class="progress-label"><span id="step-label">Section 1 of 7</span></div>
 
       <!-- SECTION 1: Your Goals -->
       <div class="form-section active" data-step="1">
         <div class="section-badge">Your Goals</div>
         <h2>Tell us about your situation</h2>
 
-        <div class="form-group">
+        <div class="form-group" data-validate="radio" data-name="situation">
           <label class="form-label">What best describes your current situation?</label>
           <div class="radio-grid">
             <label class="radio-card"><input type="radio" name="situation" value="First-time buyer" required><span class="radio-label">First-time buyer</span></label>
@@ -40,9 +40,10 @@
             <label class="radio-card"><input type="radio" name="situation" value="Investment property"><span class="radio-label">Investment property</span></label>
             <label class="radio-card"><input type="radio" name="situation" value="Second home"><span class="radio-label">Second home</span></label>
           </div>
+          <div class="validation-msg">Please select an option above</div>
         </div>
 
-        <div class="form-group">
+        <div class="form-group" data-validate="radio" data-name="motivation">
           <label class="form-label">Why are you considering a move?</label>
           <div class="radio-grid">
             <label class="radio-card"><input type="radio" name="motivation" value="New job or career opportunity" required><span class="radio-label">New job / career</span></label>
@@ -52,6 +53,7 @@
             <label class="radio-card"><input type="radio" name="motivation" value="School or community change"><span class="radio-label">School / community</span></label>
             <label class="radio-card"><input type="radio" name="motivation" value="Other"><span class="radio-label">Other</span></label>
           </div>
+          <div class="validation-msg">Please select an option above</div>
         </div>
 
         <div class="form-nav">
@@ -65,7 +67,7 @@
         <div class="section-badge">Timing</div>
         <h2>When are you looking to purchase?</h2>
 
-        <div class="form-group">
+        <div class="form-group" data-validate="radio" data-name="timeline">
           <label class="form-label">Expected purchase timeline</label>
           <div class="radio-grid">
             <label class="radio-card"><input type="radio" name="timeline" value="Within 30 days" required><span class="radio-label">Within 30 days</span></label>
@@ -74,9 +76,10 @@
             <label class="radio-card"><input type="radio" name="timeline" value="6-12 months"><span class="radio-label">6–12 months</span></label>
             <label class="radio-card"><input type="radio" name="timeline" value="Researching options"><span class="radio-label">Researching options</span></label>
           </div>
+          <div class="validation-msg">Please select a timeline</div>
         </div>
 
-        <div class="form-group">
+        <div class="form-group" data-validate="radio" data-name="timeline_driver">
           <label class="form-label">What is driving your timeline?</label>
           <div class="radio-grid">
             <label class="radio-card"><input type="radio" name="timeline_driver" value="Need to move" required><span class="radio-label">Need to move</span></label>
@@ -85,6 +88,7 @@
             <label class="radio-card"><input type="radio" name="timeline_driver" value="Life event"><span class="radio-label">Life event</span></label>
             <label class="radio-card"><input type="radio" name="timeline_driver" value="Exploring possibilities"><span class="radio-label">Exploring</span></label>
           </div>
+          <div class="validation-msg">Please select what's driving your timeline</div>
         </div>
 
         <div class="form-nav">
@@ -98,7 +102,7 @@
         <div class="section-badge">Purchase Goals</div>
         <h2>Help us understand what you're looking for</h2>
 
-        <div class="form-group">
+        <div class="form-group" data-validate="radio" data-name="price_range">
           <label class="form-label">What price range are you considering?</label>
           <div class="radio-grid">
             <label class="radio-card"><input type="radio" name="price_range" value="Under $300,000" required><span class="radio-label">Under $300K</span></label>
@@ -107,11 +111,13 @@
             <label class="radio-card"><input type="radio" name="price_range" value="$750,000 - $1,000,000"><span class="radio-label">$750K – $1M</span></label>
             <label class="radio-card"><input type="radio" name="price_range" value="$1,000,000+"><span class="radio-label">$1M+</span></label>
           </div>
+          <div class="validation-msg">Please select a price range</div>
         </div>
 
-        <div class="form-group">
+        <div class="form-group" data-validate="text" data-name="target_location">
           <label class="form-label">Where are you considering buying?</label>
           <input type="text" name="target_location" class="form-input" placeholder="e.g., Medina County, Hudson, Bath Township..." required>
+          <div class="validation-msg">Please enter a target location</div>
         </div>
 
         <div class="form-group">
@@ -139,7 +145,7 @@
         <div class="section-badge">Preparation</div>
         <h2>Where are you in the process?</h2>
 
-        <div class="form-group">
+        <div class="form-group" data-validate="radio" data-name="financing">
           <label class="form-label">What is your financing status?</label>
           <div class="radio-grid">
             <label class="radio-card"><input type="radio" name="financing" value="Cash buyer" required><span class="radio-label">Cash buyer</span></label>
@@ -148,14 +154,16 @@
             <label class="radio-card"><input type="radio" name="financing" value="Need lender recommendations"><span class="radio-label">Need lender recs</span></label>
             <label class="radio-card"><input type="radio" name="financing" value="Unsure"><span class="radio-label">Unsure</span></label>
           </div>
+          <div class="validation-msg">Please select your financing status</div>
         </div>
 
-        <div class="form-group">
+        <div class="form-group" data-validate="radio" data-name="current_owner">
           <label class="form-label">Do you currently own a home?</label>
           <div class="radio-grid radio-grid-narrow">
             <label class="radio-card"><input type="radio" name="current_owner" value="Yes" required><span class="radio-label">Yes</span></label>
             <label class="radio-card"><input type="radio" name="current_owner" value="No"><span class="radio-label">No</span></label>
           </div>
+          <div class="validation-msg">Please select an option</div>
         </div>
 
         <div class="form-group" id="owner-plan-group" style="display:none;">
@@ -178,7 +186,7 @@
         <div class="section-badge">Confidence</div>
         <h2>What's on your mind?</h2>
 
-        <div class="form-group">
+        <div class="form-group" data-validate="radio" data-name="representation_importance">
           <label class="form-label">How important is it to have an agent who represents <em>only</em> your interests?</label>
           <div class="scale-group">
             <span class="scale-label-left">Not important</span>
@@ -191,9 +199,10 @@
             </div>
             <span class="scale-label-right">Essential</span>
           </div>
+          <div class="validation-msg">Please select a rating</div>
         </div>
 
-        <div class="form-group">
+        <div class="form-group" data-validate="radio" data-name="biggest_concern">
           <label class="form-label">What is your biggest concern about buying?</label>
           <div class="radio-grid">
             <label class="radio-card"><input type="radio" name="biggest_concern" value="Paying too much" required><span class="radio-label">Paying too much</span></label>
@@ -203,9 +212,10 @@
             <label class="radio-card"><input type="radio" name="biggest_concern" value="Finding the right home"><span class="radio-label">Finding the right home</span></label>
             <label class="radio-card"><input type="radio" name="biggest_concern" value="Timing the market"><span class="radio-label">Timing the market</span></label>
           </div>
+          <div class="validation-msg">Please select your biggest concern</div>
         </div>
 
-        <div class="form-group">
+        <div class="form-group" data-validate="radio" data-name="confidence_level">
           <label class="form-label">How confident are you in your current buying strategy?</label>
           <div class="scale-group">
             <span class="scale-label-left">Not confident</span>
@@ -223,6 +233,7 @@
             </div>
             <span class="scale-label-right">Very confident</span>
           </div>
+          <div class="validation-msg">Please select your confidence level</div>
         </div>
 
         <div class="form-nav">
@@ -231,35 +242,134 @@
         </div>
       </div>
 
-      <!-- SECTION 6: Contact -->
+      <!-- SECTION 6: Know Your Style -->
       <div class="form-section" data-step="6">
-        <div class="section-badge">Almost Done</div>
-        <h2>How can we reach you?</h2>
-        <p class="section-note">Your information is kept confidential and used only to prepare for your Strategy Session.</p>
+        <div class="section-badge">Your Style</div>
+        <h2>Help us understand how you think</h2>
+        <p class="section-note">There are no right or wrong answers. These help us tailor our conversation to what works best for you.</p>
+
+        <div class="form-group" data-validate="radio" data-name="decision_style">
+          <label class="form-label">When making a major decision, which describes you best?</label>
+          <div class="radio-grid">
+            <label class="radio-card"><input type="radio" name="decision_style" value="Research thoroughly before deciding" required><span class="radio-label">🔍 I research thoroughly before deciding</span></label>
+            <label class="radio-card"><input type="radio" name="decision_style" value="Trust my gut and move quickly"><span class="radio-label">⚡ I trust my gut and move quickly</span></label>
+            <label class="radio-card"><input type="radio" name="decision_style" value="Talk it through with people I trust"><span class="radio-label">🤝 I talk it through with people I trust</span></label>
+            <label class="radio-card"><input type="radio" name="decision_style" value="Weigh all options carefully then commit"><span class="radio-label">⚖️ I weigh all options carefully, then commit</span></label>
+          </div>
+          <div class="validation-msg">Please select an option</div>
+        </div>
+
+        <div class="form-group" data-validate="radio" data-name="info_preference">
+          <label class="form-label">How do you prefer to receive important information?</label>
+          <div class="radio-grid">
+            <label class="radio-card"><input type="radio" name="info_preference" value="Give me the data and let me analyze" required><span class="radio-label">📊 Give me the data — I'll analyze it</span></label>
+            <label class="radio-card"><input type="radio" name="info_preference" value="Big picture first, details later"><span class="radio-label">🗺️ Big picture first, details later</span></label>
+            <label class="radio-card"><input type="radio" name="info_preference" value="Walk me through it step by step"><span class="radio-label">📋 Walk me through it step by step</span></label>
+            <label class="radio-card"><input type="radio" name="info_preference" value="Just tell me what you recommend and why"><span class="radio-label">💬 Just tell me what you recommend and why</span></label>
+          </div>
+          <div class="validation-msg">Please select an option</div>
+        </div>
+
+        <div class="form-group" data-validate="radio" data-name="what_matters_more">
+          <label class="form-label">Which matters more to you in this purchase?</label>
+          <div class="radio-grid">
+            <label class="radio-card"><input type="radio" name="what_matters_more" value="Getting the best financial outcome" required><span class="radio-label">💰 Getting the best financial outcome</span></label>
+            <label class="radio-card"><input type="radio" name="what_matters_more" value="Finding a place that feels like home"><span class="radio-label">🏡 Finding a place that feels like home</span></label>
+            <label class="radio-card"><input type="radio" name="what_matters_more" value="Making a smart long-term investment"><span class="radio-label">📈 Making a smart long-term investment</span></label>
+            <label class="radio-card"><input type="radio" name="what_matters_more" value="Minimizing stress and hassle"><span class="radio-label">🧘 Minimizing stress and hassle</span></label>
+          </div>
+          <div class="validation-msg">Please select an option</div>
+        </div>
+
+        <div class="form-group" data-validate="radio" data-name="past_experience">
+          <label class="form-label">Have you had a previous experience with a real estate professional?</label>
+          <div class="radio-grid">
+            <label class="radio-card"><input type="radio" name="past_experience" value="Yes, great experience" required><span class="radio-label">👍 Yes — great experience</span></label>
+            <label class="radio-card"><input type="radio" name="past_experience" value="Yes, mixed experience"><span class="radio-label">😐 Yes — it was okay</span></label>
+            <label class="radio-card"><input type="radio" name="past_experience" value="Yes, negative experience"><span class="radio-label">👎 Yes — not great</span></label>
+            <label class="radio-card"><input type="radio" name="past_experience" value="No, this is my first time"><span class="radio-label">🆕 No, first time</span></label>
+          </div>
+          <div class="validation-msg">Please select an option</div>
+        </div>
 
         <div class="form-group">
+          <label class="form-label">What would make this experience feel successful to you? <span class="form-hint">(in your own words)</span></label>
+          <textarea name="success_definition" class="form-input form-textarea" rows="3" placeholder="What does a great outcome look like for you — beyond just finding a house?"></textarea>
+        </div>
+
+        <div class="form-nav">
+          <button type="button" class="btn btn-secondary btn-prev" onclick="prevStep(6)">← Back</button>
+          <button type="button" class="btn btn-primary btn-next" onclick="nextStep(6)">Continue →</button>
+        </div>
+      </div>
+
+      <!-- SECTION 7: Schedule & Contact -->
+      <div class="form-section" data-step="7">
+        <div class="section-badge">Schedule Your Session</div>
+        <h2>Let's get you on the calendar</h2>
+        <p class="section-note">Choose a day and time that works for you. We'll confirm within 24 hours.</p>
+
+        <div class="form-group" data-validate="radio" data-name="preferred_day">
+          <label class="form-label">When would you like to meet?</label>
+          <div class="radio-grid" id="day-options">
+            <!-- Populated by JavaScript with next 5 available days -->
+          </div>
+          <div class="validation-msg">Please select a preferred day</div>
+        </div>
+
+        <div class="form-group" data-validate="radio" data-name="preferred_time">
+          <label class="form-label">What time works best?</label>
+          <div class="radio-grid">
+            <label class="radio-card"><input type="radio" name="preferred_time" value="Morning (9am - 11am)" required><span class="radio-label">🌅 Morning<br><small>9am – 11am</small></span></label>
+            <label class="radio-card"><input type="radio" name="preferred_time" value="Midday (11am - 1pm)"><span class="radio-label">☀️ Midday<br><small>11am – 1pm</small></span></label>
+            <label class="radio-card"><input type="radio" name="preferred_time" value="Afternoon (1pm - 3pm)"><span class="radio-label">🌤️ Afternoon<br><small>1pm – 3pm</small></span></label>
+            <label class="radio-card"><input type="radio" name="preferred_time" value="Late Afternoon (3pm - 5pm)"><span class="radio-label">🌇 Late Afternoon<br><small>3pm – 5pm</small></span></label>
+          </div>
+          <div class="validation-msg">Please select a preferred time</div>
+        </div>
+
+        <div class="form-group" data-validate="radio" data-name="session_format">
+          <label class="form-label">How would you prefer to meet?</label>
+          <div class="radio-grid radio-grid-narrow">
+            <label class="radio-card"><input type="radio" name="session_format" value="Phone call" required><span class="radio-label">📞 Phone</span></label>
+            <label class="radio-card"><input type="radio" name="session_format" value="Video call"><span class="radio-label">💻 Video</span></label>
+            <label class="radio-card"><input type="radio" name="session_format" value="In person"><span class="radio-label">🤝 In Person</span></label>
+          </div>
+          <div class="validation-msg">Please select a meeting format</div>
+        </div>
+
+        <hr style="margin: 2.5rem 0;">
+
+        <h3 style="margin-top: 0;">Your Contact Information</h3>
+        <p class="section-note">Kept confidential — used only to prepare for and confirm your session.</p>
+
+        <div class="form-group" data-validate="text" data-name="name">
           <label class="form-label" for="name">Full Name</label>
           <input type="text" id="name" name="name" class="form-input" required placeholder="Your full name">
+          <div class="validation-msg">Please enter your name</div>
         </div>
 
         <div class="form-row">
-          <div class="form-group">
+          <div class="form-group" data-validate="text" data-name="email">
             <label class="form-label" for="email">Email</label>
             <input type="email" id="email" name="email" class="form-input" required placeholder="your@email.com">
+            <div class="validation-msg">Please enter a valid email</div>
           </div>
-          <div class="form-group">
+          <div class="form-group" data-validate="text" data-name="phone">
             <label class="form-label" for="phone">Phone</label>
             <input type="tel" id="phone" name="phone" class="form-input" required placeholder="(330) 555-0000">
+            <div class="validation-msg">Please enter your phone number</div>
           </div>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">Preferred communication method</label>
+        <div class="form-group" data-validate="radio" data-name="preferred_contact">
+          <label class="form-label">Best way to reach you for confirmation?</label>
           <div class="radio-grid radio-grid-narrow">
             <label class="radio-card"><input type="radio" name="preferred_contact" value="Phone" required><span class="radio-label">📞 Phone</span></label>
             <label class="radio-card"><input type="radio" name="preferred_contact" value="Email"><span class="radio-label">✉️ Email</span></label>
             <label class="radio-card"><input type="radio" name="preferred_contact" value="Text"><span class="radio-label">💬 Text</span></label>
           </div>
+          <div class="validation-msg">Please select a contact method</div>
         </div>
 
         <div class="form-group">
@@ -268,7 +378,7 @@
         </div>
 
         <div class="form-nav">
-          <button type="button" class="btn btn-secondary btn-prev" onclick="prevStep(6)">← Back</button>
+          <button type="button" class="btn btn-secondary btn-prev" onclick="prevStep(7)">← Back</button>
           <button type="submit" class="btn btn-primary btn-large btn-submit">Submit Assessment →</button>
         </div>
       </div>
@@ -277,7 +387,31 @@
 </section>
 
 <script>
-const totalSteps = 6;
+const totalSteps = 7;
+
+// Generate next 5 weekdays for scheduling
+function populateDays() {
+  const container = document.getElementById('day-options');
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  let date = new Date();
+  let count = 0;
+  let html = '';
+
+  while (count < 5) {
+    date.setDate(date.getDate() + 1);
+    const dow = date.getDay();
+    if (dow === 0 || dow === 6) continue; // skip weekends
+
+    const label = days[dow] + ', ' + months[date.getMonth()] + ' ' + date.getDate();
+    const value = (date.getMonth()+1) + '/' + date.getDate() + '/' + date.getFullYear() + ' (' + days[dow] + ')';
+    const req = count === 0 ? ' required' : '';
+
+    html += '<label class="radio-card"><input type="radio" name="preferred_day" value="' + value + '"' + req + '><span class="radio-label">' + label + '</span></label>';
+    count++;
+  }
+  container.innerHTML = html;
+}
 
 function updateProgress(step) {
   const pct = (step / totalSteps) * 100;
@@ -286,33 +420,56 @@ function updateProgress(step) {
 }
 
 function showStep(step) {
-  document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.form-section').forEach(function(s) { s.classList.remove('active'); });
   document.querySelector('[data-step="' + step + '"]').classList.add('active');
   updateProgress(step);
   window.scrollTo({ top: document.querySelector('.assessment-form').offsetTop - 100, behavior: 'smooth' });
 }
 
-function nextStep(current) {
-  const section = document.querySelector('[data-step="' + current + '"]');
-  const required = section.querySelectorAll('[required]');
-  let valid = true;
+function validateSection(step) {
+  const section = document.querySelector('[data-step="' + step + '"]');
+  const groups = section.querySelectorAll('[data-validate]');
+  let allValid = true;
+  let firstInvalid = null;
 
-  required.forEach(input => {
-    if (input.type === 'radio') {
-      const group = section.querySelectorAll('input[name="' + input.name + '"]');
-      const checked = Array.from(group).some(r => r.checked);
-      if (!checked) valid = false;
-    } else if (!input.value.trim()) {
-      valid = false;
+  groups.forEach(function(group) {
+    const type = group.getAttribute('data-validate');
+    const name = group.getAttribute('data-name');
+    let valid = true;
+
+    if (type === 'radio') {
+      const radios = group.querySelectorAll('input[type="radio"]');
+      valid = Array.from(radios).some(function(r) { return r.checked; });
+    } else if (type === 'text') {
+      const input = group.querySelector('input, textarea');
+      if (input && input.hasAttribute('required')) {
+        valid = input.value.trim().length > 0;
+        if (input.type === 'email' && valid) {
+          valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.value);
+        }
+      }
+    }
+
+    if (!valid) {
+      group.classList.add('invalid');
+      allValid = false;
+      if (!firstInvalid) firstInvalid = group;
+    } else {
+      group.classList.remove('invalid');
     }
   });
 
-  if (!valid) {
+  if (!allValid && firstInvalid) {
+    firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
     section.classList.add('shake');
-    setTimeout(() => section.classList.remove('shake'), 500);
-    return;
+    setTimeout(function() { section.classList.remove('shake'); }, 500);
   }
 
+  return allValid;
+}
+
+function nextStep(current) {
+  if (!validateSection(current)) return;
   showStep(current + 1);
 }
 
@@ -320,14 +477,34 @@ function prevStep(current) {
   showStep(current - 1);
 }
 
+// Clear invalid state when user makes a selection
+document.addEventListener('change', function(e) {
+  var group = e.target.closest('[data-validate]');
+  if (group) group.classList.remove('invalid');
+});
+
+document.addEventListener('input', function(e) {
+  var group = e.target.closest('[data-validate]');
+  if (group) group.classList.remove('invalid');
+});
+
 // Show/hide current home plan based on ownership
-document.querySelectorAll('input[name="current_owner"]').forEach(radio => {
+document.querySelectorAll('input[name="current_owner"]').forEach(function(radio) {
   radio.addEventListener('change', function() {
     document.getElementById('owner-plan-group').style.display =
       this.value === 'Yes' ? 'block' : 'none';
   });
 });
 
+// Validate final section on submit
+document.getElementById('buyer-assessment').addEventListener('submit', function(e) {
+  if (!validateSection(7)) {
+    e.preventDefault();
+  }
+});
+
+// Init
+populateDays();
 updateProgress(1);
 </script>
 {{ end }}
