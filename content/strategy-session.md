@@ -49,11 +49,11 @@ No pressure. Just expert guidance.
 
 ## What Happens Next
 
-**Step 1** — Complete the [Buyer Readiness Assessment](/assessment/) *(approximately 3–4 minutes)*
+**Step 1** — Complete the [Buyer Discovery Experience](/assessment/) *(approximately 4–5 minutes)*
 
-**Step 2** — We'll review your responses and reach out to schedule your session.
+**Step 2** — Jen and Chris personally review your responses and reach out using the contact method you choose.
 
-**Step 3** — Meet with HomeBuyer Experts to discuss your goals and create a plan.
+**Step 3** — Have a real conversation about your goals and create a plan.
 
 ---
 
@@ -67,6 +67,6 @@ It is a strategic conversation designed to help you understand your goals, optio
 
 ## Ready to Start?
 
-[Take the Buyer Readiness Assessment →](/assessment/)
+[Start the Buyer Discovery Experience →](/assessment/)
 
 Or call us directly: **(330) 328-3170**

@@ -7,16 +7,17 @@
 <section class="section">
   <div class="container">
     <div class="assessment-intro">
-      <p>This brief assessment helps us understand your goals, timeline, and priorities — so your Strategy Session is focused entirely on what matters to you.</p>
+      <p>This brief experience helps us understand your goals, timeline, and priorities — so when we connect, the conversation is focused entirely on what matters to you.</p>
       <p class="assessment-time"><span class="icon">⏱</span> Takes approximately 4–5 minutes</p>
     </div>
 
     <form id="buyer-assessment" action="https://formsubmit.co/cwhitehead@hbexperts.com" method="POST" class="assessment-form">
       <!-- FormSubmit config -->
-      <input type="hidden" name="_subject" value="New Buyer Readiness Assessment Submission">
+      <input type="hidden" name="_subject" value="New Buyer Discovery Experience Submission">
       <input type="hidden" name="_captcha" value="false">
-      <input type="hidden" name="_next" value="{{ .Site.BaseURL }}assessment/thank-you/">
+      <input type="hidden" name="_next" value="{{ .Site.BaseURL }}discovery/thank-you/">
       <input type="hidden" name="_template" value="table">
+      <input type="hidden" name="_autoresponse" value="Thank you for completing the Buyer Discovery Experience! Jen and Chris will personally review your responses and reach out using the contact method(s) you selected. We'll do our best to connect during your preferred timeframe. If there's a scheduling conflict, we'll simply arrange another convenient time. There's no obligation and no pressure — just a conversation when you're ready. — HomeBuyer Experts, (330) 328-3170">
       <input type="text" name="_honey" style="display:none">
 
       <!-- Progress Bar -->
@@ -242,10 +243,10 @@
         </div>
       </div>
 
-      <!-- SECTION 6: Know Your Style -->
+      <!-- SECTION 6: Your Style -->
       <div class="form-section" data-step="6">
         <div class="section-badge">Your Style</div>
-        <h2>Help us understand how you think</h2>
+        <h2>Help us get to know you a little better</h2>
         <p class="section-note">There are no right or wrong answers. These help us tailor our conversation to what works best for you.</p>
 
         <div class="form-group" data-validate="radio" data-name="decision_style">
@@ -303,45 +304,56 @@
         </div>
       </div>
 
-      <!-- SECTION 7: Schedule & Contact -->
+      <!-- SECTION 7: One Last Thing -->
       <div class="form-section" data-step="7">
-        <div class="section-badge">Schedule Your Session</div>
-        <h2>Let's get you on the calendar</h2>
-        <p class="section-note">Choose a day and time that works for you. We'll confirm within 24 hours.</p>
+        <div class="section-badge">One Last Thing</div>
+        <h2>One last thing...</h2>
 
-        <div class="form-group" data-validate="radio" data-name="preferred_day">
-          <label class="form-label">When would you like to meet?</label>
-          <div class="radio-grid" id="day-options">
-            <!-- Populated by JavaScript with next 5 available days -->
+        <div class="closing-message">
+          <p>Jen and Chris personally engage with every Buyer Discovery Experience.</p>
+          <p>We're excited to continue the conversation. Let us know the best way and time to contact you, and one of us will reach out personally.</p>
+          <p>We'll do our best to contact you during your preferred timeframe. If there's a scheduling conflict, we'll simply reach out to arrange another convenient time.</p>
+          <p class="closing-promise">There's no obligation, no sales pressure, and no automated sales sequence — just a conversation when you're ready.</p>
+        </div>
+
+        <hr style="margin: 2rem 0;">
+
+        <div class="form-group" data-validate="checkbox-any" data-name="contact_method">
+          <label class="form-label">How may we contact you? <span class="form-hint">(select all that apply)</span></label>
+          <div class="checkbox-grid checkbox-grid-narrow">
+            <label class="check-card"><input type="checkbox" name="contact_method" value="Phone Call"><span class="check-label">📞 Phone Call</span></label>
+            <label class="check-card"><input type="checkbox" name="contact_method" value="Text Message"><span class="check-label">💬 Text Message</span></label>
+            <label class="check-card"><input type="checkbox" name="contact_method" value="Email"><span class="check-label">✉️ Email</span></label>
           </div>
-          <div class="validation-msg">Please select a preferred day</div>
+          <p class="contact-consent">We'll only contact you using the method(s) you select.</p>
+          <div class="validation-msg">Please select at least one contact method</div>
         </div>
 
         <div class="form-group" data-validate="radio" data-name="preferred_time">
-          <label class="form-label">What time works best?</label>
+          <label class="form-label">When is the best time to reach you?</label>
           <div class="radio-grid">
             <label class="radio-card"><input type="radio" name="preferred_time" value="Morning (9am - 11am)" required><span class="radio-label">🌅 Morning<br><small>9am – 11am</small></span></label>
             <label class="radio-card"><input type="radio" name="preferred_time" value="Midday (11am - 1pm)"><span class="radio-label">☀️ Midday<br><small>11am – 1pm</small></span></label>
             <label class="radio-card"><input type="radio" name="preferred_time" value="Afternoon (1pm - 3pm)"><span class="radio-label">🌤️ Afternoon<br><small>1pm – 3pm</small></span></label>
             <label class="radio-card"><input type="radio" name="preferred_time" value="Late Afternoon (3pm - 5pm)"><span class="radio-label">🌇 Late Afternoon<br><small>3pm – 5pm</small></span></label>
+            <label class="radio-card"><input type="radio" name="preferred_time" value="Early Evening (5pm - 7pm)"><span class="radio-label">🌆 Early Evening<br><small>5pm – 7pm</small></span></label>
           </div>
           <div class="validation-msg">Please select a preferred time</div>
         </div>
 
-        <div class="form-group" data-validate="radio" data-name="session_format">
-          <label class="form-label">How would you prefer to meet?</label>
-          <div class="radio-grid radio-grid-narrow">
-            <label class="radio-card"><input type="radio" name="session_format" value="Phone call" required><span class="radio-label">📞 Phone</span></label>
-            <label class="radio-card"><input type="radio" name="session_format" value="Video call"><span class="radio-label">💻 Video</span></label>
-            <label class="radio-card"><input type="radio" name="session_format" value="In person"><span class="radio-label">🤝 In Person</span></label>
+        <div class="form-group" data-validate="radio" data-name="preferred_day">
+          <label class="form-label">What days generally work best?</label>
+          <div class="radio-grid">
+            <label class="radio-card"><input type="radio" name="preferred_day" value="Weekdays" required><span class="radio-label">Weekdays</span></label>
+            <label class="radio-card"><input type="radio" name="preferred_day" value="Saturday"><span class="radio-label">Saturday</span></label>
+            <label class="radio-card"><input type="radio" name="preferred_day" value="No Preference"><span class="radio-label">No Preference</span></label>
           </div>
-          <div class="validation-msg">Please select a meeting format</div>
+          <div class="validation-msg">Please select a day preference</div>
         </div>
 
-        <hr style="margin: 2.5rem 0;">
+        <hr style="margin: 2rem 0;">
 
         <h3 style="margin-top: 0;">Your Contact Information</h3>
-        <p class="section-note">Kept confidential — used only to prepare for and confirm your session.</p>
 
         <div class="form-group" data-validate="text" data-name="name">
           <label class="form-label" for="name">Full Name</label>
@@ -356,30 +368,24 @@
             <div class="validation-msg">Please enter a valid email</div>
           </div>
           <div class="form-group" data-validate="text" data-name="phone">
-            <label class="form-label" for="phone">Phone</label>
+            <label class="form-label" for="phone">Mobile Phone</label>
             <input type="tel" id="phone" name="phone" class="form-input" required placeholder="(330) 555-0000">
             <div class="validation-msg">Please enter your phone number</div>
           </div>
         </div>
 
-        <div class="form-group" data-validate="radio" data-name="preferred_contact">
-          <label class="form-label">Best way to reach you for confirmation?</label>
-          <div class="radio-grid radio-grid-narrow">
-            <label class="radio-card"><input type="radio" name="preferred_contact" value="Phone" required><span class="radio-label">📞 Phone</span></label>
-            <label class="radio-card"><input type="radio" name="preferred_contact" value="Email"><span class="radio-label">✉️ Email</span></label>
-            <label class="radio-card"><input type="radio" name="preferred_contact" value="Text"><span class="radio-label">💬 Text</span></label>
-          </div>
-          <div class="validation-msg">Please select a contact method</div>
+        <div class="form-group">
+          <label class="form-label" for="anything_else">Is there anything we should know before reaching out? <span class="form-hint">(optional)</span></label>
+          <textarea id="anything_else" name="anything_else" class="form-input form-textarea" rows="3" placeholder="Questions, concerns, or anything that would help us prepare..."></textarea>
         </div>
 
-        <div class="form-group">
-          <label class="form-label" for="anything_else">Anything else you'd like us to know? <span class="form-hint">(optional)</span></label>
-          <textarea id="anything_else" name="anything_else" class="form-input form-textarea" rows="3" placeholder="Questions, concerns, or context that would help us prepare for your session..."></textarea>
+        <div class="privacy-note">
+          <p>We use technology to help organize information and prepare for conversations, but every important recommendation, communication, and representation decision is personally reviewed by Jen or Chris.</p>
         </div>
 
         <div class="form-nav">
           <button type="button" class="btn btn-secondary btn-prev" onclick="prevStep(7)">← Back</button>
-          <button type="submit" class="btn btn-primary btn-large btn-submit">Submit Assessment →</button>
+          <button type="submit" class="btn btn-primary btn-large btn-submit">Send My Buyer Discovery Experience →</button>
         </div>
       </div>
     </form>
@@ -387,34 +393,10 @@
 </section>
 
 <script>
-const totalSteps = 7;
-
-// Generate next 5 weekdays for scheduling
-function populateDays() {
-  const container = document.getElementById('day-options');
-  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  let date = new Date();
-  let count = 0;
-  let html = '';
-
-  while (count < 5) {
-    date.setDate(date.getDate() + 1);
-    const dow = date.getDay();
-    if (dow === 0 || dow === 6) continue; // skip weekends
-
-    const label = days[dow] + ', ' + months[date.getMonth()] + ' ' + date.getDate();
-    const value = (date.getMonth()+1) + '/' + date.getDate() + '/' + date.getFullYear() + ' (' + days[dow] + ')';
-    const req = count === 0 ? ' required' : '';
-
-    html += '<label class="radio-card"><input type="radio" name="preferred_day" value="' + value + '"' + req + '><span class="radio-label">' + label + '</span></label>';
-    count++;
-  }
-  container.innerHTML = html;
-}
+var totalSteps = 7;
 
 function updateProgress(step) {
-  const pct = (step / totalSteps) * 100;
+  var pct = (step / totalSteps) * 100;
   document.getElementById('progress-fill').style.width = pct + '%';
   document.getElementById('step-label').textContent = 'Section ' + step + ' of ' + totalSteps;
 }
@@ -427,21 +409,23 @@ function showStep(step) {
 }
 
 function validateSection(step) {
-  const section = document.querySelector('[data-step="' + step + '"]');
-  const groups = section.querySelectorAll('[data-validate]');
-  let allValid = true;
-  let firstInvalid = null;
+  var section = document.querySelector('[data-step="' + step + '"]');
+  var groups = section.querySelectorAll('[data-validate]');
+  var allValid = true;
+  var firstInvalid = null;
 
   groups.forEach(function(group) {
-    const type = group.getAttribute('data-validate');
-    const name = group.getAttribute('data-name');
-    let valid = true;
+    var type = group.getAttribute('data-validate');
+    var valid = true;
 
     if (type === 'radio') {
-      const radios = group.querySelectorAll('input[type="radio"]');
+      var radios = group.querySelectorAll('input[type="radio"]');
       valid = Array.from(radios).some(function(r) { return r.checked; });
+    } else if (type === 'checkbox-any') {
+      var checks = group.querySelectorAll('input[type="checkbox"]');
+      valid = Array.from(checks).some(function(c) { return c.checked; });
     } else if (type === 'text') {
-      const input = group.querySelector('input, textarea');
+      var input = group.querySelector('input, textarea');
       if (input && input.hasAttribute('required')) {
         valid = input.value.trim().length > 0;
         if (input.type === 'email' && valid) {
@@ -477,7 +461,7 @@ function prevStep(current) {
   showStep(current - 1);
 }
 
-// Clear invalid state when user makes a selection
+// Clear invalid state on interaction
 document.addEventListener('change', function(e) {
   var group = e.target.closest('[data-validate]');
   if (group) group.classList.remove('invalid');
@@ -488,7 +472,7 @@ document.addEventListener('input', function(e) {
   if (group) group.classList.remove('invalid');
 });
 
-// Show/hide current home plan based on ownership
+// Show/hide current home plan
 document.querySelectorAll('input[name="current_owner"]').forEach(function(radio) {
   radio.addEventListener('change', function() {
     document.getElementById('owner-plan-group').style.display =
@@ -496,15 +480,13 @@ document.querySelectorAll('input[name="current_owner"]').forEach(function(radio)
   });
 });
 
-// Validate final section on submit
+// Validate on submit
 document.getElementById('buyer-assessment').addEventListener('submit', function(e) {
   if (!validateSection(7)) {
     e.preventDefault();
   }
 });
 
-// Init
-populateDays();
 updateProgress(1);
 </script>
 {{ end }}

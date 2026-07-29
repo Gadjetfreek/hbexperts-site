@@ -1,6 +1,6 @@
 ---
-title: "Buyer Readiness Assessment"
-subtitle: "Understand your readiness, opportunities, and next steps — before your Strategy Session."
-description: "Complete the HomeBuyer Experts Buyer Readiness Assessment. A few minutes now creates a more focused, valuable Strategy Session."
+title: "Buyer Discovery Experience"
+subtitle: "Help us understand your goals, priorities, and what matters most — so when we connect, the conversation is all about you."
+description: "Complete the HomeBuyer Experts Buyer Discovery Experience. A few minutes now creates a more focused, valuable first conversation."
 layout: "assessment"
 ---
