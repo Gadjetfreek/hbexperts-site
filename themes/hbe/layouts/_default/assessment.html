@@ -1,0 +1,333 @@
+{{ define "main" }}
+<div class="page-header">
+  <h1>{{ .Title }}</h1>
+  <p class="subtitle">{{ .Params.subtitle }}</p>
+</div>
+
+<section class="section">
+  <div class="container">
+    <div class="assessment-intro">
+      <p>This brief assessment helps us understand your goals, timeline, and priorities — so your Strategy Session is focused entirely on what matters to you.</p>
+      <p class="assessment-time"><span class="icon">⏱</span> Takes approximately 3–4 minutes</p>
+    </div>
+
+    <form id="buyer-assessment" action="https://formsubmit.co/cwhitehead@hbexperts.com" method="POST" class="assessment-form">
+      <!-- FormSubmit config -->
+      <input type="hidden" name="_subject" value="New Buyer Readiness Assessment Submission">
+      <input type="hidden" name="_captcha" value="false">
+      <input type="hidden" name="_next" value="{{ .Site.BaseURL }}assessment/thank-you/">
+      <input type="hidden" name="_template" value="table">
+      <input type="text" name="_honey" style="display:none">
+
+      <!-- Progress Bar -->
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <div class="progress-label"><span id="step-label">Section 1 of 6</span></div>
+
+      <!-- SECTION 1: Your Goals -->
+      <div class="form-section active" data-step="1">
+        <div class="section-badge">Your Goals</div>
+        <h2>Tell us about your situation</h2>
+
+        <div class="form-group">
+          <label class="form-label">What best describes your current situation?</label>
+          <div class="radio-grid">
+            <label class="radio-card"><input type="radio" name="situation" value="First-time buyer" required><span class="radio-label">First-time buyer</span></label>
+            <label class="radio-card"><input type="radio" name="situation" value="Moving up"><span class="radio-label">Moving up</span></label>
+            <label class="radio-card"><input type="radio" name="situation" value="Relocating to NE Ohio"><span class="radio-label">Relocating to NE Ohio</span></label>
+            <label class="radio-card"><input type="radio" name="situation" value="Downsizing"><span class="radio-label">Downsizing</span></label>
+            <label class="radio-card"><input type="radio" name="situation" value="Investment property"><span class="radio-label">Investment property</span></label>
+            <label class="radio-card"><input type="radio" name="situation" value="Second home"><span class="radio-label">Second home</span></label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Why are you considering a move?</label>
+          <div class="radio-grid">
+            <label class="radio-card"><input type="radio" name="motivation" value="New job or career opportunity" required><span class="radio-label">New job / career</span></label>
+            <label class="radio-card"><input type="radio" name="motivation" value="Family changes"><span class="radio-label">Family changes</span></label>
+            <label class="radio-card"><input type="radio" name="motivation" value="Lifestyle change"><span class="radio-label">Lifestyle change</span></label>
+            <label class="radio-card"><input type="radio" name="motivation" value="Financial opportunity"><span class="radio-label">Financial opportunity</span></label>
+            <label class="radio-card"><input type="radio" name="motivation" value="School or community change"><span class="radio-label">School / community</span></label>
+            <label class="radio-card"><input type="radio" name="motivation" value="Other"><span class="radio-label">Other</span></label>
+          </div>
+        </div>
+
+        <div class="form-nav">
+          <div></div>
+          <button type="button" class="btn btn-primary btn-next" onclick="nextStep(1)">Continue →</button>
+        </div>
+      </div>
+
+      <!-- SECTION 2: Timing -->
+      <div class="form-section" data-step="2">
+        <div class="section-badge">Timing</div>
+        <h2>When are you looking to purchase?</h2>
+
+        <div class="form-group">
+          <label class="form-label">Expected purchase timeline</label>
+          <div class="radio-grid">
+            <label class="radio-card"><input type="radio" name="timeline" value="Within 30 days" required><span class="radio-label">Within 30 days</span></label>
+            <label class="radio-card"><input type="radio" name="timeline" value="1-3 months"><span class="radio-label">1–3 months</span></label>
+            <label class="radio-card"><input type="radio" name="timeline" value="3-6 months"><span class="radio-label">3–6 months</span></label>
+            <label class="radio-card"><input type="radio" name="timeline" value="6-12 months"><span class="radio-label">6–12 months</span></label>
+            <label class="radio-card"><input type="radio" name="timeline" value="Researching options"><span class="radio-label">Researching options</span></label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">What is driving your timeline?</label>
+          <div class="radio-grid">
+            <label class="radio-card"><input type="radio" name="timeline_driver" value="Need to move" required><span class="radio-label">Need to move</span></label>
+            <label class="radio-card"><input type="radio" name="timeline_driver" value="Want the right opportunity"><span class="radio-label">Right opportunity</span></label>
+            <label class="radio-card"><input type="radio" name="timeline_driver" value="Market conditions"><span class="radio-label">Market conditions</span></label>
+            <label class="radio-card"><input type="radio" name="timeline_driver" value="Life event"><span class="radio-label">Life event</span></label>
+            <label class="radio-card"><input type="radio" name="timeline_driver" value="Exploring possibilities"><span class="radio-label">Exploring</span></label>
+          </div>
+        </div>
+
+        <div class="form-nav">
+          <button type="button" class="btn btn-secondary btn-prev" onclick="prevStep(2)">← Back</button>
+          <button type="button" class="btn btn-primary btn-next" onclick="nextStep(2)">Continue →</button>
+        </div>
+      </div>
+
+      <!-- SECTION 3: Purchase Goals -->
+      <div class="form-section" data-step="3">
+        <div class="section-badge">Purchase Goals</div>
+        <h2>Help us understand what you're looking for</h2>
+
+        <div class="form-group">
+          <label class="form-label">What price range are you considering?</label>
+          <div class="radio-grid">
+            <label class="radio-card"><input type="radio" name="price_range" value="Under $300,000" required><span class="radio-label">Under $300K</span></label>
+            <label class="radio-card"><input type="radio" name="price_range" value="$300,000 - $500,000"><span class="radio-label">$300K – $500K</span></label>
+            <label class="radio-card"><input type="radio" name="price_range" value="$500,000 - $750,000"><span class="radio-label">$500K – $750K</span></label>
+            <label class="radio-card"><input type="radio" name="price_range" value="$750,000 - $1,000,000"><span class="radio-label">$750K – $1M</span></label>
+            <label class="radio-card"><input type="radio" name="price_range" value="$1,000,000+"><span class="radio-label">$1M+</span></label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Where are you considering buying?</label>
+          <input type="text" name="target_location" class="form-input" placeholder="e.g., Medina County, Hudson, Bath Township..." required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">What matters most in your next home? <span class="form-hint">(select all that apply)</span></label>
+          <div class="checkbox-grid">
+            <label class="check-card"><input type="checkbox" name="priorities" value="Location"><span class="check-label">Location</span></label>
+            <label class="check-card"><input type="checkbox" name="priorities" value="Schools"><span class="check-label">Schools</span></label>
+            <label class="check-card"><input type="checkbox" name="priorities" value="Commute"><span class="check-label">Commute</span></label>
+            <label class="check-card"><input type="checkbox" name="priorities" value="Privacy"><span class="check-label">Privacy</span></label>
+            <label class="check-card"><input type="checkbox" name="priorities" value="Lifestyle"><span class="check-label">Lifestyle</span></label>
+            <label class="check-card"><input type="checkbox" name="priorities" value="Investment value"><span class="check-label">Investment value</span></label>
+            <label class="check-card"><input type="checkbox" name="priorities" value="Home quality"><span class="check-label">Home quality</span></label>
+            <label class="check-card"><input type="checkbox" name="priorities" value="Future flexibility"><span class="check-label">Future flexibility</span></label>
+          </div>
+        </div>
+
+        <div class="form-nav">
+          <button type="button" class="btn btn-secondary btn-prev" onclick="prevStep(3)">← Back</button>
+          <button type="button" class="btn btn-primary btn-next" onclick="nextStep(3)">Continue →</button>
+        </div>
+      </div>
+
+      <!-- SECTION 4: Preparation -->
+      <div class="form-section" data-step="4">
+        <div class="section-badge">Preparation</div>
+        <h2>Where are you in the process?</h2>
+
+        <div class="form-group">
+          <label class="form-label">What is your financing status?</label>
+          <div class="radio-grid">
+            <label class="radio-card"><input type="radio" name="financing" value="Cash buyer" required><span class="radio-label">Cash buyer</span></label>
+            <label class="radio-card"><input type="radio" name="financing" value="Pre-approved"><span class="radio-label">Pre-approved</span></label>
+            <label class="radio-card"><input type="radio" name="financing" value="Working with lender"><span class="radio-label">Working with lender</span></label>
+            <label class="radio-card"><input type="radio" name="financing" value="Need lender recommendations"><span class="radio-label">Need lender recs</span></label>
+            <label class="radio-card"><input type="radio" name="financing" value="Unsure"><span class="radio-label">Unsure</span></label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Do you currently own a home?</label>
+          <div class="radio-grid radio-grid-narrow">
+            <label class="radio-card"><input type="radio" name="current_owner" value="Yes" required><span class="radio-label">Yes</span></label>
+            <label class="radio-card"><input type="radio" name="current_owner" value="No"><span class="radio-label">No</span></label>
+          </div>
+        </div>
+
+        <div class="form-group" id="owner-plan-group" style="display:none;">
+          <label class="form-label">What is your plan for your current home?</label>
+          <div class="radio-grid">
+            <label class="radio-card"><input type="radio" name="current_home_plan" value="Sell before buying"><span class="radio-label">Sell before buying</span></label>
+            <label class="radio-card"><input type="radio" name="current_home_plan" value="Buy before selling"><span class="radio-label">Buy before selling</span></label>
+            <label class="radio-card"><input type="radio" name="current_home_plan" value="Unsure"><span class="radio-label">Unsure</span></label>
+          </div>
+        </div>
+
+        <div class="form-nav">
+          <button type="button" class="btn btn-secondary btn-prev" onclick="prevStep(4)">← Back</button>
+          <button type="button" class="btn btn-primary btn-next" onclick="nextStep(4)">Continue →</button>
+        </div>
+      </div>
+
+      <!-- SECTION 5: Confidence & Concerns -->
+      <div class="form-section" data-step="5">
+        <div class="section-badge">Confidence</div>
+        <h2>What's on your mind?</h2>
+
+        <div class="form-group">
+          <label class="form-label">How important is it to have an agent who represents <em>only</em> your interests?</label>
+          <div class="scale-group">
+            <span class="scale-label-left">Not important</span>
+            <div class="scale-options">
+              <label class="scale-option"><input type="radio" name="representation_importance" value="1" required><span>1</span></label>
+              <label class="scale-option"><input type="radio" name="representation_importance" value="2"><span>2</span></label>
+              <label class="scale-option"><input type="radio" name="representation_importance" value="3"><span>3</span></label>
+              <label class="scale-option"><input type="radio" name="representation_importance" value="4"><span>4</span></label>
+              <label class="scale-option"><input type="radio" name="representation_importance" value="5"><span>5</span></label>
+            </div>
+            <span class="scale-label-right">Essential</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">What is your biggest concern about buying?</label>
+          <div class="radio-grid">
+            <label class="radio-card"><input type="radio" name="biggest_concern" value="Paying too much" required><span class="radio-label">Paying too much</span></label>
+            <label class="radio-card"><input type="radio" name="biggest_concern" value="Choosing the wrong property"><span class="radio-label">Wrong property</span></label>
+            <label class="radio-card"><input type="radio" name="biggest_concern" value="Negotiating effectively"><span class="radio-label">Negotiating</span></label>
+            <label class="radio-card"><input type="radio" name="biggest_concern" value="Understanding contracts"><span class="radio-label">Contracts</span></label>
+            <label class="radio-card"><input type="radio" name="biggest_concern" value="Finding the right home"><span class="radio-label">Finding the right home</span></label>
+            <label class="radio-card"><input type="radio" name="biggest_concern" value="Timing the market"><span class="radio-label">Timing the market</span></label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">How confident are you in your current buying strategy?</label>
+          <div class="scale-group">
+            <span class="scale-label-left">Not confident</span>
+            <div class="scale-options scale-options-10">
+              <label class="scale-option"><input type="radio" name="confidence_level" value="1" required><span>1</span></label>
+              <label class="scale-option"><input type="radio" name="confidence_level" value="2"><span>2</span></label>
+              <label class="scale-option"><input type="radio" name="confidence_level" value="3"><span>3</span></label>
+              <label class="scale-option"><input type="radio" name="confidence_level" value="4"><span>4</span></label>
+              <label class="scale-option"><input type="radio" name="confidence_level" value="5"><span>5</span></label>
+              <label class="scale-option"><input type="radio" name="confidence_level" value="6"><span>6</span></label>
+              <label class="scale-option"><input type="radio" name="confidence_level" value="7"><span>7</span></label>
+              <label class="scale-option"><input type="radio" name="confidence_level" value="8"><span>8</span></label>
+              <label class="scale-option"><input type="radio" name="confidence_level" value="9"><span>9</span></label>
+              <label class="scale-option"><input type="radio" name="confidence_level" value="10"><span>10</span></label>
+            </div>
+            <span class="scale-label-right">Very confident</span>
+          </div>
+        </div>
+
+        <div class="form-nav">
+          <button type="button" class="btn btn-secondary btn-prev" onclick="prevStep(5)">← Back</button>
+          <button type="button" class="btn btn-primary btn-next" onclick="nextStep(5)">Continue →</button>
+        </div>
+      </div>
+
+      <!-- SECTION 6: Contact -->
+      <div class="form-section" data-step="6">
+        <div class="section-badge">Almost Done</div>
+        <h2>How can we reach you?</h2>
+        <p class="section-note">Your information is kept confidential and used only to prepare for your Strategy Session.</p>
+
+        <div class="form-group">
+          <label class="form-label" for="name">Full Name</label>
+          <input type="text" id="name" name="name" class="form-input" required placeholder="Your full name">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="email">Email</label>
+            <input type="email" id="email" name="email" class="form-input" required placeholder="your@email.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="phone">Phone</label>
+            <input type="tel" id="phone" name="phone" class="form-input" required placeholder="(330) 555-0000">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Preferred communication method</label>
+          <div class="radio-grid radio-grid-narrow">
+            <label class="radio-card"><input type="radio" name="preferred_contact" value="Phone" required><span class="radio-label">📞 Phone</span></label>
+            <label class="radio-card"><input type="radio" name="preferred_contact" value="Email"><span class="radio-label">✉️ Email</span></label>
+            <label class="radio-card"><input type="radio" name="preferred_contact" value="Text"><span class="radio-label">💬 Text</span></label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="anything_else">Anything else you'd like us to know? <span class="form-hint">(optional)</span></label>
+          <textarea id="anything_else" name="anything_else" class="form-input form-textarea" rows="3" placeholder="Questions, concerns, or context that would help us prepare for your session..."></textarea>
+        </div>
+
+        <div class="form-nav">
+          <button type="button" class="btn btn-secondary btn-prev" onclick="prevStep(6)">← Back</button>
+          <button type="submit" class="btn btn-primary btn-large btn-submit">Submit Assessment →</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</section>
+
+<script>
+const totalSteps = 6;
+
+function updateProgress(step) {
+  const pct = (step / totalSteps) * 100;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('step-label').textContent = 'Section ' + step + ' of ' + totalSteps;
+}
+
+function showStep(step) {
+  document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
+  document.querySelector('[data-step="' + step + '"]').classList.add('active');
+  updateProgress(step);
+  window.scrollTo({ top: document.querySelector('.assessment-form').offsetTop - 100, behavior: 'smooth' });
+}
+
+function nextStep(current) {
+  const section = document.querySelector('[data-step="' + current + '"]');
+  const required = section.querySelectorAll('[required]');
+  let valid = true;
+
+  required.forEach(input => {
+    if (input.type === 'radio') {
+      const group = section.querySelectorAll('input[name="' + input.name + '"]');
+      const checked = Array.from(group).some(r => r.checked);
+      if (!checked) valid = false;
+    } else if (!input.value.trim()) {
+      valid = false;
+    }
+  });
+
+  if (!valid) {
+    section.classList.add('shake');
+    setTimeout(() => section.classList.remove('shake'), 500);
+    return;
+  }
+
+  showStep(current + 1);
+}
+
+function prevStep(current) {
+  showStep(current - 1);
+}
+
+// Show/hide current home plan based on ownership
+document.querySelectorAll('input[name="current_owner"]').forEach(radio => {
+  radio.addEventListener('change', function() {
+    document.getElementById('owner-plan-group').style.display =
+      this.value === 'Yes' ? 'block' : 'none';
+  });
+});
+
+updateProgress(1);
+</script>
+{{ end }}

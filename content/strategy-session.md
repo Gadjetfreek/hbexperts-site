@@ -49,9 +49,9 @@ No pressure. Just expert guidance.
 
 ## What Happens Next
 
-**Step 1** — Complete the [Buyer Readiness Assessment](/assessment/) *(approximately 3 minutes)*
+**Step 1** — Complete the [Buyer Readiness Assessment](/assessment/) *(approximately 3–4 minutes)*
 
-**Step 2** — Schedule your Strategy Session at a convenient time.
+**Step 2** — We'll review your responses and reach out to schedule your session.
 
 **Step 3** — Meet with HomeBuyer Experts to discuss your goals and create a plan.
 
@@ -67,6 +67,6 @@ It is a strategic conversation designed to help you understand your goals, optio
 
 ## Ready to Start?
 
-[Schedule Your Buyer Strategy Session →](mailto:cwhitehead@hbexperts.com?subject=Buyer%20Strategy%20Session%20Request)
+[Take the Buyer Readiness Assessment →](/assessment/)
 
 Or call us directly: **(330) 328-3170**
