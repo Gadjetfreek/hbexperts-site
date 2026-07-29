@@ -13,11 +13,19 @@ If there's a scheduling conflict, we'll simply reach out to arrange another conv
 
 ---
 
+### While You're Here
+
+Ready to go deeper? The **Home DNA Workshop** helps us understand not just *what* you're looking for — but *why*. It takes about 5 minutes and makes our first conversation significantly more valuable.
+
+[Start the Home DNA Workshop →](/home-dna/)
+
+---
+
 ### What to Expect
 
 One of us will personally reach out — not an automated sequence, not a sales pitch. Just a conversation about your goals when you're ready.
 
-In the meantime, if you'd like to learn more about our approach:
+If you'd like to learn more about our approach:
 
 - [How Exclusive Buyer Representation Works →](/buyer-representation/)
 - [About HomeBuyer Experts →](/about/)

@@ -29,9 +29,13 @@ theme = "hbe"
     url = "/assessment/"
     weight = 4
   [[menu.main]]
+    name = "Home DNA"
+    url = "/home-dna/"
+    weight = 5
+  [[menu.main]]
     name = "Contact"
     url = "/contact/"
-    weight = 5
+    weight = 6
 
 [markup]
   [markup.goldmark]
