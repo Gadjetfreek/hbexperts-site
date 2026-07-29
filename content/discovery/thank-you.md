@@ -5,19 +5,11 @@ description: "Thank you for completing the HomeBuyer Experts Buyer Discovery Exp
 
 ## Thank You
 
-Your Buyer Discovery Experience has been received.
+Your Buyer Discovery Experience has been received — including your Home DNA profile.
 
-Jen and Chris will personally review your responses and reach out using the contact method(s) you selected.
+Jen and Chris will personally review everything and reach out using the contact method(s) you selected. We'll do our best to connect during your preferred timeframe.
 
----
-
-### Want to Go Deeper?
-
-The **Home DNA Workshop** helps us understand not just *what* you're looking for in a home — but *why*. It takes about 5 minutes and makes our first conversation significantly more valuable.
-
-<a href="/home-dna/" class="btn btn-primary btn-large" style="display:inline-block; margin: 1rem 0;">Continue to Home DNA Workshop →</a>
-
-<p style="margin-top: 0.5rem;"><a href="/" style="font-size: 0.95rem;">Skip for now — I'll come back to this later</a></p>
+If there's a scheduling conflict, we'll simply arrange another convenient time.
 
 ---
 
@@ -25,9 +17,11 @@ The **Home DNA Workshop** helps us understand not just *what* you're looking for
 
 One of us will personally reach out — not an automated sequence, not a sales pitch. Just a conversation about your goals when you're ready.
 
-If there's a scheduling conflict, we'll simply arrange another convenient time.
+When we connect, we won't waste time asking questions you've already answered. We'll start where it matters.
 
-If you'd like to learn more about our approach:
+---
+
+### Learn More
 
 - [How Exclusive Buyer Representation Works →](/buyer-representation/)
 - [About HomeBuyer Experts →](/about/)

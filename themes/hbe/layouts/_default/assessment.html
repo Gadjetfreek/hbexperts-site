@@ -7,29 +7,23 @@
 <section class="section">
   <div class="container">
     <div class="assessment-intro">
-      <p>This brief experience helps us understand your goals, timeline, and priorities — so when we connect, the conversation is focused entirely on what matters to you.</p>
-      <p class="assessment-time"><span class="icon">⏱</span> Takes approximately 4–5 minutes</p>
+      <p>This experience helps us understand your goals, your lifestyle, and what truly matters in your next home — so when we connect, the conversation is focused entirely on you.</p>
+      <p class="assessment-time"><span class="icon">⏱</span> Takes approximately 8–10 minutes</p>
     </div>
 
     <form id="buyer-assessment" action="https://formsubmit.co/cwhitehead@hbexperts.com" method="POST" class="assessment-form">
-      <!-- FormSubmit config -->
       <input type="hidden" name="_subject" value="New Buyer Discovery Experience Submission">
       <input type="hidden" name="_captcha" value="false">
       <input type="hidden" name="_next" value="{{ .Site.BaseURL }}discovery/thank-you/">
       <input type="hidden" name="_template" value="table">
-      <!-- AUTO-REPLY DISABLED until @hbexperts.com email is set up
-      <input type="hidden" name="_autoresponse" value="Thank you for completing the Buyer Discovery Experience! Jen and Chris will personally review your responses and reach out using the contact method(s) you selected. We'll do our best to connect during your preferred timeframe. If there's a scheduling conflict, we'll simply arrange another convenient time. There's no obligation and no pressure — just a conversation when you're ready. — HomeBuyer Experts, (330) 328-3170">
-      -->
       <input type="hidden" name="_cc" value="gadjetfreekdriver@gmail.com">
+      <!-- AUTO-REPLY DISABLED until @hbexperts.com email is set up -->
       <input type="text" name="_honey" style="display:none">
 
-      <!-- Progress Bar -->
-      <div class="progress-bar">
-        <div class="progress-fill" id="progress-fill"></div>
-      </div>
-      <div class="progress-label"><span id="step-label">Section 1 of 7</span></div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="progress-label"><span id="step-label">Section 1 of 12</span></div>
 
-      <!-- SECTION 1: Your Goals -->
+      <!-- ============ SECTION 1: Your Goals ============ -->
       <div class="form-section active" data-step="1">
         <div class="section-badge">Your Goals</div>
         <h2>Tell us about your situation</h2>
@@ -44,7 +38,7 @@
             <label class="radio-card"><input type="radio" name="situation" value="Investment property"><span class="radio-label">Investment property</span></label>
             <label class="radio-card"><input type="radio" name="situation" value="Second home"><span class="radio-label">Second home</span></label>
           </div>
-          <div class="validation-msg">Please select an option above</div>
+          <div class="validation-msg">Please select an option</div>
         </div>
 
         <div class="form-group" data-validate="radio" data-name="motivation">
@@ -57,16 +51,13 @@
             <label class="radio-card"><input type="radio" name="motivation" value="School or community change"><span class="radio-label">School / community</span></label>
             <label class="radio-card"><input type="radio" name="motivation" value="Other"><span class="radio-label">Other</span></label>
           </div>
-          <div class="validation-msg">Please select an option above</div>
+          <div class="validation-msg">Please select an option</div>
         </div>
 
-        <div class="form-nav">
-          <div></div>
-          <button type="button" class="btn btn-primary btn-next" onclick="nextStep(1)">Continue →</button>
-        </div>
+        <div class="form-nav"><div></div><button type="button" class="btn btn-primary btn-next" onclick="nextStep(1)">Continue →</button></div>
       </div>
 
-      <!-- SECTION 2: Timing -->
+      <!-- ============ SECTION 2: Timing ============ -->
       <div class="form-section" data-step="2">
         <div class="section-badge">Timing</div>
         <h2>When are you looking to purchase?</h2>
@@ -92,7 +83,7 @@
             <label class="radio-card"><input type="radio" name="timeline_driver" value="Life event"><span class="radio-label">Life event</span></label>
             <label class="radio-card"><input type="radio" name="timeline_driver" value="Exploring possibilities"><span class="radio-label">Exploring</span></label>
           </div>
-          <div class="validation-msg">Please select what's driving your timeline</div>
+          <div class="validation-msg">Please select an option</div>
         </div>
 
         <div class="form-nav">
@@ -101,10 +92,10 @@
         </div>
       </div>
 
-      <!-- SECTION 3: Purchase Goals -->
+      <!-- ============ SECTION 3: Finances & Preparation ============ -->
       <div class="form-section" data-step="3">
-        <div class="section-badge">Purchase Goals</div>
-        <h2>Help us understand what you're looking for</h2>
+        <div class="section-badge">Finances</div>
+        <h2>Where are you in the process?</h2>
 
         <div class="form-group" data-validate="radio" data-name="price_range">
           <label class="form-label">What price range are you considering?</label>
@@ -117,37 +108,6 @@
           </div>
           <div class="validation-msg">Please select a price range</div>
         </div>
-
-        <div class="form-group" data-validate="text" data-name="target_location">
-          <label class="form-label">Where are you considering buying?</label>
-          <input type="text" name="target_location" class="form-input" placeholder="e.g., Medina County, Hudson, Bath Township..." required>
-          <div class="validation-msg">Please enter a target location</div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">What matters most in your next home? <span class="form-hint">(select all that apply)</span></label>
-          <div class="checkbox-grid">
-            <label class="check-card"><input type="checkbox" name="priorities" value="Location"><span class="check-label">Location</span></label>
-            <label class="check-card"><input type="checkbox" name="priorities" value="Schools"><span class="check-label">Schools</span></label>
-            <label class="check-card"><input type="checkbox" name="priorities" value="Commute"><span class="check-label">Commute</span></label>
-            <label class="check-card"><input type="checkbox" name="priorities" value="Privacy"><span class="check-label">Privacy</span></label>
-            <label class="check-card"><input type="checkbox" name="priorities" value="Lifestyle"><span class="check-label">Lifestyle</span></label>
-            <label class="check-card"><input type="checkbox" name="priorities" value="Investment value"><span class="check-label">Investment value</span></label>
-            <label class="check-card"><input type="checkbox" name="priorities" value="Home quality"><span class="check-label">Home quality</span></label>
-            <label class="check-card"><input type="checkbox" name="priorities" value="Future flexibility"><span class="check-label">Future flexibility</span></label>
-          </div>
-        </div>
-
-        <div class="form-nav">
-          <button type="button" class="btn btn-secondary btn-prev" onclick="prevStep(3)">← Back</button>
-          <button type="button" class="btn btn-primary btn-next" onclick="nextStep(3)">Continue →</button>
-        </div>
-      </div>
-
-      <!-- SECTION 4: Preparation -->
-      <div class="form-section" data-step="4">
-        <div class="section-badge">Preparation</div>
-        <h2>Where are you in the process?</h2>
 
         <div class="form-group" data-validate="radio" data-name="financing">
           <label class="form-label">What is your financing status?</label>
@@ -180,14 +140,14 @@
         </div>
 
         <div class="form-nav">
-          <button type="button" class="btn btn-secondary btn-prev" onclick="prevStep(4)">← Back</button>
-          <button type="button" class="btn btn-primary btn-next" onclick="nextStep(4)">Continue →</button>
+          <button type="button" class="btn btn-secondary btn-prev" onclick="prevStep(3)">← Back</button>
+          <button type="button" class="btn btn-primary btn-next" onclick="nextStep(3)">Continue →</button>
         </div>
       </div>
 
-      <!-- SECTION 5: Confidence & Concerns -->
-      <div class="form-section" data-step="5">
-        <div class="section-badge">Confidence</div>
+      <!-- ============ SECTION 4: Concerns ============ -->
+      <div class="form-section" data-step="4">
+        <div class="section-badge">Concerns</div>
         <h2>What's on your mind?</h2>
 
         <div class="form-group" data-validate="radio" data-name="representation_importance">
@@ -220,13 +180,13 @@
         </div>
 
         <div class="form-nav">
-          <button type="button" class="btn btn-secondary btn-prev" onclick="prevStep(5)">← Back</button>
-          <button type="button" class="btn btn-primary btn-next" onclick="nextStep(5)">Continue →</button>
+          <button type="button" class="btn btn-secondary btn-prev" onclick="prevStep(4)">← Back</button>
+          <button type="button" class="btn btn-primary btn-next" onclick="nextStep(4)">Continue →</button>
         </div>
       </div>
 
-      <!-- SECTION 6: Your Style -->
-      <div class="form-section" data-step="6">
+      <!-- ============ SECTION 5: Your Style ============ -->
+      <div class="form-section" data-step="5">
         <div class="section-badge">Your Style</div>
         <h2>Help us get to know you a little better</h2>
         <p class="section-note">There are no right or wrong answers. These help us tailor our conversation to what works best for you.</p>
@@ -281,13 +241,291 @@
         </div>
 
         <div class="form-nav">
+          <button type="button" class="btn btn-secondary btn-prev" onclick="prevStep(5)">← Back</button>
+          <button type="button" class="btn btn-primary btn-next" onclick="nextStep(5)">Continue →</button>
+        </div>
+      </div>
+
+      <!-- ============ SECTION 6: Your Lifestyle ============ -->
+      <div class="form-section" data-step="6">
+        <div class="section-badge">Your Lifestyle</div>
+        <h2>Tell us about your daily life</h2>
+        <p class="section-note">Your home should fit your life — not the other way around.</p>
+
+        <div class="form-group" data-validate="radio" data-name="household">
+          <label class="form-label">Who will be living in this home?</label>
+          <div class="radio-grid">
+            <label class="radio-card"><input type="radio" name="household" value="Just me" required><span class="radio-label">Just me</span></label>
+            <label class="radio-card"><input type="radio" name="household" value="Me and my partner"><span class="radio-label">Me and my partner</span></label>
+            <label class="radio-card"><input type="radio" name="household" value="Family with young children"><span class="radio-label">Family with young kids</span></label>
+            <label class="radio-card"><input type="radio" name="household" value="Family with teenagers"><span class="radio-label">Family with teens</span></label>
+            <label class="radio-card"><input type="radio" name="household" value="Multi-generational household"><span class="radio-label">Multi-generational</span></label>
+            <label class="radio-card"><input type="radio" name="household" value="Empty nesters"><span class="radio-label">Empty nesters</span></label>
+          </div>
+          <div class="validation-msg">Please select an option</div>
+        </div>
+
+        <div class="form-group" data-validate="radio" data-name="lifestyle_pace">
+          <label class="form-label">How would you describe your daily pace?</label>
+          <div class="radio-grid">
+            <label class="radio-card"><input type="radio" name="lifestyle_pace" value="Always on the go — need a home base, not a hangout" required><span class="radio-label">⚡ Always on the go</span></label>
+            <label class="radio-card"><input type="radio" name="lifestyle_pace" value="Balanced — active but value downtime"><span class="radio-label">⚖️ Balanced</span></label>
+            <label class="radio-card"><input type="radio" name="lifestyle_pace" value="Home-centered — our home IS our lifestyle"><span class="radio-label">🏡 Home-centered</span></label>
+            <label class="radio-card"><input type="radio" name="lifestyle_pace" value="Work from home — need functional living and working space"><span class="radio-label">💻 Work from home</span></label>
+          </div>
+          <div class="validation-msg">Please select an option</div>
+        </div>
+
+        <div class="form-group" data-validate="radio" data-name="home_feeling">
+          <label class="form-label">When you imagine walking into your ideal home, what's the first feeling?</label>
+          <div class="radio-grid">
+            <label class="radio-card"><input type="radio" name="home_feeling" value="Peace and quiet — a sanctuary from the world" required><span class="radio-label">🧘 Peace and quiet</span></label>
+            <label class="radio-card"><input type="radio" name="home_feeling" value="Energy and warmth — a place where people gather"><span class="radio-label">🔥 Energy and warmth</span></label>
+            <label class="radio-card"><input type="radio" name="home_feeling" value="Pride and accomplishment — something I built or earned"><span class="radio-label">🏆 Pride and accomplishment</span></label>
+            <label class="radio-card"><input type="radio" name="home_feeling" value="Safety and security — a place where my family is protected"><span class="radio-label">🛡️ Safety and security</span></label>
+            <label class="radio-card"><input type="radio" name="home_feeling" value="Freedom and space — room to breathe, create, and grow"><span class="radio-label">🌿 Freedom and space</span></label>
+          </div>
+          <div class="validation-msg">Please select an option</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Do you have pets or plan to? <span class="form-hint">(optional)</span></label>
+          <input type="text" name="pets" class="form-input" placeholder="e.g., 2 dogs, a cat, planning to get chickens...">
+        </div>
+
+        <div class="form-nav">
           <button type="button" class="btn btn-secondary btn-prev" onclick="prevStep(6)">← Back</button>
           <button type="button" class="btn btn-primary btn-next" onclick="nextStep(6)">Continue →</button>
         </div>
       </div>
 
-      <!-- SECTION 7: One Last Thing -->
+      <!-- ============ SECTION 7: Your Ideal Home ============ -->
       <div class="form-section" data-step="7">
+        <div class="section-badge">Your Ideal Home</div>
+        <h2>What does the home look and feel like?</h2>
+
+        <div class="form-group" data-validate="radio" data-name="home_style">
+          <label class="form-label">Which style draws you in?</label>
+          <div class="radio-grid">
+            <label class="radio-card"><input type="radio" name="home_style" value="Move-in ready — modern, updated, no projects" required><span class="radio-label">✨ Move-in ready</span></label>
+            <label class="radio-card"><input type="radio" name="home_style" value="Character home — older with charm and history"><span class="radio-label">🏚️ Character & charm</span></label>
+            <label class="radio-card"><input type="radio" name="home_style" value="Project home — I want to make it mine"><span class="radio-label">🔨 Project / make it mine</span></label>
+            <label class="radio-card"><input type="radio" name="home_style" value="New construction — everything brand new"><span class="radio-label">🏗️ New construction</span></label>
+            <label class="radio-card"><input type="radio" name="home_style" value="Flexible — depends on the right opportunity"><span class="radio-label">🤷 Flexible</span></label>
+          </div>
+          <div class="validation-msg">Please select an option</div>
+        </div>
+
+        <div class="form-group" data-validate="radio" data-name="space_priority">
+          <label class="form-label">If you had to choose, which matters more?</label>
+          <div class="radio-grid">
+            <label class="radio-card"><input type="radio" name="space_priority" value="More indoor space — rooms, storage, layout" required><span class="radio-label">🏠 More indoor space</span></label>
+            <label class="radio-card"><input type="radio" name="space_priority" value="More outdoor space — yard, land, nature"><span class="radio-label">🌳 More outdoor space</span></label>
+            <label class="radio-card"><input type="radio" name="space_priority" value="Better location — even if the home is smaller"><span class="radio-label">📍 Better location</span></label>
+            <label class="radio-card"><input type="radio" name="space_priority" value="Quality over quantity — smaller but well-built"><span class="radio-label">💎 Quality over size</span></label>
+          </div>
+          <div class="validation-msg">Please select an option</div>
+        </div>
+
+        <div class="form-group" data-validate="radio" data-name="kitchen_role">
+          <label class="form-label">What role does the kitchen play in your home?</label>
+          <div class="radio-grid">
+            <label class="radio-card"><input type="radio" name="kitchen_role" value="The heart of the home — we cook, gather, and live here" required><span class="radio-label">❤️ Heart of the home</span></label>
+            <label class="radio-card"><input type="radio" name="kitchen_role" value="Functional — we cook but it's not the center of our lives"><span class="radio-label">🍳 Functional</span></label>
+            <label class="radio-card"><input type="radio" name="kitchen_role" value="Minimal — we eat out or order in most of the time"><span class="radio-label">📱 Minimal use</span></label>
+            <label class="radio-card"><input type="radio" name="kitchen_role" value="Aspiration — we want a kitchen that inspires us to cook more"><span class="radio-label">⭐ Aspiration</span></label>
+          </div>
+          <div class="validation-msg">Please select an option</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Any must-have spaces? <span class="form-hint">(select all that apply)</span></label>
+          <div class="checkbox-grid">
+            <label class="check-card"><input type="checkbox" name="must_have_spaces" value="Home office"><span class="check-label">💻 Home office</span></label>
+            <label class="check-card"><input type="checkbox" name="must_have_spaces" value="Garage"><span class="check-label">🚗 Garage</span></label>
+            <label class="check-card"><input type="checkbox" name="must_have_spaces" value="Basement"><span class="check-label">🏚️ Basement</span></label>
+            <label class="check-card"><input type="checkbox" name="must_have_spaces" value="Workshop / hobby space"><span class="check-label">🔧 Workshop</span></label>
+            <label class="check-card"><input type="checkbox" name="must_have_spaces" value="Playroom / kids space"><span class="check-label">🧸 Playroom</span></label>
+            <label class="check-card"><input type="checkbox" name="must_have_spaces" value="Guest suite"><span class="check-label">🛏️ Guest suite</span></label>
+            <label class="check-card"><input type="checkbox" name="must_have_spaces" value="Outdoor living / deck / patio"><span class="check-label">🌅 Outdoor living</span></label>
+            <label class="check-card"><input type="checkbox" name="must_have_spaces" value="Garden / growing space"><span class="check-label">🌱 Garden</span></label>
+          </div>
+        </div>
+
+        <div class="form-nav">
+          <button type="button" class="btn btn-secondary btn-prev" onclick="prevStep(7)">← Back</button>
+          <button type="button" class="btn btn-primary btn-next" onclick="nextStep(7)">Continue →</button>
+        </div>
+      </div>
+
+      <!-- ============ SECTION 8: Location ============ -->
+      <div class="form-section" data-step="8">
+        <div class="section-badge">Location</div>
+        <h2>Where do you want to be?</h2>
+
+        <div class="form-group" data-validate="text" data-name="target_location">
+          <label class="form-label">Where are you considering buying?</label>
+          <input type="text" name="target_location" class="form-input" placeholder="e.g., Medina County, Hudson, Bath Township..." required>
+          <div class="validation-msg">Please enter a target location</div>
+        </div>
+
+        <div class="form-group" data-validate="radio" data-name="setting">
+          <label class="form-label">What setting feels right?</label>
+          <div class="radio-grid">
+            <label class="radio-card"><input type="radio" name="setting" value="Urban — walkable, restaurants, culture, energy" required><span class="radio-label">🏙️ Urban</span></label>
+            <label class="radio-card"><input type="radio" name="setting" value="Suburban — neighborhoods, schools, community"><span class="radio-label">🏘️ Suburban</span></label>
+            <label class="radio-card"><input type="radio" name="setting" value="Rural — land, privacy, space, quiet"><span class="radio-label">🌾 Rural</span></label>
+            <label class="radio-card"><input type="radio" name="setting" value="Small town — charm, community, slower pace"><span class="radio-label">🏪 Small town</span></label>
+            <label class="radio-card"><input type="radio" name="setting" value="Flexible — depends on the property"><span class="radio-label">🤷 Flexible</span></label>
+          </div>
+          <div class="validation-msg">Please select a setting</div>
+        </div>
+
+        <div class="form-group" data-validate="radio" data-name="commute_tolerance">
+          <label class="form-label">How far are you willing to commute?</label>
+          <div class="radio-grid">
+            <label class="radio-card"><input type="radio" name="commute_tolerance" value="Under 15 minutes" required><span class="radio-label">Under 15 min</span></label>
+            <label class="radio-card"><input type="radio" name="commute_tolerance" value="15-30 minutes"><span class="radio-label">15–30 min</span></label>
+            <label class="radio-card"><input type="radio" name="commute_tolerance" value="30-45 minutes"><span class="radio-label">30–45 min</span></label>
+            <label class="radio-card"><input type="radio" name="commute_tolerance" value="I work remotely — commute doesn't matter"><span class="radio-label">Remote — N/A</span></label>
+            <label class="radio-card"><input type="radio" name="commute_tolerance" value="Willing to commute for the right home"><span class="radio-label">Whatever it takes</span></label>
+          </div>
+          <div class="validation-msg">Please select an option</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">What's nearby that matters to you? <span class="form-hint">(select all that apply)</span></label>
+          <div class="checkbox-grid">
+            <label class="check-card"><input type="checkbox" name="nearby_priorities" value="Good schools"><span class="check-label">🎓 Good schools</span></label>
+            <label class="check-card"><input type="checkbox" name="nearby_priorities" value="Parks and trails"><span class="check-label">🌲 Parks & trails</span></label>
+            <label class="check-card"><input type="checkbox" name="nearby_priorities" value="Restaurants and shops"><span class="check-label">🍽️ Restaurants & shops</span></label>
+            <label class="check-card"><input type="checkbox" name="nearby_priorities" value="Healthcare facilities"><span class="check-label">🏥 Healthcare</span></label>
+            <label class="check-card"><input type="checkbox" name="nearby_priorities" value="Highway access"><span class="check-label">🛣️ Highway access</span></label>
+            <label class="check-card"><input type="checkbox" name="nearby_priorities" value="Family nearby"><span class="check-label">👨‍👩‍👧 Family nearby</span></label>
+            <label class="check-card"><input type="checkbox" name="nearby_priorities" value="Church / community"><span class="check-label">⛪ Faith community</span></label>
+            <label class="check-card"><input type="checkbox" name="nearby_priorities" value="Water / lake / river"><span class="check-label">🌊 Water access</span></label>
+          </div>
+        </div>
+
+        <div class="form-nav">
+          <button type="button" class="btn btn-secondary btn-prev" onclick="prevStep(8)">← Back</button>
+          <button type="button" class="btn btn-primary btn-next" onclick="nextStep(8)">Continue →</button>
+        </div>
+      </div>
+
+      <!-- ============ SECTION 9: Deal Breakers & Flexibility ============ -->
+      <div class="form-section" data-step="9">
+        <div class="section-badge">Boundaries</div>
+        <h2>What would make you walk away — and where could you bend?</h2>
+
+        <div class="form-group">
+          <label class="form-label">Absolute deal breakers <span class="form-hint">(things you will NOT accept)</span></label>
+          <div class="checkbox-grid">
+            <label class="check-card"><input type="checkbox" name="deal_breakers" value="No garage"><span class="check-label">🚫 No garage</span></label>
+            <label class="check-card"><input type="checkbox" name="deal_breakers" value="No yard"><span class="check-label">🚫 No yard</span></label>
+            <label class="check-card"><input type="checkbox" name="deal_breakers" value="Busy road"><span class="check-label">🚫 Busy road</span></label>
+            <label class="check-card"><input type="checkbox" name="deal_breakers" value="HOA"><span class="check-label">🚫 HOA</span></label>
+            <label class="check-card"><input type="checkbox" name="deal_breakers" value="Major renovation needed"><span class="check-label">🚫 Major reno needed</span></label>
+            <label class="check-card"><input type="checkbox" name="deal_breakers" value="Poor school district"><span class="check-label">🚫 Poor schools</span></label>
+            <label class="check-card"><input type="checkbox" name="deal_breakers" value="No basement"><span class="check-label">🚫 No basement</span></label>
+            <label class="check-card"><input type="checkbox" name="deal_breakers" value="Small lot"><span class="check-label">🚫 Small lot</span></label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Where could you be flexible? <span class="form-hint">(select all that apply)</span></label>
+          <div class="checkbox-grid">
+            <label class="check-card"><input type="checkbox" name="compromises" value="Cosmetic updates needed"><span class="check-label">🎨 Cosmetic updates</span></label>
+            <label class="check-card"><input type="checkbox" name="compromises" value="Smaller than ideal"><span class="check-label">📏 Slightly smaller</span></label>
+            <label class="check-card"><input type="checkbox" name="compromises" value="Longer commute"><span class="check-label">🚗 Longer commute</span></label>
+            <label class="check-card"><input type="checkbox" name="compromises" value="Older home"><span class="check-label">🏠 Older home</span></label>
+            <label class="check-card"><input type="checkbox" name="compromises" value="Different neighborhood than planned"><span class="check-label">📍 Different area</span></label>
+            <label class="check-card"><input type="checkbox" name="compromises" value="Fewer bedrooms"><span class="check-label">🛏️ Fewer bedrooms</span></label>
+            <label class="check-card"><input type="checkbox" name="compromises" value="Smaller yard"><span class="check-label">🌱 Smaller yard</span></label>
+            <label class="check-card"><input type="checkbox" name="compromises" value="At the top of budget"><span class="check-label">💰 Top of budget</span></label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">If you could only have TWO of these three, which would you keep?</label>
+          <div class="checkbox-grid checkbox-grid-narrow" id="tradeoff-group">
+            <label class="check-card"><input type="checkbox" name="tradeoff" value="Perfect location" class="tradeoff-check"><span class="check-label">📍 Perfect location</span></label>
+            <label class="check-card"><input type="checkbox" name="tradeoff" value="Perfect home" class="tradeoff-check"><span class="check-label">🏡 Perfect home</span></label>
+            <label class="check-card"><input type="checkbox" name="tradeoff" value="Perfect price" class="tradeoff-check"><span class="check-label">💰 Perfect price</span></label>
+          </div>
+          <p class="contact-consent">Choose only two — this tells us what you'd sacrifice last.</p>
+        </div>
+
+        <div class="form-nav">
+          <button type="button" class="btn btn-secondary btn-prev" onclick="prevStep(9)">← Back</button>
+          <button type="button" class="btn btn-primary btn-next" onclick="nextStep(9)">Continue →</button>
+        </div>
+      </div>
+
+      <!-- ============ SECTION 10: Your Vision ============ -->
+      <div class="form-section" data-step="10">
+        <div class="section-badge">Your Vision</div>
+        <h2>Paint us a picture</h2>
+
+        <div class="form-group">
+          <label class="form-label">Imagine it's a year from now. You're sitting in your new home on a Saturday morning. What do you see, hear, and feel?</label>
+          <textarea name="saturday_morning_vision" class="form-input form-textarea" rows="4" placeholder="Where are you sitting? What do you see out the window? Who's with you? What sounds do you hear?"></textarea>
+        </div>
+
+        <div class="form-group" data-validate="radio" data-name="entertain">
+          <label class="form-label">How do you use your home socially?</label>
+          <div class="radio-grid">
+            <label class="radio-card"><input type="radio" name="entertain" value="We host regularly — dinner parties, holidays, gatherings" required><span class="radio-label">🎉 We host regularly</span></label>
+            <label class="radio-card"><input type="radio" name="entertain" value="Occasionally — a few times a year"><span class="radio-label">🍷 Occasionally</span></label>
+            <label class="radio-card"><input type="radio" name="entertain" value="Rarely — home is our private space"><span class="radio-label">🔒 Rarely — it's private</span></label>
+            <label class="radio-card"><input type="radio" name="entertain" value="We want to start — haven't had the right space"><span class="radio-label">✨ Want to start</span></label>
+          </div>
+          <div class="validation-msg">Please select an option</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Is there anything about your home search that keeps you up at night? <span class="form-hint">(optional)</span></label>
+          <textarea name="keeps_up_at_night" class="form-input form-textarea" rows="3" placeholder="Worries, fears, unknowns..."></textarea>
+        </div>
+
+        <div class="form-nav">
+          <button type="button" class="btn btn-secondary btn-prev" onclick="prevStep(10)">← Back</button>
+          <button type="button" class="btn btn-primary btn-next" onclick="nextStep(10)">Continue →</button>
+        </div>
+      </div>
+
+      <!-- ============ SECTION 11: Priorities ============ -->
+      <div class="form-section" data-step="11">
+        <div class="section-badge">Priorities</div>
+        <h2>Let's bring it all together</h2>
+
+        <div class="form-group">
+          <label class="form-label">What matters most in your next home? <span class="form-hint">(select your top priorities)</span></label>
+          <div class="checkbox-grid">
+            <label class="check-card"><input type="checkbox" name="priorities" value="Location"><span class="check-label">Location</span></label>
+            <label class="check-card"><input type="checkbox" name="priorities" value="Schools"><span class="check-label">Schools</span></label>
+            <label class="check-card"><input type="checkbox" name="priorities" value="Commute"><span class="check-label">Commute</span></label>
+            <label class="check-card"><input type="checkbox" name="priorities" value="Privacy"><span class="check-label">Privacy</span></label>
+            <label class="check-card"><input type="checkbox" name="priorities" value="Lifestyle"><span class="check-label">Lifestyle</span></label>
+            <label class="check-card"><input type="checkbox" name="priorities" value="Investment value"><span class="check-label">Investment value</span></label>
+            <label class="check-card"><input type="checkbox" name="priorities" value="Home quality"><span class="check-label">Home quality</span></label>
+            <label class="check-card"><input type="checkbox" name="priorities" value="Future flexibility"><span class="check-label">Future flexibility</span></label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Any other deal breakers or must-haves we haven't covered? <span class="form-hint">(optional)</span></label>
+          <textarea name="other_deal_breakers" class="form-input form-textarea" rows="2" placeholder="Anything else that matters..."></textarea>
+        </div>
+
+        <div class="form-nav">
+          <button type="button" class="btn btn-secondary btn-prev" onclick="prevStep(11)">← Back</button>
+          <button type="button" class="btn btn-primary btn-next" onclick="nextStep(11)">Continue →</button>
+        </div>
+      </div>
+
+      <!-- ============ SECTION 12: One Last Thing ============ -->
+      <div class="form-section" data-step="12">
         <div class="section-badge">One Last Thing</div>
         <h2>One last thing...</h2>
 
@@ -366,7 +604,7 @@
         </div>
 
         <div class="form-nav">
-          <button type="button" class="btn btn-secondary btn-prev" onclick="prevStep(7)">← Back</button>
+          <button type="button" class="btn btn-secondary btn-prev" onclick="prevStep(12)">← Back</button>
           <button type="submit" class="btn btn-primary btn-large btn-submit">Submit</button>
         </div>
       </div>
@@ -375,7 +613,7 @@
 </section>
 
 <script>
-var totalSteps = 7;
+var totalSteps = 12;
 
 function updateProgress(step) {
   var pct = (step / totalSteps) * 100;
@@ -399,7 +637,6 @@ function validateSection(step) {
   groups.forEach(function(group) {
     var type = group.getAttribute('data-validate');
     var valid = true;
-
     if (type === 'radio') {
       var radios = group.querySelectorAll('input[type="radio"]');
       valid = Array.from(radios).some(function(r) { return r.checked; });
@@ -410,19 +647,11 @@ function validateSection(step) {
       var input = group.querySelector('input, textarea');
       if (input && input.hasAttribute('required')) {
         valid = input.value.trim().length > 0;
-        if (input.type === 'email' && valid) {
-          valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.value);
-        }
+        if (input.type === 'email' && valid) valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.value);
       }
     }
-
-    if (!valid) {
-      group.classList.add('invalid');
-      allValid = false;
-      if (!firstInvalid) firstInvalid = group;
-    } else {
-      group.classList.remove('invalid');
-    }
+    if (!valid) { group.classList.add('invalid'); allValid = false; if (!firstInvalid) firstInvalid = group; }
+    else { group.classList.remove('invalid'); }
   });
 
   if (!allValid && firstInvalid) {
@@ -430,44 +659,30 @@ function validateSection(step) {
     section.classList.add('shake');
     setTimeout(function() { section.classList.remove('shake'); }, 500);
   }
-
   return allValid;
 }
 
-function nextStep(current) {
-  if (!validateSection(current)) return;
-  showStep(current + 1);
-}
+function nextStep(current) { if (!validateSection(current)) return; showStep(current + 1); }
+function prevStep(current) { showStep(current - 1); }
 
-function prevStep(current) {
-  showStep(current - 1);
-}
-
-// Clear invalid state on interaction
-document.addEventListener('change', function(e) {
-  var group = e.target.closest('[data-validate]');
-  if (group) group.classList.remove('invalid');
-});
-
-document.addEventListener('input', function(e) {
-  var group = e.target.closest('[data-validate]');
-  if (group) group.classList.remove('invalid');
-});
+document.addEventListener('change', function(e) { var g = e.target.closest('[data-validate]'); if (g) g.classList.remove('invalid'); });
+document.addEventListener('input', function(e) { var g = e.target.closest('[data-validate]'); if (g) g.classList.remove('invalid'); });
 
 // Show/hide current home plan
 document.querySelectorAll('input[name="current_owner"]').forEach(function(radio) {
   radio.addEventListener('change', function() {
-    document.getElementById('owner-plan-group').style.display =
-      this.value === 'Yes' ? 'block' : 'none';
+    document.getElementById('owner-plan-group').style.display = this.value === 'Yes' ? 'block' : 'none';
   });
 });
 
-// Validate on submit
-document.getElementById('buyer-assessment').addEventListener('submit', function(e) {
-  if (!validateSection(7)) {
-    e.preventDefault();
-  }
+// Limit tradeoff to 2 selections
+document.querySelectorAll('.tradeoff-check').forEach(function(cb) {
+  cb.addEventListener('change', function() {
+    if (document.querySelectorAll('.tradeoff-check:checked').length > 2) this.checked = false;
+  });
 });
+
+document.getElementById('buyer-assessment').addEventListener('submit', function(e) { if (!validateSection(12)) e.preventDefault(); });
 
 updateProgress(1);
 </script>

@@ -1,6 +1,6 @@
 ---
 title: "Buyer Discovery Experience"
-subtitle: "Help us understand your goals, priorities, and what matters most — so when we connect, the conversation is all about you."
-description: "Complete the HomeBuyer Experts Buyer Discovery Experience. A few minutes now creates a more focused, valuable first conversation."
+subtitle: "Your goals, your lifestyle, and what truly matters in your next home — all in one place."
+description: "Complete the HomeBuyer Experts Buyer Discovery Experience. Help us understand who you are and what you're looking for so our first conversation is focused entirely on you."
 layout: "assessment"
 ---
