@@ -49,7 +49,7 @@ No pressure. Just expert guidance.
 
 ## What Happens Next
 
-**Step 1** — Complete the [Buyer Discovery Experience](/assessment/) *(approximately 4–5 minutes)*
+**Step 1** — Complete the [Buyer Discovery Experience]({{< relref "assessment" >}}) *(approximately 4–5 minutes)*
 
 **Step 2** — Jen and Chris personally review your responses and reach out using the contact method you choose.
 
@@ -67,6 +67,6 @@ It is a strategic conversation designed to help you understand your goals, optio
 
 ## Ready to Start?
 
-[Start the Buyer Discovery Experience →](/assessment/)
+[Start the Buyer Discovery Experience →]({{< relref "assessment" >}})
 
 Or call us directly: **(330) 328-3170**

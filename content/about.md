@@ -97,4 +97,4 @@ When you work with HomeBuyer Experts, you should expect:
 
 Start with a conversation. Schedule your Buyer Strategy Session and discover what expert buyer representation can do for you.
 
-[Schedule Your Buyer Strategy Session →](/strategy-session/)
+[Schedule Your Buyer Strategy Session →]({{< relref "strategy-session" >}})

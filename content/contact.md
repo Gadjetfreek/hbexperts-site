@@ -16,6 +16,6 @@ description: "Contact HomeBuyer Experts — exclusive buyer representation in No
 
 ## Ready for the Next Step?
 
-The best place to start is a [Buyer Strategy Session](/strategy-session/) — a no-pressure conversation about your goals, timeline, and how experienced buyer representation can help.
+The best place to start is a [Buyer Strategy Session]({{< relref "strategy-session" >}}) — a no-pressure conversation about your goals, timeline, and how experienced buyer representation can help.
 
-[Schedule Your Buyer Strategy Session →](/strategy-session/)
+[Schedule Your Buyer Strategy Session →]({{< relref "strategy-session" >}})

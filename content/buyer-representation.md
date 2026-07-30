@@ -118,4 +118,4 @@ We believe buyers deserve:
 
 Schedule your Buyer Strategy Session. Learn how exclusive buyer representation can change the way you approach your next home purchase.
 
-[Schedule Your Buyer Strategy Session →](/strategy-session/)
+[Schedule Your Buyer Strategy Session →]({{< relref "strategy-session" >}})

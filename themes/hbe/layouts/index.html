@@ -5,8 +5,8 @@
     <h1 class="hero-headline">{{ .Title }}</h1>
     <p class="hero-tagline">{{ .Site.Params.tagline }}</p>
     <div class="hero-cta">
-      <a href="/assessment/" class="btn btn-primary">Start Your Buyer Discovery</a>
-      <a href="/buyer-representation/" class="btn btn-secondary">Learn Our Approach</a>
+      <a href="{{ "/assessment/" | relURL }}" class="btn btn-primary">Start Your Buyer Discovery</a>
+      <a href="{{ "/buyer-representation/" | relURL }}" class="btn btn-secondary">Learn Our Approach</a>
     </div>
   </div>
 </section>
@@ -170,7 +170,7 @@
 <section class="cta-section">
   <h2>Ready to Make Your Next Home Purchase With Confidence?</h2>
   <p>Start with a conversation. Learn how an experienced buyer advocate can help you make a smarter decision.</p>
-  <a href="/assessment/" class="btn btn-primary btn-large">Start Your Buyer Discovery Experience</a>
+  <a href="{{ "/assessment/" | relURL }}" class="btn btn-primary btn-large">Start Your Buyer Discovery Experience</a>
   <p style="margin-top: 1.5rem; font-size: 0.95rem;">Or call directly: <a href="tel:{{ .Site.Params.phone }}" style="font-weight: 600;">{{ .Site.Params.phone }}</a></p>
 </section>
 {{ end }}

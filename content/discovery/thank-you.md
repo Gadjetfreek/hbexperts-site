@@ -23,8 +23,8 @@ When we connect, we won't waste time asking questions you've already answered. W
 
 ### Learn More
 
-- [How Exclusive Buyer Representation Works →](/buyer-representation/)
-- [About HomeBuyer Experts →](/about/)
+- [How Exclusive Buyer Representation Works →]({{< relref "buyer-representation" >}})
+- [About HomeBuyer Experts →]({{< relref "about" >}})
 
 ---
 

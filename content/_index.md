@@ -75,4 +75,4 @@ When our work creates additional value, our interests remain aligned with yours.
 
 Start with a conversation. Learn how an experienced buyer advocate can help you make a smarter decision.
 
-[Schedule Your Buyer Strategy Session →](/strategy-session/)
+[Schedule Your Buyer Strategy Session →]({{< relref "strategy-session" >}})
