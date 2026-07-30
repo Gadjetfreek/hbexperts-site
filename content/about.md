@@ -18,7 +18,7 @@ Your goals should guide the process — not the transaction.
 
 ---
 
-## Meet Christopher Whitehead
+## Meet Christopher
 
 ### A buyer advocate, not just a real estate professional.
 
@@ -36,7 +36,7 @@ This experience shaped a simple philosophy: **the best real estate decisions hap
 
 ---
 
-## Meet Jennifer Whitehead
+## Meet Jennifer
 
 ### The heart of the practice — and the reason clients feel taken care of.
 
