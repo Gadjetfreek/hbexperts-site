@@ -65,17 +65,11 @@ Our role is to help you make the decision with confidence.
 
 ## Who We Serve
 
-HomeBuyer Experts is built for buyers who value expertise:
+Purchase price is irrelevant. Every buyer deserves exceptional representation.
 
-- Physicians and medical professionals
-- Attorneys
-- Executives
-- Professors
-- Successful professionals
-- Relocation buyers
-- Move-up buyers purchasing significant homes
+HomeBuyer Experts serves anyone who values expertise and advocacy — first-time buyers, growing families, relocating professionals, move-up buyers, those downsizing, and investors alike.
 
-These clients understand the value of having an experienced advocate protecting their interests.
+If you want a knowledgeable advocate protecting your interests through one of life's largest financial decisions, HBE is built for you.
 
 ---
 
@@ -95,6 +89,6 @@ When you work with HomeBuyer Experts, you should expect:
 
 ## Ready to make your next home purchase with confidence?
 
-Start with a conversation. Schedule your Buyer Strategy Session and discover what expert buyer representation can do for you.
+Start with a conversation and discover what expert buyer representation can do for you.
 
-[Schedule Your Buyer Strategy Session →]({{< relref "strategy-session" >}})
+[Start Your Buyer Discovery →]({{< relref "assessment" >}})

@@ -25,7 +25,7 @@ theme = "hbe"
     url = "/strategy-session/"
     weight = 3
   [[menu.main]]
-    name = "Discover"
+    name = "Start Here"
     url = "/assessment/"
     weight = 4
   [[menu.main]]

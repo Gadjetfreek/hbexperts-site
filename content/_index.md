@@ -46,33 +46,8 @@ When our work creates additional value, our interests remain aligned with yours.
 
 ---
 
-## Who We Help
-
-**Physicians** — You value expertise, efficiency, and someone who understands complex decisions.
-
-**Attorneys** — You understand the importance of representation, negotiation, and protecting interests.
-
-**Executives** — You need a strategic advisor who respects your time.
-
-**Professors** — You value research, information, and thoughtful decision-making.
-
-**Move-Up Buyers** — You need someone who understands equity, timing, and transition.
-
----
-
-## How It Works
-
-1. **Buyer Strategy Session** — Understand your goals, priorities, and concerns.
-2. **Purchase Strategy** — Create a plan based on your situation.
-3. **Market Intelligence** — Identify opportunities and risks.
-4. **Property Evaluation** — Analyze homes objectively.
-5. **Negotiation** — Protect your financial interests.
-6. **Closing** — Navigate the final details with confidence.
-
----
-
 ## Ready to make your next home purchase with confidence?
 
-Start with a conversation. Learn how an experienced buyer advocate can help you make a smarter decision.
+Start with a conversation. Discover what expert buyer representation can do for you — regardless of price range or profession.
 
-[Schedule Your Buyer Strategy Session →]({{< relref "strategy-session" >}})
+[Start Your Buyer Discovery →]({{< relref "assessment" >}})
