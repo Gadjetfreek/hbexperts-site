@@ -9,6 +9,15 @@
       <p><a href="tel:{{ .Site.Params.phone }}">{{ .Site.Params.phone }}</a></p>
       <p><a href="mailto:{{ .Site.Params.email }}">{{ .Site.Params.email }}</a></p>
     </div>
+    <div class="footer-links">
+      <p>
+        <a href="{{ "privacy/" | relURL }}">Privacy Policy</a> ·
+        <a href="{{ "terms/" | relURL }}">Terms</a> ·
+        <a href="{{ "accessibility/" | relURL }}">Accessibility</a> ·
+        <a href="{{ "fair-housing/" | relURL }}">Fair Housing</a> ·
+        <a href="{{ "licensing/" | relURL }}">Licensing</a>
+      </p>
+    </div>
     <div class="footer-legal">
       <p>&copy; {{ now.Year }} HomeBuyer Experts. All rights reserved.</p>
     </div>

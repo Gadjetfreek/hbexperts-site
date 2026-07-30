@@ -949,3 +949,20 @@ hr { border: none; border-top: 1px solid var(--color-border); margin: 3rem 0; }
 .hero-content > :nth-child(2) { animation-delay: 0.2s; }
 .hero-content > :nth-child(3) { animation-delay: 0.3s; }
 .hero-content > :nth-child(4) { animation-delay: 0.4s; }
+
+/* Footer legal links */
+.footer-links {
+  margin-top: 1rem;
+}
+.footer-links p {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.5);
+}
+.footer-links a {
+  color: rgba(255,255,255,0.6);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.footer-links a:hover {
+  color: rgba(255,255,255,0.9);
+}

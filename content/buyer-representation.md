@@ -114,8 +114,16 @@ We believe buyers deserve:
 
 ---
 
+## The Buyer Value Agreement
+
+Before we begin looking at homes together, we formalize our relationship through the Buyer Value Agreement — a document that protects you and aligns our interests with yours.
+
+[Learn How the Buyer Value Agreement Works →]({{< relref "buyer-value-agreement" >}})
+
+---
+
 ## Ready to have someone truly working for you?
 
-Schedule your Buyer Strategy Session. Learn how exclusive buyer representation can change the way you approach your next home purchase.
+Start with the Buyer Discovery — a short experience that helps us understand your goals before we ever meet.
 
-[Schedule Your Buyer Strategy Session →]({{< relref "strategy-session" >}})
+[Start Your Buyer Discovery →]({{< relref "assessment" >}})

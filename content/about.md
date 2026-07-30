@@ -36,6 +36,22 @@ This experience shaped a simple philosophy: **the best real estate decisions hap
 
 ---
 
+## Meet Jennifer Whitehead
+
+### The heart of the practice — and the reason clients feel taken care of.
+
+Buying a home is one of the most emotionally charged decisions a person can make. Numbers and strategy matter, but so does feeling heard, supported, and never rushed.
+
+That is where Jen comes in.
+
+Jen is the relationship side of HBE — the one who makes sure clients never feel like a transaction. She manages appointment coordination, stays close to every client relationship, and brings a level of warmth and emotional intelligence that turns a process that could feel overwhelming into one that feels manageable.
+
+When you work with HomeBuyer Experts, you work with both Chris and Jen. Chris focuses on market analysis, strategy, and negotiation. Jen makes sure the human side is never lost in the process — that your questions get answered, your concerns get heard, and you always know where things stand.
+
+Together, they cover all sides of what buying a home actually requires.
+
+---
+
 ## The HBE Philosophy
 
 ### Your Vision Guides Us, Not the Sale.
