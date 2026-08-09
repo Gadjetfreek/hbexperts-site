@@ -13,44 +13,14 @@
 <main>
   <div class="top"><div class="brand">The Next Choice</div><span id="shareStatus" class="status"></span><button class="share" onclick="shareTrial()">Share</button></div>
   <div class="card">
-    <section id="nameStep" class="step active">
-      <h1>Before we begin</h1>
-      <p>Please enter your first name. Nothing else.</p>
-      <input id="firstName" class="input" type="text" autocomplete="given-name" maxlength="40" placeholder="First name">
-      <div id="nameError" class="error">Please enter your first name.</div>
-      <button class="btn primary" onclick="startTrial()">Continue</button>
-    </section>
-    <section id="listenStep" class="step">
-      <h1 id="hello">Thanks.</h1>
-      <p>You're helping us test whether a story communicates clearly.</p>
-      <p><strong>Please listen from beginning to end without skipping ahead.</strong> There's nothing you need to study or remember, and there are no right or wrong reactions.</p>
-      <p>When the audio ends, you may replay it <strong>one time</strong> if you'd like.</p>
-      <p>After that, we'll ask you <strong>five short questions</strong> about what you heard.</p>
-      <p><strong>Ready? Press Play.</strong></p>
-      <audio id="storyAudio" class="audio" controls preload="metadata">
-        <source src="The_Next_Choice_Human_Trials_Prototype_C.mp3" type="audio/mpeg">
-      </audio>
-      <div id="audioError" class="error">The audio could not be loaded. Please refresh and try again.</div>
-      <div id="afterListen" style="display:none">
-        <h2>Want to hear it once more?</h2>
-        <p>You can replay the story one time, or continue to the questions.</p>
-        <button id="replayBtn" class="btn secondary" onclick="replayOnce()">Replay once</button>
-        <button class="btn primary" onclick="beginQuestions()">Continue to the questions</button>
-      </div>
-    </section>
-    <form id="trialForm" class="step" action="https://formsubmit.co/cwhitehead@hbexperts.com" method="POST">
-      <input type="hidden" name="_subject" value="The Next Choice - Human Trial">
-      <input type="hidden" name="_captcha" value="false">
-      <input type="hidden" name="_template" value="table">
-      <input type="hidden" name="_next" value="https://hbexperts.com/next-choice-listen-7f3a/thanks/">
-      <input type="hidden" name="first_name" id="submittedName">
-      <input type="hidden" name="listens" id="listenCount" value="1">
-      <div class="progress"><span id="trialProgress"></span></div>
-      <section class="q step active" data-q="1"><p class="muted">Question 1 of 5</p><h2>What do you think happened? What is the storyline?</h2><textarea class="answer" name="q1_storyline" required></textarea><button type="button" class="btn primary" onclick="nextQ(1)">Continue</button></section>
-      <section class="q step" data-q="2"><p class="muted">Question 2 of 5</p><h2>What role did technology play in that change?</h2><textarea class="answer" name="q2_technology_role" required></textarea><button type="button" class="btn primary" onclick="nextQ(2)">Continue</button></section>
-      <section class="q step" data-q="3"><p class="muted">Question 3 of 5</p><h2>Why did the elder plant a tree they might never see grow big?</h2><textarea class="answer" name="q3_tree" required></textarea><button type="button" class="btn primary" onclick="nextQ(3)">Continue</button></section>
-      <section class="q step" data-q="4"><p class="muted">Question 4 of 5</p><h2>What was different about the future the children grew up in?</h2><textarea class="answer" name="q4_future" required></textarea><button type="button" class="btn primary" onclick="nextQ(4)">Continue</button></section>
-      <section class="q step" data-q="5"><p class="muted">Question 5 of 5</p><h2>At the end, what do you think “the next choice” means?</h2><textarea class="answer" name="q5_next_choice" required></textarea><button type="submit" class="btn primary">Submit answers</button></section>
+    <section id="nameStep" class="step active"><h1>Before we begin</h1><p>Please enter your first name. Nothing else.</p><input id="firstName" class="input" type="text" autocomplete="given-name" maxlength="40" placeholder="First name"><div id="nameError" class="error">Please enter your first name.</div><button class="btn primary" onclick="startTrial()">Continue</button></section>
+    <section id="listenStep" class="step"><h1 id="hello">Thanks.</h1><p>You're helping us test whether a story communicates clearly.</p><p><strong>Please listen from beginning to end without skipping ahead.</strong> There's nothing you need to study or remember, and there are no right or wrong reactions.</p><p>When the audio ends, you may replay it <strong>one time</strong> if you'd like.</p><p>After that, we'll ask you <strong>five short questions</strong> about what you heard.</p><p><strong>Ready? Press Play.</strong></p><audio id="storyAudio" class="audio" controls preload="metadata"><source src="The_Next_Choice_Human_Trials_Prototype_C.mp3" type="audio/mpeg"></audio><div id="audioError" class="error">The audio could not be loaded. Please refresh and try again.</div><div id="afterListen" style="display:none"><h2>Want to hear it once more?</h2><p>You can replay the story one time, or continue to the questions.</p><button id="replayBtn" class="btn secondary" onclick="replayOnce()">Replay once</button><button class="btn primary" onclick="beginQuestions()">Continue to the questions</button></div></section>
+    <form id="trialForm" class="step" action="https://formsubmit.co/cwhitehead@hbexperts.com" method="POST"><input type="hidden" name="_subject" value="The Next Choice - Human Trial"><input type="hidden" name="_captcha" value="false"><input type="hidden" name="_template" value="table"><input type="hidden" name="_next" value="https://hbexperts.com/next-choice-listen-7f3a/thanks/"><input type="hidden" name="first_name" id="submittedName"><input type="hidden" name="listens" id="listenCount" value="1"><div class="progress"><span id="trialProgress"></span></div>
+      <section class="q step active" data-q="1"><p class="muted">Question 1 of 5</p><h2>What happened in the story?</h2><textarea class="answer" name="q1_story" required></textarea><button type="button" class="btn primary" onclick="nextQ(1)">Continue</button></section>
+      <section class="q step" data-q="2"><p class="muted">Question 2 of 5</p><h2>How did technology help people?</h2><textarea class="answer" name="q2_technology" required></textarea><button type="button" class="btn primary" onclick="nextQ(2)">Continue</button></section>
+      <section class="q step" data-q="3"><p class="muted">Question 3 of 5</p><h2>Why did the older person plant the tree if they might never see it grow big?</h2><textarea class="answer" name="q3_tree" required></textarea><button type="button" class="btn primary" onclick="nextQ(3)">Continue</button></section>
+      <section class="q step" data-q="4"><p class="muted">Question 4 of 5</p><h2>What was different about life in the future?</h2><textarea class="answer" name="q4_future" required></textarea><button type="button" class="btn primary" onclick="nextQ(4)">Continue</button></section>
+      <section class="q step" data-q="5"><p class="muted">Question 5 of 5</p><h2>What do you think “the next choice” means?</h2><textarea class="answer" name="q5_next_choice" required></textarea><button type="submit" class="btn primary">Submit answers</button></section>
     </form>
   </div>
 </main>
