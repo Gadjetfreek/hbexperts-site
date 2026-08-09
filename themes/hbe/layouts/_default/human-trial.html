@@ -1,0 +1,77 @@
+{{ define "main" }}
+<style>
+.ht-wrap{max-width:720px;margin:0 auto;padding:64px 24px 90px}.ht-card{background:#fff;border:1px solid #e5e7eb;border-radius:18px;padding:32px;box-shadow:0 12px 36px rgba(0,0,0,.06)}.ht-kicker{font-size:.8rem;text-transform:uppercase;letter-spacing:.12em;font-weight:700;opacity:.55}.ht-card h1{margin:.4rem 0 1rem}.ht-note{opacity:.72}.ht-input,.ht-textarea{width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:10px;padding:13px 14px;font:inherit}.ht-textarea{min-height:150px;resize:vertical}.ht-btn{display:inline-block;border:0;border-radius:999px;padding:13px 22px;font:inherit;font-weight:700;cursor:pointer;background:#17324d;color:#fff}.ht-btn.secondary{background:#eef2f5;color:#17324d}.ht-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}.ht-hidden{display:none!important}.ht-player{width:100%;margin:18px 0}.ht-progress{height:6px;background:#e8edf1;border-radius:99px;overflow:hidden;margin-bottom:24px}.ht-progress>div{height:100%;background:#17324d;width:0;transition:width .25s}.ht-question{font-size:1.35rem;line-height:1.35;margin-bottom:18px}.ht-small{font-size:.92rem;opacity:.65}.ht-error{color:#9f2d20;margin-top:10px}.ht-thanks{text-align:center;padding:20px 0}
+</style>
+<div class="ht-wrap">
+  <div class="ht-card">
+    <div id="intro">
+      <div class="ht-kicker">A short listening experience</div>
+      <h1>Before we begin...</h1>
+      <p>Just your first name. Nothing else.</p>
+      <input id="first-name" class="ht-input" type="text" maxlength="40" autocomplete="given-name" placeholder="First name" aria-label="First name">
+      <div id="name-error" class="ht-error ht-hidden">Please enter your first name.</div>
+      <div class="ht-actions"><button class="ht-btn" type="button" onclick="beginListening()">Continue</button></div>
+    </div>
+
+    <div id="listen" class="ht-hidden">
+      <div class="ht-kicker">Listen once</div>
+      <h1>Press play when you're ready.</h1>
+      <p class="ht-note">There is nothing to prepare for. Just listen.</p>
+      <audio id="trial-audio" class="ht-player" controls preload="metadata">
+        <source src="/audio/the-next-choice-prototype-c.mp3" type="audio/mpeg">
+      </audio>
+      <p id="listen-note" class="ht-small">The questions will appear after the audio finishes.</p>
+      <div id="after-listen" class="ht-hidden">
+        <p>Want to hear it one more time? You can replay it, or continue whenever you're ready.</p>
+        <div class="ht-actions">
+          <button class="ht-btn secondary" type="button" onclick="replayAudio()">Replay</button>
+          <button class="ht-btn" type="button" onclick="startQuestions()">Continue to questions</button>
+        </div>
+      </div>
+    </div>
+
+    <form id="trial-form" class="ht-hidden" action="https://formsubmit.co/cwhitehead@hbexperts.com" method="POST">
+      <input type="hidden" name="_subject" value="The Next Choice — Human Trial Response">
+      <input type="hidden" name="_captcha" value="false">
+      <input type="hidden" name="_template" value="table">
+      <input type="hidden" name="first_name" id="form-first-name">
+      <input type="hidden" name="listen_count" id="listen-count" value="0">
+      <input type="text" name="_honey" style="display:none">
+      <div class="ht-progress"><div id="q-progress"></div></div>
+
+      <div class="q-step" data-q="1">
+        <div class="ht-kicker">Question 1 of 5</div><div class="ht-question">What happened?</div>
+        <textarea class="ht-textarea" name="1_what_happened" required></textarea>
+      </div>
+      <div class="q-step ht-hidden" data-q="2">
+        <div class="ht-kicker">Question 2 of 5</div><div class="ht-question">What was the story about?</div>
+        <textarea class="ht-textarea" name="2_story_about" required></textarea>
+      </div>
+      <div class="q-step ht-hidden" data-q="3">
+        <div class="ht-kicker">Question 3 of 5</div><div class="ht-question">Would you want to live in the future you just heard about? Why or why not?</div>
+        <textarea class="ht-textarea" name="3_want_to_live_there" required></textarea>
+      </div>
+      <div class="q-step ht-hidden" data-q="4">
+        <div class="ht-kicker">Question 4 of 5</div><div class="ht-question">What do you think humans did to get there?</div>
+        <textarea class="ht-textarea" name="4_how_humans_got_there" required></textarea>
+      </div>
+      <div class="q-step ht-hidden" data-q="5">
+        <div class="ht-kicker">Question 5 of 5</div><div class="ht-question">What questions did the story leave you with?</div>
+        <textarea class="ht-textarea" name="5_questions_left" required></textarea>
+      </div>
+      <div id="q-error" class="ht-error ht-hidden">Please answer this question before continuing.</div>
+      <div class="ht-actions"><button id="q-next" class="ht-btn" type="button" onclick="nextQuestion()">Next</button></div>
+    </form>
+  </div>
+</div>
+<script>
+let currentQ=1, listens=0;
+const audio=document.getElementById('trial-audio');
+function beginListening(){const n=document.getElementById('first-name').value.trim();if(!n){document.getElementById('name-error').classList.remove('ht-hidden');return;}document.getElementById('form-first-name').value=n;document.getElementById('intro').classList.add('ht-hidden');document.getElementById('listen').classList.remove('ht-hidden');}
+audio.addEventListener('ended',()=>{listens++;document.getElementById('listen-count').value=listens;document.getElementById('after-listen').classList.remove('ht-hidden');document.getElementById('listen-note').classList.add('ht-hidden');});
+function replayAudio(){document.getElementById('after-listen').classList.add('ht-hidden');audio.currentTime=0;audio.play();}
+function startQuestions(){audio.pause();document.getElementById('listen').classList.add('ht-hidden');document.getElementById('trial-form').classList.remove('ht-hidden');updateProgress();}
+function updateProgress(){document.getElementById('q-progress').style.width=(currentQ/5*100)+'%';document.getElementById('q-next').textContent=currentQ===5?'Submit':'Next';}
+function nextQuestion(){const step=document.querySelector('.q-step[data-q="'+currentQ+'"]'), field=step.querySelector('textarea');if(!field.value.trim()){document.getElementById('q-error').classList.remove('ht-hidden');field.focus();return;}document.getElementById('q-error').classList.add('ht-hidden');if(currentQ===5){document.getElementById('trial-form').submit();return;}step.classList.add('ht-hidden');currentQ++;document.querySelector('.q-step[data-q="'+currentQ+'"]').classList.remove('ht-hidden');updateProgress();window.scrollTo({top:0,behavior:'smooth'});}
+</script>
+{{ end }}
