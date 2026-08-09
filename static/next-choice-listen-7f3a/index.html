@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive,nosnippet">
+<title>The Next Choice</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4f3ef;color:#1f1f1f;font-family:Arial,Helvetica,sans-serif}main{max-width:760px;margin:0 auto;padding:24px 18px 56px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.brand{font-family:Georgia,serif;font-size:28px;font-weight:700}.share{border:0;background:none;text-decoration:underline;font-size:16px;cursor:pointer}.card{background:#fff;border:1px solid #d8d8d2;border-radius:16px;padding:28px;box-shadow:0 3px 12px rgba(0,0,0,.04)}.step{display:none}.step.active{display:block}h1{font-family:Georgia,serif;font-size:34px;margin:0 0 14px}h2{font-family:Georgia,serif}.muted{color:#666}.input,.answer{width:100%;padding:14px;border:1px solid #aaa;border-radius:10px;font:inherit}.answer{min-height:130px;resize:vertical}.btn{margin-top:16px;border:0;border-radius:10px;padding:12px 18px;font-weight:700;cursor:pointer}.primary{background:#222;color:#fff}.secondary{background:#ececec;color:#222;margin-right:8px}.audio{width:100%;margin:18px 0}.error{display:none;color:#9b1c1c;margin-top:8px}.progress{height:6px;background:#e9e9e4;border-radius:4px;overflow:hidden;margin:18px 0}.progress span{display:block;height:100%;width:20%;background:#222;transition:width .2s}.status{font-size:14px;color:#666;margin-left:auto;margin-right:12px}@media(max-width:600px){.card{padding:22px 18px}.brand{font-size:24px}h1{font-size:30px}}
+</style>
+</head>
+<body>
+<main>
+  <div class="top"><div class="brand">The Next Choice</div><span id="shareStatus" class="status"></span><button class="share" onclick="shareTrial()">Share</button></div>
+  <div class="card">
+    <section id="nameStep" class="step active">
+      <h1>Before we begin</h1>
+      <p>Please enter your first name. Nothing else.</p>
+      <input id="firstName" class="input" type="text" autocomplete="given-name" maxlength="40" placeholder="First name">
+      <div id="nameError" class="error">Please enter your first name.</div>
+      <button class="btn primary" onclick="startTrial()">Continue</button>
+    </section>
+
+    <section id="listenStep" class="step">
+      <h1 id="hello">Thanks.</h1>
+      <p>You're helping us test whether a story communicates clearly.</p>
+      <p><strong>Please listen from beginning to end without skipping ahead.</strong> There's nothing you need to study or remember, and there are no right or wrong reactions.</p>
+      <p>When the audio ends, you may replay it <strong>one time</strong> if you'd like.</p>
+      <p>After that, we'll ask you <strong>five short questions</strong> about what you heard.</p>
+      <p><strong>Ready? Press Play.</strong></p>
+      <audio id="storyAudio" class="audio" controls preload="metadata">
+        <source src="https://raw.githubusercontent.com/Gadjetfreek/hbexperts-site/main/The_Next_Choice_Human_Trials_Prototype_C.mp3" type="audio/mpeg">
+      </audio>
+      <div id="audioError" class="error">The audio could not be loaded. Please refresh and try again.</div>
+      <div id="afterListen" style="display:none">
+        <h2>Want to hear it once more?</h2>
+        <p>You can replay the story one time, or continue to the questions.</p>
+        <button id="replayBtn" class="btn secondary" onclick="replayOnce()">Replay once</button>
+        <button class="btn primary" onclick="beginQuestions()">Continue to the questions</button>
+      </div>
+    </section>
+
+    <form id="trialForm" class="step" action="https://formsubmit.co/cwhitehead@hbexperts.com" method="POST">
+      <input type="hidden" name="_subject" value="The Next Choice - Human Trial">
+      <input type="hidden" name="_captcha" value="false">
+      <input type="hidden" name="_template" value="table">
+      <input type="hidden" name="first_name" id="submittedName">
+      <input type="hidden" name="listens" id="listenCount" value="1">
+      <div class="progress"><span id="trialProgress"></span></div>
+      <section class="q step active" data-q="1"><p class="muted">Question 1 of 5</p><h2>What changed?</h2><textarea class="answer" name="q1_what_changed" required></textarea><button type="button" class="btn primary" onclick="nextQ(1)">Continue</button></section>
+      <section class="q step" data-q="2"><p class="muted">Question 2 of 5</p><h2>What role did technology play?</h2><textarea class="answer" name="q2_technology_role" required></textarea><button type="button" class="btn primary" onclick="nextQ(2)">Continue</button></section>
+      <section class="q step" data-q="3"><p class="muted">Question 3 of 5</p><h2>Why did the elder plant a tree they would probably never see grow big?</h2><textarea class="answer" name="q3_tree" required></textarea><button type="button" class="btn primary" onclick="nextQ(3)">Continue</button></section>
+      <section class="q step" data-q="4"><p class="muted">Question 4 of 5</p><h2>What was different about the future the children grew up in?</h2><textarea class="answer" name="q4_future" required></textarea><button type="button" class="btn primary" onclick="nextQ(4)">Continue</button></section>
+      <section class="q step" data-q="5"><p class="muted">Question 5 of 5</p><h2>At the end, what do you think “the next choice” means?</h2><textarea class="answer" name="q5_next_choice" required></textarea><button type="submit" class="btn primary">Submit answers</button></section>
+    </form>
+  </div>
+</main>
+<script>
+let listens=0,replayUsed=false;const audio=document.getElementById('storyAudio');
+function show(id){document.querySelectorAll('.card>.step').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active')}
+function startTrial(){const n=document.getElementById('firstName').value.trim();if(!n){document.getElementById('nameError').style.display='block';return}document.getElementById('nameError').style.display='none';document.getElementById('hello').textContent='Thanks, '+n+'.';document.getElementById('submittedName').value=n;show('listenStep');audio.load()}
+audio.addEventListener('error',()=>document.getElementById('audioError').style.display='block');audio.addEventListener('canplay',()=>document.getElementById('audioError').style.display='none');audio.addEventListener('ended',()=>{listens++;document.getElementById('listenCount').value=listens;document.getElementById('afterListen').style.display='block';if(replayUsed)document.getElementById('replayBtn').style.display='none'});
+function replayOnce(){if(replayUsed)return;replayUsed=true;document.getElementById('afterListen').style.display='none';audio.currentTime=0;audio.play()}
+function beginQuestions(){audio.pause();show('trialForm');setProgress(1)}function setProgress(q){document.getElementById('trialProgress').style.width=(q/5*100)+'%'}
+function nextQ(q){const cur=document.querySelector('.q[data-q="'+q+'"]'),a=cur.querySelector('textarea');if(!a.value.trim()){a.focus();return}cur.classList.remove('active');const next=document.querySelector('.q[data-q="'+(q+1)+'"]');if(next){next.classList.add('active');setProgress(q+1);next.querySelector('textarea').focus()}}
+async function shareTrial(){const data={title:'The Next Choice',text:'Would you listen to this story and answer five short questions?',url:location.href};try{if(navigator.share){await navigator.share(data)}else{await navigator.clipboard.writeText(location.href);const s=document.getElementById('shareStatus');s.textContent='Link copied';setTimeout(()=>s.textContent='',1600)}}catch(e){}}
+</script>
+</body>
+</html>
