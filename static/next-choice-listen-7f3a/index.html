@@ -20,7 +20,6 @@
       <div id="nameError" class="error">Please enter your first name.</div>
       <button class="btn primary" onclick="startTrial()">Continue</button>
     </section>
-
     <section id="listenStep" class="step">
       <h1 id="hello">Thanks.</h1>
       <p>You're helping us test whether a story communicates clearly.</p>
@@ -29,7 +28,7 @@
       <p>After that, we'll ask you <strong>five short questions</strong> about what you heard.</p>
       <p><strong>Ready? Press Play.</strong></p>
       <audio id="storyAudio" class="audio" controls preload="metadata">
-        <source src="https://raw.githubusercontent.com/Gadjetfreek/hbexperts-site/main/The_Next_Choice_Human_Trials_Prototype_C.mp3" type="audio/mpeg">
+        <source src="The_Next_Choice_Human_Trials_Prototype_C.mp3" type="audio/mpeg">
       </audio>
       <div id="audioError" class="error">The audio could not be loaded. Please refresh and try again.</div>
       <div id="afterListen" style="display:none">
@@ -39,7 +38,6 @@
         <button class="btn primary" onclick="beginQuestions()">Continue to the questions</button>
       </div>
     </section>
-
     <form id="trialForm" class="step" action="https://formsubmit.co/cwhitehead@hbexperts.com" method="POST">
       <input type="hidden" name="_subject" value="The Next Choice - Human Trial">
       <input type="hidden" name="_captcha" value="false">
