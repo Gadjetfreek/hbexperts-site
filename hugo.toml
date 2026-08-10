@@ -32,9 +32,12 @@ theme = "hbe"
     name = "Contact"
     url = "/contact/"
     weight = 5
+  [[menu.main]]
+    name = "Clients"
+    url = "/clients/"
+    weight = 6
 
 [markup]
   [markup.goldmark]
     [markup.goldmark.renderer]
       unsafe = true
-
