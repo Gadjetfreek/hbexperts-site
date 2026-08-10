@@ -5,6 +5,10 @@
   "appointmentDate": "August 10, 2026",
   "focus": "Two homes worth a closer look",
   "intro": "Today we saw four homes together. Two earned a closer look. Before the details start blending together, let's capture what each one taught us and what you want us to carry into the next decision.",
+  "attentionPhotos": [
+    {"file": "photos/example-basement.jpg", "title": "Basement wall", "note": "We noticed this area during the showing and want to understand whether it is cosmetic or deserves further investigation.", "alt": "Basement wall detail"},
+    {"file": "photos/example-window.jpg", "title": "Living room window", "note": "Worth another look when we compare condition and likely near-term maintenance.", "alt": "Living room window detail"}
+  ],
   "items": [
     {"name": "123 Example Street", "note": "Strong layout; questions remain about condition and value."},
     {"name": "456 Sample Avenue", "note": "Better location; trade-offs in space and updates."}
