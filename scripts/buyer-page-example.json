@@ -1,0 +1,17 @@
+{
+  "firstName": "Alex",
+  "household": "Alex & Jordan",
+  "appointmentType": "Home tour debrief",
+  "appointmentDate": "August 10, 2026",
+  "focus": "Two homes worth a closer look",
+  "intro": "Today we saw four homes together. Two earned a closer look. Before the details start blending together, let's capture what each one taught us and what you want us to carry into the next decision.",
+  "items": [
+    {"name": "123 Example Street", "note": "Strong layout; questions remain about condition and value."},
+    {"name": "456 Sample Avenue", "note": "Better location; trade-offs in space and updates."}
+  ],
+  "questions": [
+    "If both homes cost the same, which would you choose today—and why?",
+    "What would we need to learn about either property before you would feel comfortable considering an offer?"
+  ],
+  "nextPrompt": "Based on today, what should HBE do next for you?"
+}
