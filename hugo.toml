@@ -1,15 +1,19 @@
 baseURL = "https://hbexperts.com/"
 languageCode = "en-us"
-title = "HomeBuyer Experts | Exclusive Buyer Representation"
+title = "HomeBuyer Experts LLC | Exclusive Buyer Agency in Northeast Ohio"
 theme = "hbe"
+enableRobotsTXT = true
 
 [params]
-  description = "Exclusive buyer representation for Northeast Ohio. We represent you — only you."
+  business_name = "HomeBuyer Experts LLC"
+  professional_name = "Christopher Whitehead"
+  description = "HomeBuyer Experts LLC provides buyer-only representation across Northeast Ohio, generally within about an hour of Akron. Serving buyers since 2004."
   tagline = "When the decision matters, have someone at the table whose only job is protecting your interests."
   phone = "(330) 328-3170"
   email = "cwhitehead@hbexperts.com"
   location = "Northeast Ohio"
-  counties = "Summit, Stark, Medina, Wayne & Cuyahoga Counties"
+  service_area = "Northeast Ohio · Generally within about an hour of Akron"
+  serving_since = "2004"
 
 [menu]
   [[menu.main]]
