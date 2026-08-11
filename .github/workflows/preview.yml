@@ -1,4 +1,4 @@
-name: Build Buyer Platform Preview
+name: Build Public HBE Preview
 
 on:
   pull_request:
@@ -58,25 +58,21 @@ jobs:
         run: |
           hugo --gc --minify --baseURL "${PREVIEW_ROOT}"
 
-      - name: Make shared BuyerUI assets preview-safe and stamp build
+      - name: Stamp public preview pages
         run: |
           python3 - <<'PY'
           from pathlib import Path
           import json, os
 
-          root = os.environ["PREVIEW_ROOT"]
           sha = os.environ["SOURCE_SHA"]
           pr = os.environ["PR_NUMBER"]
 
-          for path in Path("public").rglob("*"):
-              if not path.is_file() or path.suffix.lower() not in {".html", ".js", ".css"}:
+          for rel in ["index.html", "about/index.html"]:
+              path = Path("public") / rel
+              if not path.exists():
                   continue
               text = path.read_text(encoding="utf-8")
-              # BuyerUI currently contains a few root-absolute shared-asset references.
-              # Rewrite only the known shared namespace rather than all root links.
-              text = text.replace('"/buyer-portal/', f'"{root}buyer-portal/')
-              text = text.replace("'/buyer-portal/", f"'{root}buyer-portal/")
-              if path.suffix.lower() == ".html" and "</head>" in text:
+              if "</head>" in text:
                   stamp = f'<meta name="hbe-preview" content="pr-{pr}@{sha}">'
                   text = text.replace("</head>", stamp + "</head>", 1)
               path.write_text(text, encoding="utf-8")
@@ -87,18 +83,37 @@ jobs:
                   "pull_request": int(pr),
                   "source_sha": sha,
                   "source_branch": os.environ.get("GITHUB_HEAD_REF", ""),
+                  "public_pages_only": True
               }, indent=2) + "\n",
               encoding="utf-8",
           )
           PY
 
-      - name: Validate build before publish
+      - name: Validate public build before publish
         run: |
           test -f public/index.html
-          test -f public/buyers/donald-kelley/index.html
-          test -f public/buyer-portal/dashboard.js
+          test -f public/about/index.html
           test -f public/__hbe-preview.json
           grep -q "${SOURCE_SHA}" public/__hbe-preview.json
+          grep -q "hbe-preview" public/index.html
+          grep -q "hbe-preview" public/about/index.html
+
+      - name: Create public-only preview bundle
+        run: |
+          rm -rf preview-public
+          mkdir -p preview-public/about preview-public/css preview-public/js
+          cp public/index.html preview-public/index.html
+          cp public/about/index.html preview-public/about/index.html
+          cp public/__hbe-preview.json preview-public/__hbe-preview.json
+          if [ -d public/css ]; then cp -a public/css/. preview-public/css/; fi
+          if [ -d public/js ]; then cp -a public/js/. preview-public/js/; fi
+          if [ -d public/images ]; then cp -a public/images preview-public/images; fi
+          if [ -f public/favicon.ico ]; then cp public/favicon.ico preview-public/favicon.ico; fi
+
+          # Safety gate: never publish personal-client or advisor application trees in PR previews.
+          test ! -e preview-public/buyers
+          test ! -e preview-public/buyer-portal
+          test ! -e preview-public/hbeui
 
       - name: Checkout preview storage branch
         uses: actions/checkout@v4
@@ -107,12 +122,12 @@ jobs:
           path: preview-store
           fetch-depth: 0
 
-      - name: Publish immutable preview bundle
+      - name: Publish immutable public preview bundle
         working-directory: preview-store
         run: |
           mkdir -p "${PREVIEW_PATH}"
           rm -rf "${PREVIEW_PATH:?}"/*
-          cp -a ../public/. "${PREVIEW_PATH}/"
+          cp -a ../preview-public/. "${PREVIEW_PATH}/"
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -120,32 +135,40 @@ jobs:
           if git diff --cached --quiet; then
             echo "Preview bundle already published."
           else
-            git commit -m "Preview PR ${PR_NUMBER} at ${SHORT_SHA}"
+            git commit -m "Public preview PR ${PR_NUMBER} at ${SHORT_SHA}"
             git pull --rebase origin previews
             git push origin HEAD:previews
           fi
 
-      - name: Verify browser preview endpoint
+      - name: Verify public preview endpoints
         run: |
-          URL="${PREVIEW_ROOT}buyers/donald-kelley/index.html"
-          echo "Checking ${URL}"
+          HOME_URL="${PREVIEW_ROOT}"
+          ABOUT_URL="${PREVIEW_ROOT}about/"
+          echo "Checking ${HOME_URL}"
           curl --fail --silent --show-error --location \
             --retry 8 --retry-delay 5 --retry-all-errors \
-            "${URL}" > "${{ runner.temp }}/preview.html"
-          grep -q "hbe-preview" "${{ runner.temp }}/preview.html"
+            "${HOME_URL}" > "${{ runner.temp }}/home-preview.html"
+          grep -q "hbe-preview" "${{ runner.temp }}/home-preview.html"
+          echo "Checking ${ABOUT_URL}"
+          curl --fail --silent --show-error --location \
+            --retry 8 --retry-delay 5 --retry-all-errors \
+            "${ABOUT_URL}" > "${{ runner.temp }}/about-preview.html"
+          grep -q "hbe-preview" "${{ runner.temp }}/about-preview.html"
 
-      - name: Publish preview link to PR
+      - name: Publish public preview links to PR
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          URL="${PREVIEW_ROOT}buyers/donald-kelley/index.html"
+          HOME_URL="${PREVIEW_ROOT}"
+          ABOUT_URL="${PREVIEW_ROOT}about/"
           gh pr comment "${PR_NUMBER}" --repo "${GITHUB_REPOSITORY}" --body "$(cat <<EOF
-          ### HBE interactive preview ready
+          ### HBE public-site preview ready
 
           **Exact source commit:** \`${SOURCE_SHA}\`
 
-          [Open Donald BuyerUI preview](${URL})
+          [Open HBE homepage preview](${HOME_URL})  
+          [Open HBE About preview](${ABOUT_URL})
 
-          This preview is built from this PR commit and stored outside the production GitHub Pages deployment. It does not change the live BuyerUI. raw.githack may show a one-time safety confirmation before displaying repository HTML.
+          This preview bundle intentionally contains public HBE pages/assets only. Personal-client BuyerUI pages and HBEUI surfaces are not published into this preview.
           EOF
           )"
