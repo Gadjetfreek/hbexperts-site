@@ -43,12 +43,49 @@ jobs:
         env:
           HUGO_CACHEDIR: ${{ runner.temp }}/hugo_cache
           TZ: America/New_York
-        
         run: |
           hugo \
             --gc \
             --minify \
             --baseURL "${{ steps.pages.outputs.base_url }}/"
+
+      - name: Stamp production release and make BuyerUI assets release-driven
+        env:
+          RELEASE_ID: ${{ github.sha }}
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json, os, re
+
+          release = os.environ['RELEASE_ID']
+          short = release[:12]
+          portal = Path('public/buyer-portal')
+          portal.mkdir(parents=True, exist_ok=True)
+          (portal / 'release.json').write_text(json.dumps({
+              'release': release,
+              'shortRelease': short,
+              'checkIntervalMs': 30000
+          }, separators=(',', ':')) + '\n', encoding='utf-8')
+
+          # Every production HTML page that uses BuyerUI shared assets gets the
+          # exact deployment SHA as its cache key. No manual version bump.
+          for path in Path('public').rglob('*.html'):
+              text = path.read_text(encoding='utf-8')
+              text = re.sub(r'(/buyer-portal/[^"\'?#]+\.(?:css|js))(?:[?][^"\']*)?',
+                            lambda m: m.group(1) + '?release=' + release, text)
+              if '</head>' in text and 'hbe-production-release' not in text:
+                  text = text.replace('</head>', f'<meta name="hbe-production-release" content="{release}"></head>', 1)
+              path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Verify release contract
+        env:
+          RELEASE_ID: ${{ github.sha }}
+        run: |
+          test -f public/buyer-portal/release.json
+          grep -q "${RELEASE_ID}" public/buyer-portal/release.json
+          test -f public/buyers/donald-kelley/index.html
+          grep -q "hbe-production-release" public/buyers/donald-kelley/index.html
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
