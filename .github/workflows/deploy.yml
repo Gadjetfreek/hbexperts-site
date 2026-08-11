@@ -1,4 +1,4 @@
-name: Deploy Hugo to GitHub Pages
+name: Deploy Public HBE Site to GitHub Pages
 
 on:
   push:
@@ -39,40 +39,54 @@ jobs:
         id: pages
         uses: actions/configure-pages@v5
 
-      - name: Build with Hugo
+      - name: Build public Hugo site
         env:
           HUGO_CACHEDIR: ${{ runner.temp }}/hugo_cache
           TZ: America/New_York
         run: |
           hugo --gc --minify --baseURL "${{ steps.pages.outputs.base_url }}/"
 
-      - name: Stamp production release and make BuyerUI assets release-driven
+      - name: Enforce public/private boundary
+        run: |
+          # GitHub Pages is public static hosting. Private buyer or advisor surfaces
+          # must never be present in the deploy artifact, even if a future branch
+          # accidentally adds them back under static/.
+          rm -rf public/buyers public/clients public/hbeui public/buyer-portal
+
+          for forbidden in public/buyers public/clients public/hbeui public/buyer-portal; do
+            if [ -e "$forbidden" ]; then
+              echo "SECURITY FAILURE: forbidden private surface present: $forbidden" >&2
+              exit 1
+            fi
+          done
+
+          test -f public/index.html
+
+      - name: Stamp production release
         env:
           RELEASE_ID: ${{ github.sha }}
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import json, os, re
-          release=os.environ['RELEASE_ID']; short=release[:12]
-          portal=Path('public/buyer-portal'); portal.mkdir(parents=True,exist_ok=True)
-          (portal/'release.json').write_text(json.dumps({'release':release,'shortRelease':short,'checkIntervalMs':30000},separators=(',',':'))+'\n',encoding='utf-8')
+          import os
+          release = os.environ['RELEASE_ID']
           for path in Path('public').rglob('*.html'):
-              text=path.read_text(encoding='utf-8')
-              text=re.sub(r'(/buyer-portal/[^"\'?#]+\.(?:css|js))(?:[?][^"\']*)?',lambda m:m.group(1)+'?release='+release,text)
+              text = path.read_text(encoding='utf-8')
               if '</head>' in text and 'hbe-production-release' not in text:
-                  text=text.replace('</head>',f'<meta name="hbe-production-release" content="{release}"></head>',1)
-              path.write_text(text,encoding='utf-8')
+                  text = text.replace('</head>', f'<meta name="hbe-production-release" content="{release}"></head>', 1)
+              path.write_text(text, encoding='utf-8')
           PY
 
-      - name: Verify release contract before upload
+      - name: Verify public release before upload
         env:
           RELEASE_ID: ${{ github.sha }}
         run: |
-          test -f public/buyer-portal/release.json
-          grep -q "${RELEASE_ID}" public/buyer-portal/release.json
-          test -f public/buyers/donald-kelley/index.html
-          grep -q "hbe-production-release" public/buyers/donald-kelley/index.html
-          test -f public/buyer-portal/buyer-app.js
+          test -f public/index.html
+          grep -q "${RELEASE_ID}" public/index.html
+          test ! -e public/buyers
+          test ! -e public/clients
+          test ! -e public/hbeui
+          test ! -e public/buyer-portal
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
@@ -93,39 +107,39 @@ jobs:
         uses: actions/deploy-pages@v4
 
   verify-production:
-    name: Verify deployed production release
+    name: Verify public production release
     runs-on: ubuntu-latest
     needs: deploy
     env:
       RELEASE_ID: ${{ github.sha }}
       PAGE_URL: ${{ needs.deploy.outputs.page_url }}
     steps:
-      - name: Wait for exact release manifest
+      - name: Verify homepage release and private-surface removal
         run: |
           BASE="${PAGE_URL%/}"
-          URL="${BASE}/buyer-portal/release.json?verify=${RELEASE_ID}"
-          echo "Verifying ${URL}"
           for attempt in {1..18}; do
-            BODY="$(curl --fail --silent --show-error --location --max-time 15 "${URL}" || true)"
+            BODY="$(curl --fail --silent --show-error --location --max-time 15 "${BASE}/?verify=${RELEASE_ID}" || true)"
             if printf '%s' "$BODY" | grep -q "${RELEASE_ID}"; then
-              echo "Exact release ${RELEASE_ID} is live."
-              exit 0
+              echo "Exact public release ${RELEASE_ID} is live."
+              break
             fi
-            echo "Attempt ${attempt}: deployed endpoint has not reached expected release yet."
+            if [ "$attempt" -eq 18 ]; then
+              echo "Production never served expected public release ${RELEASE_ID}." >&2
+              exit 1
+            fi
             sleep 10
           done
-          echo "Production never served expected release ${RELEASE_ID}." >&2
-          exit 1
 
-      - name: Smoke test shared BuyerUI production assets
-        run: |
-          BASE="${PAGE_URL%/}"
-          curl --fail --silent --show-error --location "${BASE}/buyers/donald-kelley/?verify=${RELEASE_ID}" > /tmp/donald.html
-          grep -q "${RELEASE_ID}" /tmp/donald.html
-          curl --fail --silent --show-error --location "${BASE}/buyer-portal/buyer-app.js?release=${RELEASE_ID}" > /tmp/buyer-app.js
-          test -s /tmp/buyer-app.js
+          # These URLs must not return successful private application content.
+          for path in buyers/donald-kelley clients hbeui buyer-portal; do
+            code="$(curl --silent --output /dev/null --write-out '%{http_code}' --location "${BASE}/${path}/?verify=${RELEASE_ID}" || true)"
+            if [ "$code" = "200" ]; then
+              echo "SECURITY FAILURE: /${path}/ is still publicly served." >&2
+              exit 1
+            fi
+          done
 
       - name: Record verified release
         run: |
-          echo "VERIFIED_PRODUCTION_RELEASE=${RELEASE_ID}" >> "$GITHUB_STEP_SUMMARY"
+          echo "VERIFIED_PUBLIC_RELEASE=${RELEASE_ID}" >> "$GITHUB_STEP_SUMMARY"
           echo "PRODUCTION_URL=${PAGE_URL}" >> "$GITHUB_STEP_SUMMARY"
