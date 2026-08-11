@@ -17,22 +17,27 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "Organization",
-    "@id": "{{ .Site.BaseURL }}#organization",
-    "name": {{ .Site.Params.business_name | jsonify }},
-    "url": {{ .Site.BaseURL | jsonify }},
-    "telephone": {{ .Site.Params.phone | jsonify }},
-    "email": {{ .Site.Params.email | jsonify }},
-    "description": {{ .Site.Params.description | jsonify }},
-    "areaServed": {
-      "@type": "AdministrativeArea",
-      "name": "Northeast Ohio"
-    },
-    "founder": {
-      "@type": "Person",
-      "name": {{ .Site.Params.professional_name | jsonify }},
-      "worksFor": { "@id": "{{ .Site.BaseURL }}#organization" }
-    }
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "{{ .Site.BaseURL }}#organization",
+        "name": {{ .Site.Params.business_name | jsonify }},
+        "url": {{ .Site.BaseURL | jsonify }},
+        "telephone": {{ .Site.Params.phone | jsonify }},
+        "email": {{ .Site.Params.email | jsonify }},
+        "description": {{ .Site.Params.description | jsonify }},
+        "areaServed": {
+          "@type": "AdministrativeArea",
+          "name": "Northeast Ohio"
+        }
+      },
+      {
+        "@type": "Person",
+        "@id": "{{ .Site.BaseURL }}#christopher-whitehead",
+        "name": {{ .Site.Params.professional_name | jsonify }},
+        "worksFor": { "@id": "{{ .Site.BaseURL }}#organization" }
+      }
+    ]
   }
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
