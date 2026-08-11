@@ -1,7 +1,7 @@
 ---
 title: "Experience Matters When the Decision Matters"
-subtitle: "For more than 20 years, HomeBuyer Experts has focused on one mission: helping buyers make smarter, more confident real estate decisions."
-description: "Meet the team behind HomeBuyer Experts — over 20 years of exclusive buyer representation in Northeast Ohio."
+subtitle: "Serving buyers since 2004, HomeBuyer Experts LLC has focused on one mission: helping buyers make smarter, more confident real estate decisions."
+description: "Meet Christopher Whitehead and HomeBuyer Experts LLC, an Exclusive Buyer Agency serving Northeast Ohio homebuyers since 2004."
 ---
 
 ## Why HomeBuyer Experts Exists
@@ -10,11 +10,13 @@ Buying a home is more than finding a property. It is a financial decision. A lif
 
 Too often, buyers enter the process assuming someone is protecting their interests, only to discover that real estate transactions can involve competing priorities.
 
-HomeBuyer Experts was created around a simple belief:
+HomeBuyer Experts LLC was created around a simple belief:
 
 > **Buyers deserve dedicated representation.**
 
-Your goals should guide the process — not the transaction.
+We represent homebuyers only. We do not take listings. Your goals should guide the process — not the transaction.
+
+HBE serves Northeast Ohio, generally within about a 45-minute to 1-hour drive of Akron.
 
 ---
 
@@ -22,17 +24,11 @@ Your goals should guide the process — not the transaction.
 
 ### A buyer advocate, not just a real estate professional.
 
-For over two decades, Christopher has dedicated his career to helping buyers navigate complex real estate decisions.
+Christopher Whitehead has been serving buyers since 2004, helping people navigate complex real estate decisions with education, research, property evaluation, negotiation, due diligence, and clear advice.
 
-His background combines:
+His experience spans real estate, negotiation, investment, business ownership, leadership, and service. More important than a string of initials is how that experience is used: to help buyers understand what they are choosing before they commit.
 
-- Real estate expertise
-- Negotiation experience
-- Investment experience
-- Business ownership
-- Leadership and service
-
-This experience shaped a simple philosophy: **the best real estate decisions happen when buyers have the information, guidance, and advocacy they need before making a commitment.**
+That work shaped a simple philosophy: **the best real estate decisions happen when buyers have the information, guidance, and advocacy they need before making a commitment.**
 
 ---
 
@@ -44,11 +40,11 @@ Buying a home is one of the most emotionally charged decisions a person can make
 
 That is where Jen comes in.
 
-Jen is the relationship side of HBE — the one who makes sure clients never feel like a transaction. She manages appointment coordination, stays close to every client relationship, and brings a level of warmth and emotional intelligence that turns a process that could feel overwhelming into one that feels manageable.
+Jen is the relationship side of HBE — the one who helps make sure clients never feel like a transaction. She supports appointment coordination, stays close to client relationships, and helps keep the human side of the process from getting lost.
 
-When you work with HomeBuyer Experts, you work with both Chris and Jen. Chris focuses on market analysis, strategy, and negotiation. Jen makes sure the human side is never lost in the process — that your questions get answered, your concerns get heard, and you always know where things stand.
+When you work with HomeBuyer Experts, Chris focuses on market analysis, strategy, property evaluation, and negotiation while Jen helps make sure questions get answered, concerns get heard, and people know where things stand.
 
-Together, they cover all sides of what buying a home actually requires.
+Together, the goal is simple: help the buyer make a better decision, not merely complete a transaction.
 
 ---
 
@@ -63,7 +59,7 @@ Every buyer has different goals. The right home is not simply the one that close
 - Your priorities
 - Your future plans
 
-Our role is to help you make the decision with confidence.
+Our role is to help you make the decision with confidence — including when the better decision is to walk away.
 
 ---
 
@@ -77,15 +73,17 @@ Our role is to help you make the decision with confidence.
 
 **Negotiation Beyond Price** — The best outcome is not always the lowest price. It is the strongest overall position: terms, timing, risk, protection, and value.
 
+**Buyer-Only Loyalty** — HomeBuyer Experts represents buyers and does not take listings. Our advice is not shaped by the need to sell an HBE listing.
+
 ---
 
 ## Who We Serve
 
 Purchase price is irrelevant. Every buyer deserves exceptional representation.
 
-HomeBuyer Experts serves anyone who values expertise and advocacy — first-time buyers, growing families, relocating professionals, move-up buyers, those downsizing, and investors alike.
+HomeBuyer Experts serves buyers throughout Northeast Ohio, generally within about an hour of Akron, including first-time buyers, growing families, relocating professionals, move-up buyers, those downsizing, and investors.
 
-If you want a knowledgeable advocate protecting your interests through one of life's largest financial decisions, HBE is built for you.
+If you value clear thinking, careful investigation, and an advocate whose job is to remain on the buyer's side of the decision, HBE is built for you.
 
 ---
 
@@ -105,6 +103,6 @@ When you work with HomeBuyer Experts, you should expect:
 
 ## Ready to make your next home purchase with confidence?
 
-Start with a conversation and discover what expert buyer representation can do for you.
+Start with a conversation and discover what buyer-only representation can do for you.
 
 [Start Your Buyer Discovery →]({{< relref "assessment" >}})
