@@ -3,8 +3,38 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }} | HomeBuyer Experts{{ end }}</title>
-  <meta name="description" content="{{ with .Description }}{{ . }}{{ else }}{{ .Site.Params.description }}{{ end }}">
+  {{ $pageTitle := cond .IsHome .Site.Title (printf "%s | HomeBuyer Experts LLC" .Title) }}
+  {{ $pageDescription := .Description | default .Site.Params.description }}
+  <title>{{ $pageTitle }}</title>
+  <meta name="description" content="{{ $pageDescription }}">
+  <link rel="canonical" href="{{ .Permalink }}">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="{{ $pageTitle }}">
+  <meta property="og:description" content="{{ $pageDescription }}">
+  <meta property="og:url" content="{{ .Permalink }}">
+  <meta property="og:site_name" content="{{ .Site.Params.business_name }}">
+  <meta name="twitter:card" content="summary">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": "{{ .Site.BaseURL }}#organization",
+    "name": {{ .Site.Params.business_name | jsonify }},
+    "url": {{ .Site.BaseURL | jsonify }},
+    "telephone": {{ .Site.Params.phone | jsonify }},
+    "email": {{ .Site.Params.email | jsonify }},
+    "description": {{ .Site.Params.description | jsonify }},
+    "areaServed": {
+      "@type": "AdministrativeArea",
+      "name": "Northeast Ohio"
+    },
+    "founder": {
+      "@type": "Person",
+      "name": {{ .Site.Params.professional_name | jsonify }},
+      "worksFor": { "@id": "{{ .Site.BaseURL }}#organization" }
+    }
+  }
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
