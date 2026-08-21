@@ -51,9 +51,9 @@ jobs:
           # GitHub Pages is public static hosting. Private buyer or advisor surfaces
           # must never be present in the deploy artifact, even if a future branch
           # accidentally adds them back under static/.
-          rm -rf public/buyers public/clients public/hbeui public/buyer-portal
+          rm -rf public/advisor public/buyers public/clients public/hbeui public/buyer-portal
 
-          for forbidden in public/buyers public/clients public/hbeui public/buyer-portal; do
+          for forbidden in public/advisor public/buyers public/clients public/hbeui public/buyer-portal; do
             if [ -e "$forbidden" ]; then
               echo "SECURITY FAILURE: forbidden private surface present: $forbidden" >&2
               exit 1
@@ -83,6 +83,7 @@ jobs:
         run: |
           test -f public/index.html
           grep -q "${RELEASE_ID}" public/index.html
+          test ! -e public/advisor
           test ! -e public/buyers
           test ! -e public/clients
           test ! -e public/hbeui
@@ -131,7 +132,7 @@ jobs:
           done
 
           # These URLs must not return successful private application content.
-          for path in buyers/donald-kelley clients hbeui buyer-portal; do
+          for path in advisor advisor/consultation-brief.html buyers/donald-kelley clients hbeui buyer-portal; do
             code="$(curl --silent --output /dev/null --write-out '%{http_code}' --location "${BASE}/${path}/?verify=${RELEASE_ID}" || true)"
             if [ "$code" = "200" ]; then
               echo "SECURITY FAILURE: /${path}/ is still publicly served." >&2

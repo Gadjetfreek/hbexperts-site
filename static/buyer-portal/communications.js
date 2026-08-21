@@ -1,1 +1,0 @@
-window.HBE_COMMUNICATIONS={text:{displayName:'Chris',role:'HomeBuyer Experts',number:'+13303283170',label:'Text Chris'}};
