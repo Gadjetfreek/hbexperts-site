@@ -37,8 +37,34 @@ CREATE TABLE IF NOT EXISTS notifications (
   FOREIGN KEY (buyer_id) REFERENCES buyers(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS buyer_notes (
+  id TEXT PRIMARY KEY,
+  buyer_id TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  author_email TEXT NOT NULL,
+  visibility TEXT NOT NULL DEFAULT 'hbe',
+  body TEXT NOT NULL,
+  FOREIGN KEY (buyer_id) REFERENCES buyers(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS buyer_tasks (
+  id TEXT PRIMARY KEY,
+  buyer_id TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  title TEXT NOT NULL,
+  due_at TEXT,
+  priority TEXT NOT NULL DEFAULT 'normal',
+  status TEXT NOT NULL DEFAULT 'open',
+  stage TEXT,
+  visible_to_buyer INTEGER NOT NULL DEFAULT 0,
+  FOREIGN KEY (buyer_id) REFERENCES buyers(id) ON DELETE CASCADE
+);
+
 CREATE INDEX IF NOT EXISTS idx_buyers_email ON buyers(email);
 CREATE INDEX IF NOT EXISTS idx_buyers_submitted ON buyers(submitted_at DESC);
 CREATE INDEX IF NOT EXISTS idx_sessions_buyer ON buyer_sessions(buyer_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_expires ON buyer_sessions(expires_at);
 CREATE INDEX IF NOT EXISTS idx_notifications_read ON notifications(read_at, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_buyer_notes_buyer ON buyer_notes(buyer_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_buyer_tasks_buyer ON buyer_tasks(buyer_id, status, due_at);
