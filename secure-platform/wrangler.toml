@@ -1,0 +1,11 @@
+name = "hbe-buyer-platform"
+main = "src/worker.js"
+compatibility_date = "2026-08-26"
+
+[vars]
+HBE_ADMIN_EMAIL = "cwhitehead@hbexperts.com"
+
+[[d1_databases]]
+binding = "BUYER_DB"
+database_name = "hbe-buyer-journey"
+database_id = "REPLACE_AFTER_D1_CREATE"
