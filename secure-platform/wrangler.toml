@@ -1,6 +1,11 @@
 name = "hbe-buyer-platform"
 main = "src/worker.js"
 compatibility_date = "2026-08-26"
+workers_dev = false
+
+[[routes]]
+pattern = "buyer.hbexperts.com"
+custom_domain = true
 
 [vars]
 HBE_ADMIN_EMAIL = "cwhitehead@hbexperts.com"
@@ -9,7 +14,7 @@ HBE_ALERT_FROM = "buyer-alerts@hbexperts.com"
 
 [[d1_databases]]
 binding = "BUYER_DB"
-database_name = "hbe-buyer-journey"
+database_name = "hbe-buyer-journey-v2"
 database_id = "REPLACE_AFTER_D1_CREATE"
 
 [[ratelimits]]
