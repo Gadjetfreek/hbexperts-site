@@ -39,8 +39,15 @@ if (Select-String -Path src/worker.js -Pattern 'donald-kelley|localStorage|buyer
 }
 
 Write-Host '5/6 Deploying Worker to buyer.hbexperts.com...'
-$deployOutput = npx --yes wrangler@latest deploy 2>&1
+$oldErrorActionPreference = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+$deployOutput = & npx --yes wrangler@latest deploy 2>&1
+$deployExitCode = $LASTEXITCODE
+$ErrorActionPreference = $oldErrorActionPreference
 $deployOutput | ForEach-Object { Write-Host $_ }
+if ($deployExitCode -ne 0) {
+  throw "Wrangler deploy failed with exit code $deployExitCode."
+}
 
 Write-Host '6/6 Verifying custom-domain health endpoint...'
 $health = Invoke-RestMethod -Uri "$buyerBaseUrl/health" -Method Get
