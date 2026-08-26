@@ -2,6 +2,7 @@ name = "hbe-buyer-platform"
 main = "src/worker.js"
 compatibility_date = "2026-08-26"
 workers_dev = false
+preview_urls = false
 
 [[routes]]
 pattern = "buyer.hbexperts.com"
