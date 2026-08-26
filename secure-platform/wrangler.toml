@@ -1,0 +1,34 @@
+name = "hbe-buyer-platform"
+main = "src/worker.js"
+compatibility_date = "2026-08-26"
+
+[vars]
+HBE_ADMIN_EMAIL = "cwhitehead@hbexperts.com"
+HBE_ALERT_TO = "cwhitehead@hbexperts.com"
+HBE_ALERT_FROM = "buyer-alerts@hbexperts.com"
+
+[[d1_databases]]
+binding = "BUYER_DB"
+database_name = "hbe-buyer-journey"
+database_id = "REPLACE_AFTER_D1_CREATE"
+
+[[ratelimits]]
+name = "LOGIN_RATE_LIMITER"
+namespace_id = "82626001"
+  [ratelimits.simple]
+  limit = 6
+  period = 60
+
+[[ratelimits]]
+name = "SUBMIT_RATE_LIMITER"
+namespace_id = "82626002"
+  [ratelimits.simple]
+  limit = 3
+  period = 60
+
+# Optional same-day email alert once hbexperts.com is onboarded/verified for
+# Cloudflare Email Service. The application always creates an unread HBEUI
+# notification even when this binding is not configured.
+# [[send_email]]
+# name = "HBE_ALERT"
+# destination_address = "cwhitehead@hbexperts.com"
