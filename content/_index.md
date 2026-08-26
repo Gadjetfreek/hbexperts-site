@@ -1,53 +1,49 @@
 ---
-title: "A Trusted Buyer Advocate for Northeast Ohio"
-description: "HomeBuyer Experts provides exclusive buyer representation, strategic negotiation, and unbiased guidance for buyers who want confidence — not just a transaction."
+title: "A Buyer Advocate for Decisions That Matter"
+description: "HomeBuyer Experts provides exclusive buyer representation designed to increase understanding, protect buyer agency, and help Northeast Ohio home buyers choose wisely."
 ---
 
-## Buying a home is one of the largest financial decisions you will make.
+## A home purchase is a consequential decision.
 
-Most people assume every real estate professional represents their best interests. The reality is more complicated.
+It involves money, risk, lifestyle, family, timing, uncertainty, and future possibilities — not just a property.
 
-Without experienced guidance, buyers may face:
-
-- Paying more than necessary
-- Missing important property concerns
-- Losing negotiation leverage
-- Making emotional decisions under pressure
-- Navigating complex contracts without advocacy
-
-**HomeBuyer Experts exists to change that.**
+**HomeBuyer Experts exists to help protect the quality of that decision.**
 
 ---
 
-## Your interests deserve dedicated representation.
+## Our North Star
+
+> **What is best for the buyer?**
 
 We represent buyers exclusively. We do not take listings.
 
-That means our loyalty, strategy, and advice remain focused on one thing: **helping you make the smartest purchase possible.**
+Our job is not to push a transaction toward closing. It is to help you understand your options, see important tradeoffs, protect your leverage, and make a choice you can own.
+
+Sometimes that means moving forward. Sometimes it means negotiating differently, changing the search, waiting, or walking away.
 
 ---
 
 ## The HBE Buyer Advantage™
 
 ### Unbiased Guidance
-You receive education, analysis, and honest advice. Not pressure.
+Education, analysis, and candid advice without pressure to buy.
 
-### Expert Research
-We investigate properties, neighborhoods, and circumstances before decisions are made.
+### Evidence Before Commitment
+We investigate properties, markets, alternatives, and meaningful unknowns before decisions harden.
 
-### Strategic Negotiation
-We analyze the market and advocate for the strongest possible terms.
+### Tradeoff-Aware Strategy
+Price matters, but so do terms, timing, risk, protection, lifestyle, opportunity cost, and your future plans.
 
 ### Fiduciary Loyalty
-Your interests come first — through loyalty, full disclosure, reasonable care, and confidentiality.
+Your interests come first through loyalty, disclosure, reasonable care, confidentiality, and clear advocacy.
 
-### Win-Win Savings™
-When our work creates additional value, our interests remain aligned with yours.
+### Meaningful Agency
+The choice remains yours. Our work should make you more capable of choosing — not more dependent on someone else choosing for you.
 
 ---
 
-## Ready to make your next home purchase with confidence?
+## Explore before you share
 
-Start with a conversation. Discover what expert buyer representation can do for you — regardless of price range or profession.
+You can see the entire Buyer Journey before providing HBE any personal information.
 
-[Start Your Buyer Discovery →]({{< relref "assessment" >}})
+[Explore the Buyer Journey →](https://buyer.hbexperts.com/)
