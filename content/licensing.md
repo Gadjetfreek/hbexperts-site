@@ -37,22 +37,28 @@ HomeBuyer Experts operates as an **exclusive buyer's brokerage**.
 This means:
 
 - **We do not represent sellers.** Ever.
-- **We do not take listings.** We have no seller clients, no listings to move, no inventory to push.
-- **Our only clients are buyers.** Every tool, every negotiation strategy, every piece of market knowledge we apply is directed toward one goal — the best possible outcome for the buyer.
+- **We do not take listings.** We have no seller clients, no listings to move, and no inventory to push.
+- **Our only clients are buyers.** Our research, negotiation, confidentiality, and advice are directed toward helping each buyer understand the decision and protect their own interests.
 
-This is not just a policy. It is the entire business model.
+This is not just a policy. It is the business model.
 
-In a traditional real estate firm, agents represent both buyers and sellers — often with the same brokerage representing both sides of a transaction. At HBE, that conflict does not exist. Your interests are the only interests we serve.
+Our North Star is simple:
+
+> **What is best for the buyer?**
+
+That answer is not automatically "complete the purchase." Good representation must leave room for the buyer to proceed, renegotiate, pause, change direction, or walk away when the facts and their priorities point there.
 
 ---
 
 ## Why This Matters
 
-When an agent represents both buyers and sellers — or works within a firm that does — there are inherent limitations on how fully they can advocate for either side.
+When a brokerage represents both buyers and sellers, there can be limitations on how fully either side can be advised or advocated for in a particular transaction.
 
-Exclusive buyer representation removes those limitations.
+Exclusive buyer representation is designed to keep HBE's loyalty clear.
 
-Your agent knows what you paid. Your agent knows your timeline, your motivation, and your flexibility. That information is protected — it works for you, not against you.
+Your agent may know sensitive information about your budget, timing, motivation, concerns, flexibility, and alternatives. That information should be protected and used to serve your interests — not to move a transaction forward at your expense.
+
+Representation should increase your ability to understand your options and make your own informed choice.
 
 ---
 
@@ -70,4 +76,4 @@ Brokerage licensing information can be verified through the **Ohio Division of R
 HomeBuyer Experts
 [cwhitehead@hbexperts.com](mailto:cwhitehead@hbexperts.com)
 
-[Start Your Buyer Discovery →]({{< relref "assessment" >}})
+[Explore the Buyer Journey →](https://buyer.hbexperts.com/)
