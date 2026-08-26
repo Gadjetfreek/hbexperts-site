@@ -1,0 +1,63 @@
+$ErrorActionPreference = 'Stop'
+
+Write-Host 'HBE Secure Buyer Platform deployment' -ForegroundColor Cyan
+
+$root = Split-Path -Parent $MyInvocation.MyCommand.Path
+Set-Location $root
+
+Write-Host '1/6 Checking Wrangler authentication...'
+npx --yes wrangler@latest whoami
+
+$dbName = 'hbe-buyer-journey-v2'
+$configPath = Join-Path $root 'wrangler.toml'
+$config = Get-Content $configPath -Raw
+
+Write-Host '2/6 Locating or creating D1 database...'
+$dbs = npx --yes wrangler@latest d1 list --json | ConvertFrom-Json
+$db = $dbs | Where-Object { $_.name -eq $dbName } | Select-Object -First 1
+if (-not $db) {
+  npx --yes wrangler@latest d1 create $dbName
+  $dbs = npx --yes wrangler@latest d1 list --json | ConvertFrom-Json
+  $db = $dbs | Where-Object { $_.name -eq $dbName } | Select-Object -First 1
+}
+if (-not $db -or -not $db.uuid) {
+  throw "Could not resolve D1 database '$dbName'."
+}
+
+$config = [regex]::Replace($config, 'database_id\s*=\s*"[^"]+"', "database_id = `"$($db.uuid)`"")
+Set-Content -Path $configPath -Value $config -Encoding UTF8
+Write-Host "Using D1 database $dbName ($($db.uuid))"
+
+Write-Host '3/6 Applying database schema...'
+npx --yes wrangler@latest d1 execute $dbName --remote --file=schema.sql
+
+Write-Host '4/6 Running local source checks...'
+node --check src/worker.js
+if (Select-String -Path src/worker.js -Pattern 'donald-kelley|localStorage|buyer_token_hash' -Quiet) {
+  throw 'Security/source check failed: legacy buyer-specific or browser-local journey code detected.'
+}
+
+Write-Host '5/6 Deploying Worker...'
+$deployOutput = npx --yes wrangler@latest deploy 2>&1
+$deployOutput | ForEach-Object { Write-Host $_ }
+
+$url = ($deployOutput | Select-String -Pattern 'https://[^\s]+\.workers\.dev' | Select-Object -Last 1).Matches.Value
+if (-not $url) {
+  Write-Warning 'Worker deployed, but the workers.dev URL was not parsed automatically. Copy the URL shown above.'
+  exit 0
+}
+
+Write-Host '6/6 Verifying health endpoint...'
+$health = Invoke-RestMethod -Uri "$url/health" -Method Get
+if (-not $health.ok) {
+  throw 'Health verification failed.'
+}
+
+Write-Host ''
+Write-Host 'LIVE' -ForegroundColor Green
+Write-Host "Buyer link: $url/"
+Write-Host "HBEUI:      $url/hbe"
+Write-Host "Health:     $url/health"
+Write-Host ''
+Write-Host 'Next: configure Cloudflare Access on /hbe* and /api/hbe/* before external beta use.' -ForegroundColor Yellow
+Write-Host 'Sensitive uploads remain disabled until /sensitive* has fresh email-OTP Access protection.' -ForegroundColor Yellow
