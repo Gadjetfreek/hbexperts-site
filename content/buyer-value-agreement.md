@@ -1,54 +1,65 @@
 ---
 title: "The Buyer Value Agreement"
-subtitle: "A commitment to your interests — not a contract designed to protect the agent."
-description: "Understand HBE's Buyer Value Agreement: what it is, why it exists, how it aligns incentives, and what it means for you as a buyer."
+subtitle: "A commitment to your interests — not a contract designed to move a transaction forward."
+description: "Understand HBE's Buyer Value Agreement: what it is, how compensation works, how incentives are handled, and how the relationship is designed around the buyer's interests."
 ---
 
 ## What Is the Buyer Value Agreement?
 
-The Buyer Value Agreement — or BVA — is the formal working arrangement between you and HomeBuyer Experts. But before you picture pages of fine print, know this: the BVA is designed around one idea.
+The Buyer Value Agreement — or BVA — is the formal working arrangement between you and HomeBuyer Experts.
+
+Its purpose is to make the relationship clear before the pressure of a specific property enters the picture.
 
 **We work for you. Exclusively.**
 
 Not the seller. Not the listing agent. Not the builder. You.
 
-The BVA puts that commitment in writing — and goes further by tying our success directly to yours.
+That means our work is governed by a simple North Star:
+
+> **What is best for the buyer?**
+
+The answer is not automatically "complete the purchase." Good representation must leave room to proceed, renegotiate, pause, change direction, or walk away.
 
 ---
 
 ## Why It Exists
 
-Real estate has historically operated in ways that blur whose side an agent is actually on. Buyers often assume they have representation when, in practice, they may not.
+Real estate has historically operated in ways that can blur whose interests an agent is serving and how compensation may influence behavior.
 
-The BVA exists to eliminate that ambiguity.
+The BVA is intended to reduce that ambiguity.
 
-It formally establishes:
+It establishes:
 
 - That HBE represents **you and only you**
 - That our fiduciary duty is to your interests
-- That we will be transparent about compensation — who pays, how much, and why
+- That compensation and incentives will be explained transparently
+- That you retain the ability to decide whether the relationship continues
 
-You deserve to know exactly who is in your corner before you start looking at homes. The BVA is how we make that official.
+You deserve to understand who is in your corner, what they are paid, and what incentives exist before those factors can influence a consequential decision.
 
 ---
 
-## How It Aligns Our Incentives With Yours
+## How We Think About Incentives
 
-Most buyer agreements protect the agent. HBE's BVA is built around a different question: **what's actually good for the buyer?**
+Compensation matters because incentives can shape behavior — even when people mean well.
+
+HBE's responsibility is to make those incentives visible and to structure them so they do not replace the real objective: **helping you make the decision that best serves you.**
 
 ### The Dollar & Dime Program
 
-HBE's compensation is structured so that the more we save you off the list price, the more we earn.
+HBE's compensation includes a performance component connected to negotiated savings from list price.
 
-This is intentional. When your savings go up, our performance bonus goes up. When your outcome improves, so does ours.
+That creates an incentive to negotiate aggressively on price, but price is only one dimension of a good outcome. A lower price does not make a poor-fit property, unacceptable risk, bad timing, or weak terms good for the buyer.
 
-There is no incentive for us to push you toward a higher-priced home, rush a negotiation, or leave money on the table. The entire model points the same direction you do.
+**The Dollar & Dime Program never overrides the HBE North Star.** If the best advice is to walk away, wait, or choose another property, that remains the advice we owe you.
 
 ### Seller and Builder Bonuses Are Rebated to You
 
-Sometimes sellers or builders offer agents extra incentives to close quickly or at a certain price. At HBE, any such bonus or incentive is rebated directly back to you — not kept by the agent.
+Sometimes sellers or builders offer agents extra incentives to close quickly or at a certain price. HBE does not keep those incentives as a reason to steer your decision.
 
-You should not be disadvantaged by behind-the-scenes financial arrangements. Under the BVA, you won't be.
+Any such bonus or incentive is disclosed and rebated to you as described in the agreement.
+
+You should not be disadvantaged by compensation arrangements operating behind the scenes.
 
 ---
 
@@ -56,59 +67,68 @@ You should not be disadvantaged by behind-the-scenes financial arrangements. Und
 
 ### Performance Guarantee
 
-HBE is confident in what we do — confident enough to back it up.
+HBE currently backs its compensation model with a stated performance guarantee:
 
-If HBE does not save you at least **$7,500 off the list price** of your home, your $750 retainer is **fully refunded at closing**.
+If HBE does not save you at least **$7,500 off the list price** of your home, your $750 retainer is **fully refunded at closing**, subject to the terms of the signed agreement.
 
-No fine print. No carve-outs. If we don't deliver, you don't pay.
+The guarantee is one accountability mechanism. It is not our definition of success.
+
+Success is not simply "we saved money and closed." Success means you understood the decision, your interests were represented, material risks and tradeoffs were surfaced, and the choice remained yours.
 
 ### Cancel Anytime
 
-You are never locked in. If at any point you are not satisfied with HBE's representation, you can cancel the agreement.
+You are not meant to be trapped in the relationship. If HBE is not serving you well, the agreement provides a way to end the relationship as described in its terms.
 
-The goal is to earn your continued trust — not to hold you in place with paperwork.
+The goal is to earn continued trust through useful representation — not hold a buyer in place with paperwork.
 
 ### Full Compensation Transparency
 
-You will always know how HBE is compensated. No surprises. No undisclosed arrangements. If a seller is offering a commission, you know. If there's a builder incentive, you know. Everything is disclosed and explained in plain language.
+You should know how HBE is compensated and what other incentives may exist.
+
+If a seller is offering compensation, you should know. If there is a builder incentive, you should know. If our own compensation structure creates an incentive, you should understand that too.
+
+Transparency is part of preserving your agency.
 
 ---
 
 ## When the BVA Is Explained
 
-The BVA is introduced during your **Strategy Session** — a dedicated conversation about your goals, the market, and how HBE works.
+The BVA is introduced during your **Strategy Session** — before you begin touring homes with HBE.
 
-This happens **before** you ever look at homes together. Not in the parking lot of a showing. Not after you've already fallen in love with a property. Before.
+That timing is deliberate.
 
-The goal is that by the time you step into your first home, you already understand the plan, the process, and the relationship.
+Representation, compensation, obligations, and cancellation rights should be understood when you are calm — not first presented in the parking lot of a showing or after you have fallen in love with a property.
+
+The goal is that before the search becomes emotionally charged, you already understand the relationship and can decide whether it works for you.
 
 ---
 
 ## When Anything Is Signed
 
-Nothing is signed until **you are ready to begin viewing homes** — and only when you say so.
+Nothing should be signed simply because HBE has explained it.
 
-There is no pressure. No countdown. No urgency manufactured to rush a decision.
+You decide whether HBE is the right fit and whether you are ready to begin a represented home search.
 
-You decide when you're ready. The paperwork follows your readiness.
+There is no benefit to manufactured urgency. Understanding comes first; your decision follows.
 
 ---
 
 ## The Bottom Line
 
-The Buyer Value Agreement is not about legal protection for the agent. It is about:
+The Buyer Value Agreement is meant to create:
 
-- **Clarity** — you know exactly who works for you
-- **Alignment** — our incentives match yours
-- **Accountability** — we back our performance with a guarantee
-- **Trust** — built before the search begins, not assumed during it
+- **Clarity** — you understand who works for whom
+- **Alignment** — incentives are visible and conflicts are reduced
+- **Accountability** — promises are written down
+- **Agency** — you understand your choices and remain free to make them
+- **Trust** — earned through conduct, not assumed from paperwork
 
-Most agreements protect the agent. This one protects you.
+The agreement is not the purpose of the relationship. The buyer is.
 
 ---
 
-## Ready to Learn More?
+## Explore Before You Decide
 
-The best place to start is a conversation. The Buyer Discovery is a no-pressure, no-obligation step to see if HBE is the right fit for your goals.
+You can see HBE's full Buyer Journey before sharing any personal information.
 
-[Start Your Buyer Discovery →]({{< relref "assessment" >}})
+[Explore the Buyer Journey →](https://buyer.hbexperts.com/)
