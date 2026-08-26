@@ -1,5 +1,5 @@
 name = "hbe-buyer-platform"
-main = "src/ui-worker.js"
+main = "src/portal-worker.js"
 compatibility_date = "2026-08-26"
 workers_dev = false
 preview_urls = false
@@ -32,9 +32,7 @@ namespace_id = "82626002"
   limit = 3
   period = 60
 
-# Optional same-day email alert once hbexperts.com is onboarded/verified for
-# Cloudflare Email Service. The application always creates an unread HBEUI
-# notification even when this binding is not configured.
+# Optional email config stays disabled until the sending domain/path is verified.
 # [[send_email]]
 # name = "HBE_ALERT"
 # destination_address = "cwhitehead@hbexperts.com"
