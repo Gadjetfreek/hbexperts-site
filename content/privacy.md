@@ -1,12 +1,12 @@
 ---
 title: "Privacy Policy"
 subtitle: "How we collect, use, and protect your information."
-description: "HomeBuyer Experts privacy policy — what information we collect, how we use it, and your rights as a visitor and client."
+description: "HomeBuyer Experts privacy policy — what information we collect, why we collect it, how we use it, and your choices."
 ---
 
 **Effective Date: August 2026**
 
-HomeBuyer Experts ("HBE," "we," "us," or "our") is committed to protecting your privacy. This policy explains what information we collect through this website and authorized services, how we use it, and how we keep it safe.
+HomeBuyer Experts ("HBE," "we," "us," or "our") is committed to protecting your privacy and preserving your control over what you choose to share. This policy explains what information we collect through this website and authorized services, how we use it, and how we protect it.
 
 If you have questions, contact us at [cwhitehead@hbexperts.com](mailto:cwhitehead@hbexperts.com).
 
@@ -14,16 +14,32 @@ If you have questions, contact us at [cwhitehead@hbexperts.com](mailto:cwhitehea
 
 ## What Information We Collect
 
-### Information You Provide
+### Information You Choose to Provide
 
-When you complete a form on this website — including the Buyer Discovery assessment or the contact form — you may provide:
+The public HBE website can be browsed without completing the Buyer Experience.
+
+Inside the HBE Buyer Journey, you can explore the process before submitting personal information. A Buyer Experience draft may remain temporarily in your browser session so that normal Back or Refresh actions do not erase your work. HBE does not intentionally create a buyer record from that draft until you deliberately submit it.
+
+When you choose **Submit to HBE**, you may provide information such as:
 
 - Your name
 - Your email address
 - Your phone number
-- Details about your home search, timeline, or goals
+- Your goals, timing, questions, concerns, and home-buying context
+- Information about how you prefer to make and understand consequential decisions
 
-You control what you share. We only ask for what helps us prepare for a meaningful conversation.
+We aim to ask for information only when it has a clear buyer-serving purpose — for example, helping us prepare for a meaningful conversation, understand your priorities, tailor communication, identify relevant tradeoffs, or support your representation.
+
+### Buyer Journey Account and Session Information
+
+After a Buyer Experience is submitted, HBE's secure buyer system may create information needed to provide the BuyerUI, including:
+
+- A buyer record connected to the submitted information
+- A current journey stage and completed stages
+- Secure session records that allow authorized access from one or more devices
+- Notifications indicating that HBE has received a submission
+
+Sensitive document features are intentionally separate from ordinary BuyerUI access and may require additional identity verification when enabled.
 
 ### Google / Gmail Data for Jeebs Gmail Bridge
 
@@ -49,85 +65,95 @@ Users may revoke Google access at any time through their Google Account permissi
 
 ### Automatically Collected Information
 
-Like most websites, we may collect certain technical information automatically when you visit, including:
+Like most websites and internet services, hosting and infrastructure providers may process technical information needed to deliver and protect the service, such as:
 
-- Browser type and version
-- Device type
-- Pages visited and time spent
-- Referring URL
-- General geographic location (city/region level, not precise)
+- IP address
+- Browser and device information
+- Request timestamps
+- Pages or routes requested
+- Security and performance information
 
-This information is collected in aggregate and used to understand how visitors use the site.
+We do not use this information to build advertising profiles or sell behavioral data.
 
 ---
 
 ## How We Use Your Information
 
-Information you provide through forms is used to:
+Buyer information you choose to submit may be used to:
 
-- Prepare for your Buyer Discovery conversation
-- Follow up with you about your home search goals
-- Answer questions you have submitted
+- Prepare for your Buyer Strategy Session or other requested conversation
+- Understand your goals, concerns, priorities, and preferred communication style
+- Help HBE provide buyer representation and maintain your Buyer Journey
+- Identify questions, tradeoffs, alternatives, and next steps relevant to your decision
+- Respond to requests you make
+- Protect the security and integrity of the buyer system
+
+Our use of buyer information is governed by the same principle as our representation:
+
+> **What is best for the buyer?**
+
+Information should help us serve the buyer; it should not become a tool for manipulating the buyer toward a transaction.
 
 Google/Gmail data authorized for Jeebs Gmail Bridge is used only to provide the email functions described above and requested by the authorized user.
 
-**We do not sell, rent, or share your personal information with third parties for marketing purposes. Ever.**
-
-Information is not used to make unsolicited sales calls or added to third-party marketing lists.
+**We do not sell or rent your personal information or provide it to third parties for unrelated marketing purposes.**
 
 ---
 
-## Third-Party Services
+## Service Providers and Infrastructure
 
-This website and related authorized workflows use a small number of third-party services to function:
+HBE uses a limited number of infrastructure and service providers to operate its website and authorized tools.
+
+### Cloudflare
+
+The secure HBE Buyer Journey uses Cloudflare infrastructure, including Cloudflare Workers and D1 database services, to deliver the BuyerUI and store submitted buyer-system data. Cloudflare may process technical request and security information as part of operating those services.
+
+### GitHub Pages
+
+The public HBE informational website is hosted on GitHub Pages. GitHub may log standard server access data as part of normal hosting operations. See GitHub's Privacy Statement for information about GitHub's practices.
 
 ### Google APIs
 
 Jeebs Gmail Bridge uses Google APIs and OAuth authorization to connect user-selected Google/Gmail accounts. Google's own terms and privacy policies also apply to Google's handling of information within its services.
 
-### FormSubmit.co
-Form submissions are processed through [FormSubmit.co](https://formsubmit.co), a form-handling service. When you submit a form, your data passes through their servers to deliver the message to us. Their privacy policy governs how they handle that data in transit.
-
-### GitHub Pages
-This website is hosted on GitHub Pages. GitHub may log standard server access data (IP addresses, request timestamps) as part of normal hosting operations. See [GitHub's Privacy Statement](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement) for details.
-
-### Google Analytics
-This site may use Google Analytics to understand aggregate traffic patterns. If enabled, Google Analytics collects anonymized usage data using cookies. You can opt out using the [Google Analytics Opt-out Browser Add-on](https://tools.google.com/dlpage/gaoptout).
-
 ---
 
-## Cookies
+## Cookies and Sessions
 
-This site may use cookies to support basic functionality and analytics. Cookies are small text files stored in your browser. You can disable cookies in your browser settings, though some site features may not function correctly without them.
+The public informational site may use standard browser technologies needed for functionality or aggregate analytics if enabled.
 
-We do not use cookies to track you across other websites or for targeted advertising.
+The secure Buyer Journey uses a session cookie to keep an authorized buyer signed in. If a buyer deliberately selects a "remember this device" option, that session may persist longer than a normal browser session.
+
+We do not use Buyer Journey session cookies for cross-site advertising or behavioral targeting.
 
 ---
 
 ## Data Retention
 
-Information submitted through forms is retained only as long as necessary to fulfill the purpose for which it was shared — typically the duration of an active buyer relationship or inquiry.
+Buyer information is retained only as long as reasonably necessary for the purpose for which it was shared, an active or reasonably anticipated buyer relationship, legal or professional obligations, security, or legitimate recordkeeping needs.
 
 For Jeebs Gmail Bridge, Gmail content is fetched on demand. The service is designed to avoid retaining a permanent combined copy of connected mailboxes. Authorization credentials and limited operational data may be retained only as necessary to maintain the authorized connection, provide requested functionality, protect the service, and comply with applicable obligations.
 
 ---
 
-## Your Rights
+## Your Choices
 
-You may request to:
+You may contact HBE to request that we:
 
-- Review the personal information we hold about you
+- Tell you what personal information we hold about you
 - Correct inaccurate information
-- Request deletion of your information
-- Revoke connected Google account access through your Google Account permissions
+- Delete information where we are able and permitted to do so
+- Explain why particular buyer information is being requested or used
 
-To make any such request, contact us at [cwhitehead@hbexperts.com](mailto:cwhitehead@hbexperts.com).
+You may revoke connected Google account access through your Google Account permissions.
+
+To make a request, contact [cwhitehead@hbexperts.com](mailto:cwhitehead@hbexperts.com).
 
 ---
 
 ## Changes to This Policy
 
-We may update this privacy policy from time to time. Changes will be reflected by an updated effective date at the top of this page. Continued use of the site after changes constitutes acceptance of the updated policy.
+We may update this privacy policy as HBE's systems and practices evolve. Changes will be reflected by an updated effective date at the top of this page.
 
 ---
 
@@ -135,6 +161,6 @@ We may update this privacy policy from time to time. Changes will be reflected b
 
 For privacy-related questions or concerns:
 
-**HomeBuyer Experts**
-Christopher Whitehead
+**HomeBuyer Experts**  
+Christopher Whitehead  
 [cwhitehead@hbexperts.com](mailto:cwhitehead@hbexperts.com)
