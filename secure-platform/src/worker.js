@@ -1,185 +1,112 @@
 const enc = new TextEncoder();
 
-export default {
-  async fetch(request, env) {
-    const url = new URL(request.url);
-    try {
-      if (request.method === 'GET' && url.pathname === '/') return html(landing());
-      if (request.method === 'GET' && url.pathname === '/questionnaire') return html(questionnaire());
-      if (request.method === 'POST' && url.pathname === '/api/intake') return createBuyer(request, env);
-      if (request.method === 'GET' && url.pathname === '/buyer') return buyerHome(request, env);
-      if (request.method === 'GET' && url.pathname === '/login') return html(loginPage());
-      if (request.method === 'POST' && url.pathname === '/api/login') return loginBuyer(request, env);
-      if (request.method === 'GET' && url.pathname === '/hbe') return hbeHome(request, env);
-      if (request.method === 'POST' && url.pathname.startsWith('/api/hbe/buyer/')) return updateStage(request, env, url);
-      if (request.method === 'GET' && url.pathname === '/health') return json({ok:true, service:'hbe-buyer-platform'});
-      return new Response('Not found', {status:404});
-    } catch (err) {
-      console.error(err);
-      return html(errorPage(), 500);
-    }
-  }
-};
+const STAGES = [
+  ['buyerExperience','Buyer Experience','Start with what matters to you',['Share what is bringing you to the idea of buying a home.','Tell us what you know, what you do not know, and what you are worried about.','Give HBE a useful starting point without needing perfect answers.']],
+  ['consultation','Consultation','Turn answers into understanding',['Talk through your Buyer Experience with an HBE advisor.','Clarify priorities, tradeoffs, timing, risks, and unanswered questions.','Decide whether HBE feels like the right fit for you.']],
+  ['representation','Hire HBE','Choose your representation deliberately',['Understand who HBE represents and what fiduciary representation means.','Review compensation, responsibilities, and the agency agreement.','Choose whether to hire HBE without pressure.']],
+  ['search','Build Your Home Search','Turn priorities into a useful search',['Translate your priorities into search criteria and tradeoffs.','Connect your profile to the MLS search.','Adjust the search as we learn what actually fits.']],
+  ['market','Learn the Market','Understand what the market is really offering',['See what your money buys in the current market.','Compare location, condition, value, and alternatives.','Refine expectations before chasing individual homes.']],
+  ['possibilities','Discover Possibilities','Find homes worth learning from',['Review homes that may fit your evolving profile.','Notice useful possibilities you did not originally expect.','Flag homes worth seeing without letting the search become noise.']],
+  ['evaluation','Evaluate Homes','Learn from each property',['Tour homes with an HBE advisor.','Capture details, observations, photos, and questions worth remembering.','Use each home to improve the next decision.']],
+  ['offer','Ready to Offer?','Decide before negotiating',['Separate excitement from decision quality.','Identify what is still unknown and what could change the decision.','Choose whether making an offer actually serves your goals.']],
+  ['terms','Build the Offer','Construct price and terms deliberately',['Choose price, timing, contingencies, and protections consciously.','Understand what each term gives up or protects.','Build an offer you can live with whether it wins or loses.']],
+  ['negotiation','Negotiate Wisely','Protect leverage and your WHY',['Evaluate counters, concessions, and seller responses.','Keep alternatives and leverage visible.','Choose when to proceed, counter, or walk away.']],
+  ['diligence','Learn What We Did Not Know','Investigate before commitment hardens',['Review disclosures, records, transaction details, and unanswered questions.','Track new facts as they appear.','Ask what each new fact changes about the decision.']],
+  ['inspection','Inspection Decision','Put inspection findings in context',['Separate routine maintenance from meaningful risk.','Identify specialist or follow-up needs.','Choose repairs, credits, acceptance, or exit when available.']],
+  ['value','Value Check','Compare price with independent evidence',['Review appraisal and other value evidence.','Understand any value gap and its consequences.','Choose the response that best protects you.']],
+  ['loan','Final Financing','Finish financing without surprises',['Track underwriting and lender conditions.','Review final cash, payment, and financing expectations.','Protect the transaction from avoidable financing problems.']],
+  ['commitment','Final Decision','Ask whether this is still the right choice',['Compare what you know now with what you knew when you started.','Confirm remaining risks and obligations.','Make sure the home still serves your WHY before final commitment.']],
+  ['closing','Get the Keys','Complete the purchase and take possession',['Verify final documents, funds, and logistics.','Complete the final walk-through and closing.','Get the keys and begin making the home yours.']]
+];
 
-async function createBuyer(request, env) {
-  const form = await request.formData();
-  const first = clean(form.get('first_name'));
-  const last = clean(form.get('last_name'));
-  const email = clean(form.get('email')).toLowerCase();
-  if (!first || !last || !email) return html(questionnaire('Please provide your first name, last name, and email.'), 400);
+export default { async fetch(request, env, ctx) {
+  const url = new URL(request.url);
+  try {
+    if (request.method==='GET' && url.pathname==='/') return html(explorer());
+    if (request.method==='GET' && url.pathname==='/questionnaire') return html(questionnaire());
+    if (request.method==='POST' && url.pathname==='/api/intake') return createBuyer(request,env,ctx);
+    if (request.method==='GET' && url.pathname==='/buyer') return buyerHome(request,env);
+    if (request.method==='GET' && url.pathname==='/login') return html(loginPage());
+    if (request.method==='POST' && url.pathname==='/api/login') return loginBuyer(request,env);
+    if (request.method==='GET' && url.pathname==='/sensitive') return sensitiveHome(request,env);
+    if (request.method==='GET' && url.pathname==='/hbe') return hbeHome(request,env);
+    if (request.method==='POST' && /^\/api\/hbe\/buyer\/[^/]+\/stage$/.test(url.pathname)) return updateStage(request,env,url);
+    if (request.method==='POST' && /^\/api\/hbe\/notification\/[^/]+\/read$/.test(url.pathname)) return markNotificationRead(request,env,url);
+    if (request.method==='GET' && url.pathname==='/health') return json({ok:true,service:'hbe-buyer-platform'});
+    return new Response('Not found',{status:404,headers:securityHeaders()});
+  } catch(err) { console.error(err); return html(errorPage(),500); }
+}};
 
-  const id = crypto.randomUUID();
-  const token = randomToken(24);
-  const code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 900000 + 100000);
-  const tokenHash = await sha256(token);
-  const codeHash = await sha256(`${email}:${code}`);
-  const now = new Date().toISOString();
-  const answers = {
-    phone: clean(form.get('phone')),
-    why: clean(form.get('why')),
-    timeline: clean(form.get('timeline')),
-    location: clean(form.get('location')),
-    financing: clean(form.get('financing')),
-    concerns: clean(form.get('concerns')),
-    notes: clean(form.get('notes'))
-  };
-
-  await env.BUYER_DB.prepare(`INSERT INTO buyers
-    (id,created_at,updated_at,first_name,last_name,email,phone,stage,completed_stages,answers_json,buyer_token_hash,access_code_hash)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`)
-    .bind(id, now, now, first, last, email, answers.phone, 'consultation', JSON.stringify(['buyerExperience']), JSON.stringify(answers), tokenHash, codeHash)
-    .run();
-
-  return html(welcome(first, code), 200, cookie(token));
+async function createBuyer(request,env,ctx){
+  const form=await request.formData(), first=clean(form.get('first_name')), last=clean(form.get('last_name')), email=clean(form.get('email')).toLowerCase(), remember=form.get('remember_device')==='yes';
+  if(!first||!last||!email) return html(questionnaire('Please provide your first name, last name, and email.'),400);
+  if(env.SUBMIT_RATE_LIMITER){const {success}=await env.SUBMIT_RATE_LIMITER.limit({key:await sha256(`submit:${email}`)});if(!success)return html(questionnaire('Please wait a moment before submitting again.'),429)}
+  const id=crypto.randomUUID(), accessCode=readableAccessCode(), accessCodeHash=await sha256(`${email}:${normalizeAccessCode(accessCode)}`), now=new Date().toISOString();
+  const answers={phone:clean(form.get('phone')),why:clean(form.get('why')),timeline:clean(form.get('timeline')),location:clean(form.get('location')),financing:clean(form.get('financing')),concerns:clean(form.get('concerns')),notes:clean(form.get('notes'))};
+  await env.BUYER_DB.batch([
+    env.BUYER_DB.prepare(`INSERT INTO buyers (id,created_at,submitted_at,updated_at,first_name,last_name,email,phone,stage,completed_stages,answers_json,access_code_hash) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`).bind(id,now,now,now,first,last,email,answers.phone,'consultation',JSON.stringify(['buyerExperience']),JSON.stringify(answers),accessCodeHash),
+    env.BUYER_DB.prepare(`INSERT INTO notifications (id,buyer_id,type,created_at,payload_json) VALUES (?,?,?,?,?)`).bind(crypto.randomUUID(),id,'buyer_experience_submitted',now,JSON.stringify({first_name:first,last_name:last,email}))
+  ]);
+  const session=await createBuyerSession(env,id,remember);
+  if(ctx&&env.HBE_ALERT)ctx.waitUntil(sendHbeSubmissionAlert(env,{first,last,email,created_at:now}).catch(err=>console.error('HBE alert email failed',err)));
+  return html(welcome(first,accessCode,remember),200,sessionCookie(session.token,remember));
 }
 
-async function buyerHome(request, env) {
-  const token = getCookie(request, 'hbe_buyer');
-  if (!token) return redirect('/login');
-  const buyer = await findBuyerByToken(env, token);
-  if (!buyer) return redirect('/login');
-  return html(buyerUI(buyer));
+async function buyerHome(request,env){const auth=await getBuyerSession(request,env);if(!auth)return redirect('/login');return html(buyerUI(auth.buyer,auth.session))}
+
+async function loginBuyer(request,env){
+  const form=await request.formData(),email=clean(form.get('email')).toLowerCase(),code=normalizeAccessCode(clean(form.get('code'))),remember=form.get('remember_device')==='yes';
+  if(!email||!code)return html(loginPage('Enter your email and access code.'),400);
+  if(env.LOGIN_RATE_LIMITER){const {success}=await env.LOGIN_RATE_LIMITER.limit({key:await sha256(`login:${email}`)});if(!success)return html(loginPage('Too many attempts. Please wait a minute and try again.'),429)}
+  const buyer=await env.BUYER_DB.prepare('SELECT * FROM buyers WHERE email=? AND access_code_hash=? ORDER BY submitted_at DESC LIMIT 1').bind(email,await sha256(`${email}:${code}`)).first();
+  if(!buyer)return html(loginPage('That email and access code did not match.'),401);
+  const session=await createBuyerSession(env,buyer.id,remember);return redirect('/buyer',sessionCookie(session.token,remember));
 }
 
-async function loginBuyer(request, env) {
-  const form = await request.formData();
-  const email = clean(form.get('email')).toLowerCase();
-  const code = clean(form.get('code'));
-  const codeHash = await sha256(`${email}:${code}`);
-  const buyer = await env.BUYER_DB.prepare('SELECT * FROM buyers WHERE email = ? AND access_code_hash = ? ORDER BY created_at DESC LIMIT 1').bind(email, codeHash).first();
-  if (!buyer) return html(loginPage('That email and access code did not match.'), 401);
-  const token = randomToken(24);
-  const tokenHash = await sha256(token);
-  await env.BUYER_DB.prepare('UPDATE buyers SET buyer_token_hash = ?, updated_at = ? WHERE id = ?').bind(tokenHash, new Date().toISOString(), buyer.id).run();
-  return redirect('/buyer', cookie(token));
-}
+async function createBuyerSession(env,buyerId,remember){const token=randomToken(32),now=new Date(),expires=new Date(now.getTime()+(remember?30*86400000:12*3600000)),id=crypto.randomUUID();await env.BUYER_DB.prepare(`INSERT INTO buyer_sessions (id,buyer_id,token_hash,created_at,last_seen_at,expires_at,remembered) VALUES (?,?,?,?,?,?,?)`).bind(id,buyerId,await sha256(token),now.toISOString(),now.toISOString(),expires.toISOString(),remember?1:0).run();return{id,token}}
 
-async function hbeHome(request, env) {
-  if (!isHbe(request, env)) return new Response('HBE access required', {status:403});
-  const {results} = await env.BUYER_DB.prepare('SELECT id,created_at,updated_at,first_name,last_name,email,phone,stage,completed_stages,answers_json FROM buyers ORDER BY created_at DESC').all();
-  return html(hbeUI(results || []));
-}
+async function getBuyerSession(request,env){const token=getCookie(request,'hbe_session');if(!token)return null;const now=new Date().toISOString();const row=await env.BUYER_DB.prepare(`SELECT s.id AS session_id,s.buyer_id,s.remembered,s.elevated_until,s.expires_at,b.* FROM buyer_sessions s JOIN buyers b ON b.id=s.buyer_id WHERE s.token_hash=? AND s.expires_at>? LIMIT 1`).bind(await sha256(token),now).first();if(!row)return null;await env.BUYER_DB.prepare('UPDATE buyer_sessions SET last_seen_at=? WHERE id=?').bind(now,row.session_id).run();return{session:{id:row.session_id,buyer_id:row.buyer_id,remembered:row.remembered,elevated_until:row.elevated_until,expires_at:row.expires_at},buyer:row}}
 
-async function updateStage(request, env, url) {
-  if (!isHbe(request, env)) return new Response('HBE access required', {status:403});
-  const id = decodeURIComponent(url.pathname.split('/').pop());
-  const form = await request.formData();
-  const stage = clean(form.get('stage'));
-  const allowed = ['consultation','representation','search','market','possibilities','evaluation','offer','terms','negotiation','diligence','inspection','value','loan','commitment','closing','complete'];
-  if (!allowed.includes(stage)) return new Response('Invalid stage', {status:400});
-  await env.BUYER_DB.prepare('UPDATE buyers SET stage = ?, updated_at = ? WHERE id = ?').bind(stage, new Date().toISOString(), id).run();
-  return redirect('/hbe');
-}
+async function sensitiveHome(request,env){const auth=await getBuyerSession(request,env);if(!auth)return redirect('/login');const accessEmail=clean(request.headers.get('Cf-Access-Authenticated-User-Email')).toLowerCase();if(!accessEmail||accessEmail!==String(auth.buyer.email).toLowerCase())return html(stepUpRequired(),403);return html(shellBody('Protected documents',`<section><div class="eyebrow">Protected buyer vault</div><h1>Extra verification confirmed.</h1><p class="lede">This is where contracts, financial documents, and similarly sensitive uploads will live. Uploads remain disabled until this security boundary is configured and tested.</p><a class="btn ghost" href="/buyer">Back to BuyerUI</a></section>`))}
 
-async function findBuyerByToken(env, token) {
-  return env.BUYER_DB.prepare('SELECT * FROM buyers WHERE buyer_token_hash = ?').bind(await sha256(token)).first();
-}
+async function hbeHome(request,env){if(!isHbe(request,env))return new Response('HBE access required',{status:403,headers:securityHeaders()});const[buyers,notifications]=await Promise.all([env.BUYER_DB.prepare('SELECT id,created_at,submitted_at,updated_at,first_name,last_name,email,phone,stage,completed_stages,answers_json FROM buyers ORDER BY submitted_at DESC').all(),env.BUYER_DB.prepare(`SELECT n.id,n.buyer_id,n.type,n.created_at,n.read_at,b.first_name,b.last_name,b.email FROM notifications n JOIN buyers b ON b.id=n.buyer_id ORDER BY n.created_at DESC LIMIT 50`).all()]);return html(hbeUI(buyers.results||[],notifications.results||[]))}
 
-function isHbe(request, env) {
-  const email = (request.headers.get('Cf-Access-Authenticated-User-Email') || '').toLowerCase();
-  return email && email === String(env.HBE_ADMIN_EMAIL || '').toLowerCase();
-}
+async function updateStage(request,env,url){if(!isHbe(request,env))return new Response('HBE access required',{status:403,headers:securityHeaders()});const match=url.pathname.match(/^\/api\/hbe\/buyer\/([^/]+)\/stage$/);if(!match)return new Response('Invalid route',{status:400,headers:securityHeaders()});const id=decodeURIComponent(match[1]),form=await request.formData(),stage=clean(form.get('stage')),allowed=STAGES.slice(1).map(x=>x[0]).concat('complete');if(!allowed.includes(stage))return new Response('Invalid stage',{status:400,headers:securityHeaders()});await env.BUYER_DB.prepare('UPDATE buyers SET stage=?,updated_at=? WHERE id=?').bind(stage,new Date().toISOString(),id).run();return redirect('/hbe')}
 
-function landing() {
-  return shell('HomeBuyer Experts Buyer Experience', `
-    <section class="hero"><div class="eyebrow">HomeBuyer Experts</div><h1>Your HomeBuyer journey starts with you.</h1>
-    <p class="lede">Before we talk about houses, we want to understand the human making the decision. This first step is the Buyer Experience questionnaire.</p>
-    <p>You can look around here without an account. We do not create your private BuyerUI until you choose to begin and submit the questionnaire.</p>
-    <a class="btn primary" href="/questionnaire">Start the Buyer Experience</a>
-    <a class="btn ghost" href="/login">Already started? Open my BuyerUI</a></section>`);
-}
+async function markNotificationRead(request,env,url){if(!isHbe(request,env))return new Response('HBE access required',{status:403,headers:securityHeaders()});const match=url.pathname.match(/^\/api\/hbe\/notification\/([^/]+)\/read$/);if(!match)return new Response('Invalid route',{status:400,headers:securityHeaders()});await env.BUYER_DB.prepare('UPDATE notifications SET read_at=? WHERE id=?').bind(new Date().toISOString(),decodeURIComponent(match[1])).run();return redirect('/hbe')}
 
-function questionnaire(message='') {
-  return shell('Buyer Experience', `
-    <section><div class="eyebrow">Step 1 · Buyer Experience</div><h1>Tell us where you are starting from.</h1>
-    <p class="lede">There are no perfect answers. Share what you know today; uncertainty is useful information too.</p>${message?`<div class="notice">${esc(message)}</div>`:''}
-    <form method="post" action="/api/intake">
-      <div class="grid2"><label>First name<input name="first_name" autocomplete="given-name" required></label><label>Last name<input name="last_name" autocomplete="family-name" required></label></div>
-      <div class="grid2"><label>Email<input type="email" name="email" autocomplete="email" required></label><label>Phone<input name="phone" autocomplete="tel"></label></div>
-      <label>Why are you thinking about buying a home now?<textarea name="why" rows="4"></textarea></label>
-      <label>What timing are you imagining?<input name="timeline" placeholder="For example: soon, this fall, next year, unsure"></label>
-      <label>Where are you hoping to live?<input name="location" placeholder="Cities, neighborhoods, school area, commute, or unsure"></label>
-      <label>Where are you with financing?<select name="financing"><option value="">Choose one</option><option>Haven't started</option><option>Talking with lenders</option><option>Preapproved</option><option>Cash purchase</option><option>Not sure</option></select></label>
-      <label>What concerns or questions are already on your mind?<textarea name="concerns" rows="4"></textarea></label>
-      <label>Anything else you want HBE to understand at the start?<textarea name="notes" rows="4"></textarea></label>
-      <button class="btn primary" type="submit">Save my Buyer Experience</button>
-    </form></section>`);
-}
+async function sendHbeSubmissionAlert(env,s){const to=env.HBE_ALERT_TO||env.HBE_ADMIN_EMAIL,from=env.HBE_ALERT_FROM||'buyer-alerts@hbexperts.com';await env.HBE_ALERT.send({to,from,subject:`New HBE Buyer Experience: ${s.first} ${s.last}`,text:`A new Buyer Experience was submitted to HomeBuyer Experts.\n\nBuyer: ${s.first} ${s.last}\nEmail: ${s.email}\nSubmitted: ${s.created_at}\n\nOpen the protected HBEUI to review the submission. The buyer's questionnaire answers are intentionally not copied into this email.`})}
+function isHbe(request,env){const email=clean(request.headers.get('Cf-Access-Authenticated-User-Email')).toLowerCase();return email&&email===String(env.HBE_ADMIN_EMAIL||'').toLowerCase()}
 
-function welcome(first, code) {
-  return shell('Buyer Experience saved', `
-    <section class="hero"><div class="eyebrow">Buyer Experience saved</div><h1>Thanks, ${esc(first)}.</h1>
-    <p class="lede">Your private buyer record now exists in HBE's central system. Your next stop is the consultation.</p>
-    <div class="code"><small>Your cross-device access code</small><strong>${esc(code)}</strong></div>
-    <p>Keep this six-digit code. On another phone, tablet, or computer, use your email plus this code to open the same BuyerUI.</p>
-    <a class="btn primary" href="/buyer">Open my BuyerUI</a></section>`);
-}
+function explorer(){return shellBody('HomeBuyer Roadmap',`<section><div class="eyebrow">HomeBuyer Experts · BuyerUI preview</div><h1>See the whole road before you share anything.</h1><p class="lede">Explore every stage below. Nothing personal is collected or stored by HBE just for viewing this map.</p><div class="status"><small>Your only active step</small><strong>Buyer Experience</strong></div>${roadmap('buyerExperience',[])}<div class="startbar"><div><strong>Ready to begin?</strong><small>Your answers stay on this device until you press “Submit to HBE.”</small></div><a class="btn primary" href="/questionnaire">Start the Buyer Experience</a></div><a class="btn ghost" href="/login">Already submitted? Open my BuyerUI</a></section>${stageModalScript()}`)}
 
-function loginPage(message='') {
-  return shell('Open my BuyerUI', `<section class="hero"><div class="eyebrow">Private BuyerUI</div><h1>Open your journey on this device.</h1>
-  <p class="lede">Use the same email you entered in the Buyer Experience and your six-digit access code.</p>${message?`<div class="notice">${esc(message)}</div>`:''}
-  <form method="post" action="/api/login"><label>Email<input type="email" name="email" required></label><label>Access code<input inputmode="numeric" pattern="[0-9]{6}" name="code" required></label><button class="btn primary">Open my BuyerUI</button></form></section>`);
-}
+function questionnaire(message=''){return shellBody('Buyer Experience',`<section><div class="eyebrow">Buyer Experience · not submitted yet</div><h1>Tell us where you are starting from.</h1><p class="lede">Until you press <strong>Submit to HBE</strong>, these answers are not sent to or stored by HomeBuyer Experts. A temporary draft stays only in this browser session so Back/Refresh does not erase your work.</p>${message?`<div class="notice">${esc(message)}</div>`:''}<form id="buyerExperienceForm" method="post" action="/api/intake"><div class="grid2"><label>First name<input name="first_name" autocomplete="given-name" required></label><label>Last name<input name="last_name" autocomplete="family-name" required></label></div><div class="grid2"><label>Email<input type="email" name="email" autocomplete="email" required></label><label>Phone<input name="phone" autocomplete="tel"></label></div><label>Why are you thinking about buying a home now?<textarea name="why" rows="4"></textarea></label><label>What timing are you imagining?<input name="timeline" placeholder="For example: soon, this fall, next year, unsure"></label><label>Where are you hoping to live?<input name="location" placeholder="Cities, neighborhoods, commute, or unsure"></label><label>Where are you with financing?<select name="financing"><option value="">Choose one</option><option>Haven't started</option><option>Talking with lenders</option><option>Preapproved</option><option>Cash purchase</option><option>Not sure</option></select></label><label>What concerns or questions are already on your mind?<textarea name="concerns" rows="4"></textarea></label><label>Anything else you want HBE to understand at the start?<textarea name="notes" rows="4"></textarea></label><label class="check"><input type="checkbox" name="remember_device" value="yes"><span><strong>Remember this device</strong><small>Keep this BuyerUI signed in for up to 30 days. Contracts and financial-document areas will still require extra verification.</small></span></label><div class="submitbox"><p><strong>This is the moment HBE receives your information.</strong><br><small>Submitting creates your private buyer record and alerts HBE that your Buyer Experience is ready for review.</small></p><button class="btn primary" type="submit">Submit to HBE</button></div></form><a class="btn ghost" href="/">Back to the roadmap</a></section>${draftScript()}`)}
 
-function buyerUI(b) {
-  const completed = JSON.parse(b.completed_stages || '[]');
-  const steps = [
-    ['buyerExperience','Buyer Experience'],['consultation','Consultation'],['representation','Hire HBE'],['search','Build Your Home Search'],['market','Learn the Market'],['possibilities','Discover Possibilities'],['evaluation','Evaluate Homes'],['offer','Ready to Offer?'],['terms','Build the Offer'],['negotiation','Negotiate Wisely'],['diligence','Learn What We Did Not Know'],['inspection','Inspection Decision'],['value','Value Check'],['loan','Final Financing'],['commitment','Final Decision'],['closing','Get the Keys']
-  ];
-  let reached = true;
-  const stageHtml = steps.map(([id,label],i) => {
-    const done = completed.includes(id) || steps.findIndex(x=>x[0]===b.stage) > i;
-    const current = id === b.stage;
-    const open = done || current;
-    if(current) reached=false;
-    return `<div class="step ${done?'done':''} ${current?'current':''} ${open?'':'locked'}"><span>${done?'✓':i+1}</span><div><strong>${esc(label)}</strong><small>${current?'Current step':done?'Completed':'We will open this when you reach it.'}</small></div></div>`;
-  }).join('');
-  return shell(`${b.first_name}'s BuyerUI`, `<section><div class="eyebrow">HomeBuyer Experts · BuyerUI</div><h1>${esc(b.first_name)}'s HomeBuyer Roadmap</h1><p class="lede">One journey. The same state on every device.</p><div class="status"><small>Current step</small><strong>${esc(titleCase(b.stage))}</strong></div><div class="road">${stageHtml}</div><p class="muted">HBE and your BuyerUI now read this stage from the central buyer record rather than this browser.</p></section>`);
-}
+function welcome(first,code,remembered){return shellBody('Buyer Experience submitted',`<section class="hero"><div class="eyebrow">Submitted to HBE</div><h1>Thanks, ${esc(first)}.</h1><p class="lede">Your private buyer record now exists in HBE's central system, and HBE has been alerted that your Buyer Experience is ready.</p><div class="code"><small>Your cross-device access code</small><strong>${esc(code)}</strong></div><p>Keep this code somewhere private. Use it with your email to open the same BuyerUI on another phone, tablet, or computer.</p><p class="muted">${remembered?'This device is remembered for up to 30 days.':'This device is signed in for this browser session.'} Sensitive contract or financial-document areas will require an additional identity check.</p><a class="btn primary" href="/buyer">Open my BuyerUI</a></section><script>try{sessionStorage.removeItem('hbe:buyer-experience:draft')}catch{}</script>`)}
 
-function hbeUI(rows) {
-  const cards = rows.map(b => {
-    const a = safeJson(b.answers_json);
-    return `<article class="buyer"><div class="eyebrow">${esc(b.stage)}</div><h2>${esc(b.first_name)} ${esc(b.last_name)}</h2><p>${esc(b.email)}${b.phone?` · ${esc(b.phone)}`:''}</p><p><strong>WHY:</strong> ${esc(a.why||'Not stated')}</p><p><strong>Timing:</strong> ${esc(a.timeline||'Not stated')}</p><form method="post" action="/api/hbe/buyer/${encodeURIComponent(b.id)}/stage"><label>Current journey step<select name="stage">${['consultation','representation','search','market','possibilities','evaluation','offer','terms','negotiation','diligence','inspection','value','loan','commitment','closing','complete'].map(s=>`<option ${s===b.stage?'selected':''}>${s}</option>`).join('')}</select></label><button class="btn primary">Update shared state</button></form></article>`;
-  }).join('');
-  return shell('HBEUI', `<section><div class="eyebrow">HomeBuyer Experts · HBEUI</div><h1>Active buyers</h1><p class="lede">This screen and every BuyerUI are reading the same D1 record.</p><div class="buyers">${cards||'<p>No buyer records yet.</p>'}</div></section>`);
-}
+function loginPage(message=''){return shellBody('Open my BuyerUI',`<section class="hero"><div class="eyebrow">Private BuyerUI</div><h1>Open your journey on this device.</h1><p class="lede">Use the email you submitted to HBE and your private cross-device access code.</p>${message?`<div class="notice">${esc(message)}</div>`:''}<form method="post" action="/api/login"><label>Email<input type="email" name="email" autocomplete="email" required></label><label>Access code<input name="code" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX-XXXX-XXXX" required></label><label class="check"><input type="checkbox" name="remember_device" value="yes"><span><strong>Remember this device</strong><small>Stay signed in for up to 30 days on this device.</small></span></label><button class="btn primary">Open my BuyerUI</button></form></section>`)}
 
-function shell(title, body) {
-  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive"><title>${esc(title)}</title><style>
-  :root{--ink:#34271d;--paper:#f4e6bf;--paper2:#ead6a4;--deep:#49331f;--gold:#a87523}*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#cfb77d,#bfa064);color:var(--ink);font-family:Inter,system-ui,sans-serif;min-height:100vh}.wrap{max-width:980px;margin:auto;padding:28px 18px 70px}section{background:rgba(249,237,204,.94);border:1px solid #8f7043;border-radius:20px;padding:clamp(22px,5vw,48px);box-shadow:0 20px 60px #4d351c33}.hero{margin-top:8vh}.eyebrow{font-size:11px;font-weight:850;letter-spacing:.15em;text-transform:uppercase;color:#76511e}h1,h2{font-family:Georgia,serif}h1{font-size:clamp(36px,7vw,68px);line-height:.98;margin:10px 0 18px}h2{margin:4px 0}.lede{font-size:18px;line-height:1.55;max-width:760px}.btn{display:inline-block;border:0;border-radius:999px;padding:13px 18px;margin:10px 8px 0 0;text-decoration:none;font-weight:800;cursor:pointer}.primary{background:var(--deep);color:white}.ghost{background:transparent;border:1px solid #80633d;color:var(--deep)}label{display:block;font-weight:750;margin:16px 0 6px}input,textarea,select{width:100%;font:inherit;padding:12px;border-radius:10px;border:1px solid #9d8057;background:#fffaf0}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.notice{background:#fff2c8;border-left:4px solid var(--gold);padding:12px}.code{display:inline-grid;padding:16px 22px;border:1px dashed #7c5c2d;background:#fff4d6;border-radius:14px;margin:12px 0}.code small{font-weight:800;text-transform:uppercase}.code strong{font:700 40px Georgia,serif;letter-spacing:.12em}.status{display:inline-grid;background:#4a3422;color:#fff;padding:12px 16px;border-radius:12px;margin:8px 0 22px}.status small{text-transform:uppercase;font-weight:800}.status strong{font:700 24px Georgia,serif}.road{display:grid;gap:9px}.step{display:grid;grid-template-columns:40px 1fr;gap:10px;align-items:center;padding:10px 12px;background:#f7e9c4;border:1px solid #9a794c;border-radius:12px}.step>span{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;border:2px solid #76572f;font-weight:900}.step strong,.step small{display:block}.step.current{outline:3px solid #b17a22}.step.done>span{background:#4a3422;color:white}.step.locked{opacity:.46}.buyers{display:grid;gap:14px}.buyer{background:#f8eac6;border:1px solid #957344;border-radius:14px;padding:18px}.muted{opacity:.75}@media(max-width:640px){.grid2{grid-template-columns:1fr}.wrap{padding:12px 10px 50px}section{border-radius:14px}h1{font-size:40px}.btn{width:100%;text-align:center;margin-right:0}}
-  </style></head><body><main class="wrap">${body}</main></body></html>`;
-}
+function buyerUI(b,session){const completed=safeJsonArray(b.completed_stages);return shellBody(`${b.first_name}'s BuyerUI`,`<section><div class="eyebrow">HomeBuyer Experts · BuyerUI</div><h1>${esc(b.first_name)}'s HomeBuyer Roadmap</h1><p class="lede">This journey state comes from HBE's central record, so the same current step appears on your phone, tablet, and computer.</p><div class="status"><small>Current step</small><strong>${esc(stageLabel(b.stage))}</strong></div>${roadmap(b.stage,completed)}<div class="vault"><div><strong>Contracts & financial documents</strong><small>Protected separately because these files deserve a higher security bar.</small></div><a class="btn ghost" href="/sensitive">Open protected area</a></div><p class="muted">${session.remembered?'This device is remembered.':'This is a non-persistent session.'} Sensitive uploads require Cloudflare Access email verification even on a remembered device.</p></section>${stageModalScript()}`)}
 
-function errorPage(){return shell('Something went wrong','<section><h1>Something went wrong.</h1><p>Your answers were not intentionally discarded. Please return and try again or contact HBE.</p></section>')}
-function clean(v){return String(v??'').trim().slice(0,5000)}
+function hbeUI(rows,notes){const unread=notes.filter(n=>!n.read_at),alerts=unread.map(n=>`<article class="alert"><div><strong>New Buyer Experience · ${esc(n.first_name)} ${esc(n.last_name)}</strong><small>${esc(n.email)} · ${esc(n.created_at)}</small></div><form method="post" action="/api/hbe/notification/${encodeURIComponent(n.id)}/read"><button class="btn ghost">Mark seen</button></form></article>`).join(''),cards=rows.map(b=>{const a=safeJson(b.answers_json);return `<article class="buyer"><div class="eyebrow">${esc(stageLabel(b.stage))}</div><h2>${esc(b.first_name)} ${esc(b.last_name)}</h2><p>${esc(b.email)}${b.phone?` · ${esc(b.phone)}`:''}</p><p><strong>WHY:</strong> ${esc(a.why||'Not stated')}</p><p><strong>Timing:</strong> ${esc(a.timeline||'Not stated')}</p><p><strong>Concerns:</strong> ${esc(a.concerns||'Not stated')}</p><form method="post" action="/api/hbe/buyer/${encodeURIComponent(b.id)}/stage"><label>Current journey step<select name="stage">${STAGES.slice(1).map(s=>`<option value="${s[0]}" ${s[0]===b.stage?'selected':''}>${esc(s[1])}</option>`).join('')}<option value="complete" ${b.stage==='complete'?'selected':''}>Complete</option></select></label><button class="btn primary">Update shared state</button></form></article>`}).join('');return shellBody('HBEUI',`<section><div class="eyebrow">HomeBuyer Experts · HBEUI</div><h1>Active buyer truth</h1><p class="lede">BuyerUI and HBEUI now read the same D1 records.</p><div class="alerthead"><strong>${unread.length} new submission${unread.length===1?'':'s'} requiring attention</strong></div>${alerts||'<p class="muted">No unseen Buyer Experience submissions.</p>'}<div class="buyers">${cards||'<p>No buyer records yet.</p>'}</div></section>`)}
+
+function roadmap(currentStage,completed){const currentIndex=STAGES.findIndex(s=>s[0]===currentStage),journeyComplete=currentStage==='complete';return `<div class="map" aria-label="HomeBuyer roadmap">${STAGES.map((s,i)=>{const done=journeyComplete||completed.includes(s[0])||(currentIndex>i&&currentIndex>=0),current=s[0]===currentStage;return `<button type="button" class="mapstop ${done?'done':''} ${current?'current':''} ${!done&&!current?'future':''}" data-stage="${esc(s[0])}"><span>${done?'✓':i+1}</span><strong>${esc(s[1])}</strong><small>${esc(s[2])}</small></button>`}).join('')}</div>`}
+function stageModalScript(){const payload=JSON.stringify(Object.fromEntries(STAGES.map(s=>[s[0],{label:s[1],summary:s[2],bullets:s[3]}]))).replace(/</g,'\\u003c');return `<div id="stageModal" class="modal hidden" role="dialog" aria-modal="true"><div class="modalcard"><button id="closeStage" class="x" type="button" aria-label="Close">×</button><div class="eyebrow">What happens here</div><h2 id="stageTitle"></h2><p id="stageSummary"></p><ul id="stageBullets"></ul><div id="stageAction"></div></div></div><script>(()=>{const stages=${payload},m=document.querySelector('#stageModal'),title=document.querySelector('#stageTitle'),summary=document.querySelector('#stageSummary'),bullets=document.querySelector('#stageBullets'),action=document.querySelector('#stageAction');document.querySelectorAll('[data-stage]').forEach(b=>b.addEventListener('click',()=>{const s=stages[b.dataset.stage];title.textContent=s.label;summary.textContent=s.summary;bullets.innerHTML='';s.bullets.forEach(x=>{const li=document.createElement('li');li.textContent=x;bullets.appendChild(li)});action.innerHTML=b.dataset.stage==='buyerExperience'?'<a class="btn primary" href="/questionnaire">Start the Buyer Experience</a>':'';m.classList.remove('hidden')}));document.querySelector('#closeStage')?.addEventListener('click',()=>m.classList.add('hidden'));m?.addEventListener('click',e=>{if(e.target===m)m.classList.add('hidden')});document.addEventListener('keydown',e=>{if(e.key==='Escape')m?.classList.add('hidden')})})();</script>`}
+function draftScript(){return `<script>(()=>{const form=document.querySelector('#buyerExperienceForm'),key='hbe:buyer-experience:draft';try{const saved=JSON.parse(sessionStorage.getItem(key)||'{}');for(const[k,v]of Object.entries(saved)){const el=form.elements.namedItem(k);if(el&&el.type!=='checkbox')el.value=v}}catch{}const save=()=>{const data={};new FormData(form).forEach((v,k)=>{if(k!=='remember_device')data[k]=String(v)});sessionStorage.setItem(key,JSON.stringify(data))};form.addEventListener('input',save);form.addEventListener('change',save)})();</script>`}
+function stepUpRequired(){return shellBody('Extra verification required',`<section class="hero"><div class="eyebrow">Protected buyer vault</div><h1>Extra verification is required here.</h1><p class="lede">A remembered BuyerUI session is intentionally not enough for contracts or financial documents. This route must be protected by Cloudflare Access One-Time PIN, and the verified Access email must match the buyer record.</p><p>If you reached this page without being asked for an email code, the sensitive-route Access policy is not configured yet and this area remains locked.</p><a class="btn ghost" href="/buyer">Back to BuyerUI</a></section>`)}
+function shellBody(title,body){return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive"><title>${esc(title)}</title><style>:root{--ink:#34271d;--deep:#49331f;--gold:#a87523;--line:#8f7043}*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#cfb77d,#bfa064);color:var(--ink);font-family:Inter,system-ui,sans-serif;min-height:100vh}.wrap{max-width:1120px;margin:auto;padding:24px 14px 70px}section{background:rgba(249,237,204,.96);border:1px solid var(--line);border-radius:20px;padding:clamp(20px,4vw,44px);box-shadow:0 20px 60px #4d351c33}.hero{margin-top:7vh}.eyebrow{font-size:11px;font-weight:850;letter-spacing:.15em;text-transform:uppercase;color:#76511e}h1,h2{font-family:Georgia,serif}h1{font-size:clamp(34px,6vw,64px);line-height:1;margin:10px 0 18px}h2{font-size:28px;margin:8px 0}.lede{font-size:18px;line-height:1.55;max-width:800px}.btn{display:inline-block;border:0;border-radius:999px;padding:12px 17px;margin:8px 8px 0 0;text-decoration:none;font-weight:800;cursor:pointer}.primary{background:var(--deep);color:white}.ghost{background:transparent;border:1px solid #80633d;color:var(--deep)}label{display:block;font-weight:750;margin:16px 0 6px}input,textarea,select{width:100%;font:inherit;padding:12px;border-radius:10px;border:1px solid #9d8057;background:#fffaf0}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.notice{background:#fff2c8;border-left:4px solid var(--gold);padding:12px}.status{display:inline-grid;background:#4a3422;color:#fff;padding:11px 15px;border-radius:12px;margin:8px 0 20px}.status small,.status strong{display:block}.status small{text-transform:uppercase;font-weight:800}.status strong{font:700 23px Georgia,serif}.map{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0 26px}.mapstop{text-align:left;display:grid;grid-template-columns:34px 1fr;column-gap:8px;align-items:start;min-height:92px;padding:11px;border:1px solid #917144;border-radius:14px;background:#f6e8c2;color:inherit;cursor:pointer}.mapstop>span{grid-row:1/3;width:28px;height:28px;border-radius:50%;border:2px solid #75552d;display:grid;place-items:center;font-weight:900}.mapstop strong,.mapstop small{display:block}.mapstop small{font-size:11px;line-height:1.3;margin-top:4px}.mapstop.future{opacity:.57}.mapstop.current{outline:3px solid var(--gold);opacity:1}.mapstop.done>span{background:var(--deep);color:white}.startbar,.vault,.submitbox,.alert{display:flex;justify-content:space-between;gap:14px;align-items:center;padding:14px;border:1px solid #9b7b4e;border-radius:14px;background:#fff1cd}.startbar small,.vault small,.alert small{display:block;margin-top:3px}.code{display:inline-grid;padding:16px 22px;border:1px dashed #7c5c2d;background:#fff4d6;border-radius:14px;margin:12px 0}.code small{font-weight:800;text-transform:uppercase}.code strong{font:700 clamp(22px,5vw,38px) Georgia,serif;letter-spacing:.08em}.check{display:flex;gap:10px;align-items:flex-start;padding:12px;border:1px solid #ad8b59;border-radius:12px;background:#fff6dd}.check input{width:auto;margin-top:4px}.check strong,.check small{display:block}.submitbox{margin-top:18px}.buyers{display:grid;gap:14px;margin-top:22px}.buyer{background:#f7e8c2;border:1px solid #9a7745;border-radius:14px;padding:16px}.alerthead{margin-top:22px}.alert{margin-top:10px}.muted{opacity:.72;font-size:13px}.modal{position:fixed;inset:0;background:#22180fb8;display:grid;place-items:center;padding:18px;z-index:20}.modal.hidden{display:none}.modalcard{position:relative;width:min(620px,100%);max-height:85vh;overflow:auto;background:#f8eac7;border:1px solid #8f7043;border-radius:18px;padding:26px;box-shadow:0 30px 90px #0006}.modalcard li{margin:10px 0;line-height:1.45}.x{position:absolute;right:12px;top:8px;border:0;background:transparent;font-size:30px;cursor:pointer;color:var(--ink)}@media(max-width:850px){.map{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:620px){.grid2{grid-template-columns:1fr}.map{grid-template-columns:1fr}.mapstop{min-height:72px}.startbar,.vault,.submitbox,.alert{display:block}.wrap{padding:10px 8px 40px}section{border-radius:14px}h1{font-size:38px}}</style></head><body><main class="wrap">${body}</main></body></html>`}
+function html(body,status=200,setCookie=null){const h=securityHeaders();h.set('content-type','text/html; charset=utf-8');if(setCookie)h.append('set-cookie',setCookie);return new Response(body,{status,headers:h})}
+function json(v,status=200){const h=securityHeaders();h.set('content-type','application/json');return new Response(JSON.stringify(v),{status,headers:h})}
+function redirect(location,setCookie=null){const h=securityHeaders();h.set('location',location);if(setCookie)h.append('set-cookie',setCookie);return new Response(null,{status:303,headers:h})}
+function securityHeaders(){return new Headers({'Cache-Control':'no-store','Referrer-Policy':'no-referrer','X-Content-Type-Options':'nosniff','X-Frame-Options':'DENY','Permissions-Policy':'camera=(), microphone=(), geolocation=()','Content-Security-Policy':"default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data:; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"})}
+function sessionCookie(token,remember){return `hbe_session=${encodeURIComponent(token)}; Path=/; HttpOnly; Secure; SameSite=Lax${remember?'; Max-Age=2592000':''}`}
+function getCookie(request,name){const raw=request.headers.get('cookie')||'';for(const p of raw.split(';')){const[k,...v]=p.trim().split('=');if(k===name)return decodeURIComponent(v.join('='))}return null}
+function clean(v){return String(v||'').trim().slice(0,5000)}
 function esc(v=''){return String(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
-function safeJson(v){try{return JSON.parse(v||'{}')}catch{return {}}}
-function titleCase(v){return String(v||'').replace(/([A-Z])/g,' $1').replace(/^./,m=>m.toUpperCase())}
-function randomToken(bytes){const a=crypto.getRandomValues(new Uint8Array(bytes));return btoa(String.fromCharCode(...a)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
-async function sha256(v){const d=await crypto.subtle.digest('SHA-256',enc.encode(v));return [...new Uint8Array(d)].map(x=>x.toString(16).padStart(2,'0')).join('')}
-function getCookie(req,name){const hit=(req.headers.get('Cookie')||'').split(';').map(x=>x.trim()).find(x=>x.startsWith(name+'='));return hit?decodeURIComponent(hit.slice(name.length+1)):''}
-function cookie(token){return {'Set-Cookie':`hbe_buyer=${encodeURIComponent(token)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000`}}
-function html(body,status=200,extra={}){return new Response(body,{status,headers:{'content-type':'text/html; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff','referrer-policy':'no-referrer','content-security-policy':"default-src 'self'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",...extra}})}
-function json(obj){return new Response(JSON.stringify(obj),{headers:{'content-type':'application/json','cache-control':'no-store'}})}
-function redirect(path,extra={}){return new Response(null,{status:303,headers:{Location:path,...extra}})}
+function safeJson(v){try{return JSON.parse(v||'{}')}catch{return {}}}function safeJsonArray(v){try{const x=JSON.parse(v||'[]');return Array.isArray(x)?x:[]}catch{return []}}
+function stageLabel(id){return STAGES.find(s=>s[0]===id)?.[1]||(id==='complete'?'Journey complete':id)}
+function normalizeAccessCode(v){return String(v||'').toUpperCase().replace(/[^A-Z0-9]/g,'')}
+function readableAccessCode(){const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',bytes=crypto.getRandomValues(new Uint8Array(16)),s=Array.from(bytes,b=>alphabet[b&31]).join('');return s.match(/.{1,4}/g).join('-')}
+function randomToken(bytes){const a=crypto.getRandomValues(new Uint8Array(bytes));let s='';for(const b of a)s+=String.fromCharCode(b);return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
+async function sha256(value){const d=await crypto.subtle.digest('SHA-256',enc.encode(value));return Array.from(new Uint8Array(d),b=>b.toString(16).padStart(2,'0')).join('')}
+function errorPage(){return shellBody('Something went wrong','<section class="hero"><h1>Something went wrong.</h1><p>Your information was not intentionally exposed. Please return to the previous page and try again.</p></section>')}
