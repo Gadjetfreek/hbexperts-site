@@ -45,13 +45,15 @@ Compensation matters because incentives can shape behavior — even when people 
 
 HBE's responsibility is to make those incentives visible and to structure them so they do not replace the real objective: **helping you make the decision that best serves you.**
 
-### The Dollar & Dime Program
+### Win-Win Savings™
 
 HBE's compensation includes a performance component connected to negotiated savings from list price.
 
+We call this **Win-Win Savings™** because the incentive is designed to move in the same direction as the buyer's financial interest: when HBE creates measurable negotiated savings, HBE may share in a portion of that value as described in the agreement.
+
 That creates an incentive to negotiate aggressively on price, but price is only one dimension of a good outcome. A lower price does not make a poor-fit property, unacceptable risk, bad timing, or weak terms good for the buyer.
 
-**The Dollar & Dime Program never overrides the HBE North Star.** If the best advice is to walk away, wait, or choose another property, that remains the advice we owe you.
+**Win-Win Savings™ never overrides the HBE North Star.** If the best advice is to walk away, wait, or choose another property, that remains the advice we owe you.
 
 ### Seller and Builder Bonuses Are Rebated to You
 
