@@ -1,5 +1,5 @@
 name = "hbe-buyer-platform"
-main = "src/portal-worker.js"
+main = "src/access-code-worker.js"
 compatibility_date = "2026-08-26"
 workers_dev = false
 preview_urls = false
