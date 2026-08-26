@@ -1,20 +1,22 @@
 ---
 title: "Experience Matters When the Decision Matters"
-subtitle: "For more than 20 years, HomeBuyer Experts has focused on one mission: helping buyers make smarter, more confident real estate decisions."
-description: "Meet the team behind HomeBuyer Experts — over 20 years of exclusive buyer representation in Northeast Ohio."
+subtitle: "For more than 20 years, HomeBuyer Experts has focused on one question: what is best for the buyer?"
+description: "Meet HomeBuyer Experts — an exclusive buyer brokerage built to help Northeast Ohio buyers understand consequential housing decisions and choose wisely."
 ---
 
 ## Why HomeBuyer Experts Exists
 
-Buying a home is more than finding a property. It is a financial decision. A lifestyle decision. A long-term investment.
+Buying a home is more than finding a property. It is a financial decision, a lifestyle decision, and often a decision about family, time, risk, and the future.
 
-Too often, buyers enter the process assuming someone is protecting their interests, only to discover that real estate transactions can involve competing priorities.
+Too often, the machinery of a real estate transaction can begin moving before the buyer has had enough space to understand what they are actually choosing.
 
-HomeBuyer Experts was created around a simple belief:
+HomeBuyer Experts was created around a simple North Star:
 
-> **Buyers deserve dedicated representation.**
+> **What is best for the buyer?**
 
-Your goals should guide the process — not the transaction.
+That means your goals should guide the process — not the transaction.
+
+It also means our job is not to make every buyer buy. Our job is to help you see the decision clearly enough to choose: this home, another home, a different plan, more time, or no purchase at all.
 
 ---
 
@@ -32,60 +34,69 @@ His background combines:
 - Business ownership
 - Leadership and service
 
-This experience shaped a simple philosophy: **the best real estate decisions happen when buyers have the information, guidance, and advocacy they need before making a commitment.**
+That experience shaped a philosophy: **better decisions happen when buyers have useful evidence, honest guidance, visible tradeoffs, and enough agency to make a choice they can own.**
 
 ---
 
 ## Meet Jennifer
 
-### The heart of the practice — and the reason clients feel taken care of.
+### The heart of the practice — and a guardian of the human side of the decision.
 
-Buying a home is one of the most emotionally charged decisions a person can make. Numbers and strategy matter, but so does feeling heard, supported, and never rushed.
+Buying a home can carry excitement, pressure, uncertainty, and competing priorities at the same time. Numbers and strategy matter, but so does feeling heard, supported, and never rushed.
 
 That is where Jen comes in.
 
-Jen is the relationship side of HBE — the one who makes sure clients never feel like a transaction. She manages appointment coordination, stays close to every client relationship, and brings a level of warmth and emotional intelligence that turns a process that could feel overwhelming into one that feels manageable.
+Jen stays close to the client relationship, coordinates appointments, helps questions get answered, and notices when the human experience is getting lost inside the mechanics of the transaction.
 
-When you work with HomeBuyer Experts, you work with both Chris and Jen. Chris focuses on market analysis, strategy, and negotiation. Jen makes sure the human side is never lost in the process — that your questions get answered, your concerns get heard, and you always know where things stand.
+When you work with HomeBuyer Experts, you work with both Chris and Jen. Chris focuses on evidence, market analysis, strategy, and negotiation. Jen helps make sure your concerns, communication needs, and lived experience remain visible throughout the process.
 
-Together, they cover all sides of what buying a home actually requires.
+Together, they help keep the decision connected to the people making it.
 
 ---
 
 ## The HBE Philosophy
 
-### Your Vision Guides Us, Not the Sale.
+### People are the purpose. Real estate is the medium.
 
-Every buyer has different goals. The right home is not simply the one that closes. It is the one that fits:
+Every buyer is different. The right decision cannot be reduced to the home that closes, the lowest price, or the fastest path to contract.
+
+A wiser housing choice considers:
 
 - Your lifestyle
-- Your financial goals
+- Your financial goals and limits
 - Your priorities
-- Your future plans
+- Your decision style
+- The tradeoffs you are willing — and unwilling — to make
+- What is known, what is uncertain, and what still needs to be learned
+- Your future plans and alternatives
 
-Our role is to help you make the decision with confidence.
+Our visible North Star is **What is best for the buyer?**
+
+Our working test is **Does this help the buyer choose more wisely?**
 
 ---
 
 ## What Makes HBE Different
 
-**Education Before Transaction** — We believe informed buyers make better decisions. Our job is not to create urgency. Our job is to create clarity.
+**Understanding Before Urgency** — We do not manufacture momentum. We make the decision easier to see.
 
-**Research Before Recommendation** — We investigate properties, neighborhoods, market conditions, and potential concerns before you commit.
+**Research Before Recommendation** — We investigate properties, neighborhoods, market conditions, alternatives, and meaningful unknowns before you commit.
 
-**Strategy Before Searching** — The strongest buyers do not begin by opening doors. They begin by creating a plan.
+**Strategy Before Searching** — The search becomes more useful when we understand what you are actually trying to accomplish and why.
 
-**Negotiation Beyond Price** — The best outcome is not always the lowest price. It is the strongest overall position: terms, timing, risk, protection, and value.
+**Tradeoffs Before Certainty** — Complex decisions rarely have a perfect answer. We help you compare consequences rather than pretending uncertainty does not exist.
+
+**Negotiation in Context** — The best negotiation is not automatically the lowest price. Price, terms, timing, risk, protection, alternatives, and your goals all matter.
+
+**Freedom to Walk Away** — A transaction is not success if it is wrong for you. HBE must be as willing to help you stop as to help you proceed.
 
 ---
 
 ## Who We Serve
 
-Purchase price is irrelevant. Every buyer deserves exceptional representation.
+Purchase price is irrelevant. Every buyer deserves excellent representation and meaningful agency.
 
-HomeBuyer Experts serves anyone who values expertise and advocacy — first-time buyers, growing families, relocating professionals, move-up buyers, those downsizing, and investors alike.
-
-If you want a knowledgeable advocate protecting your interests through one of life's largest financial decisions, HBE is built for you.
+HomeBuyer Experts serves first-time buyers, growing families, relocating professionals, move-up buyers, those downsizing, investors, and anyone who values thoughtful decision-making over sales pressure.
 
 ---
 
@@ -93,18 +104,20 @@ If you want a knowledgeable advocate protecting your interests through one of li
 
 When you work with HomeBuyer Experts, you should expect:
 
-**Confidence** — You understand the decisions you are making.
+**Understanding** — You know what you are deciding and why it matters.
 
-**Advocacy** — Someone is protecting your interests.
+**Agency** — The choice remains yours, with room to pause, change direction, or walk away.
 
-**Strategy** — Your purchase is approached intentionally.
+**Advocacy** — Someone is protecting your interests without competing seller loyalties.
 
-**Partnership** — Your goals remain the priority.
+**Evidence** — Important claims and recommendations should be connected to facts, context, and uncertainty.
+
+**Partnership** — We learn how you make decisions so our guidance can become more useful to you over time.
 
 ---
 
-## Ready to make your next home purchase with confidence?
+## Explore before you decide
 
-Start with a conversation and discover what expert buyer representation can do for you.
+You can see the whole HBE Buyer Journey before sharing anything with us.
 
-[Start Your Buyer Discovery →]({{< relref "assessment" >}})
+[Explore the Buyer Journey →](https://buyer.hbexperts.com/)
