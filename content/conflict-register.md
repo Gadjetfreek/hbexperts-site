@@ -1,7 +1,7 @@
 ---
 title: "The HBE Conflict Register"
 subtitle: "Conflicts do not disappear because professionals mean well. We identify them, remove what we can, and make the rest visible."
-description: "See how HomeBuyer Experts identifies and handles common real-estate conflicts involving representation, compensation, referrals, incentives, data, decision support, and transaction pressure."
+description: "See how HomeBuyer Experts identifies and handles common real-estate conflicts involving representation, compensation, referrals, incentives, data, VALUE decision support, and transaction pressure."
 ---
 
 ## Why Publish a Conflict Register?
@@ -64,6 +64,8 @@ We continually evaluate our compensation structure against a harder question:
 
 > **Would we still recommend this if HBE earned exactly the same amount whether the buyer proceeded, renegotiated, waited, chose another home, or walked away?**
 
+During the current pilot, HBE is also tracking actual professional time and comparing alternative compensation structures internally so future compensation can be designed from evidence rather than tradition alone.
+
 ---
 
 ## Seller or Builder Incentives
@@ -102,15 +104,21 @@ The buyer should ultimately be able to see, correct, and update what HBE believe
 
 ---
 
-## Decision Aids and Values Clarification
+## VALUE, Decision Aids and Values Clarification
 
-**Potential conflict:** Advisors can unintentionally substitute their own preferences for the buyer's values.
+**Potential conflict:** Advisors can unintentionally substitute their own preferences for the buyer's values. A decision-support system can also become a disguised persuasion system if it is designed around producing a transaction instead of improving understanding.
 
-**HBE practice:** We use structured decision aids to make options, evidence, uncertainty, tradeoffs, and consequences easier to compare.
+**HBE practice:** VALUE stands for **Values, Alternatives, Learning, Uncertainty, and Evidence**.
 
-We use values-clarification questions to help buyers identify what matters before the pressure of a specific property narrows attention.
+We use structured decision aids to make options, evidence, uncertainty, tradeoffs, and consequences easier to compare. We use values-clarification questions to help buyers identify what matters before the pressure of a specific property narrows attention.
+
+After meaningful stages and showings, VALUE is revisited so new learning can change the decision rather than merely confirm the old one.
 
 These tools are meant to improve the quality of the buyer's choice — not produce a predetermined answer.
+
+> **Price tells you what a home costs. VALUE helps you decide what that cost means to you.**
+
+VALUE must never become a hidden purchase-probability score, persuasion profile, or substitute for the buyer's judgment.
 
 ---
 
@@ -150,3 +158,5 @@ For any material conflict, HBE's operating sequence is:
 The goal is not to claim perfection.
 
 The goal is to make it difficult for an undisclosed incentive to outrank the buyer.
+
+[Learn about VALUE →]({{< relref "value" >}})
