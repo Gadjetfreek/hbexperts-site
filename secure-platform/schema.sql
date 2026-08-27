@@ -138,6 +138,34 @@ CREATE TABLE IF NOT EXISTS buyer_case_financials (
   FOREIGN KEY (case_id) REFERENCES buyer_cases(id) ON DELETE CASCADE
 );
 
+-- HBE professional identity is deny-by-default. Google Workspace provisioning and
+-- HBE application authorization are tracked separately so creating/requesting an
+-- @hbexperts.com address never grants HBEUI access by itself.
+CREATE TABLE IF NOT EXISTS hbe_professionals (
+  id TEXT PRIMARY KEY,
+  email TEXT NOT NULL UNIQUE COLLATE NOCASE,
+  display_name TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'professional' CHECK (role IN ('broker_admin','professional')),
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','active','disabled')),
+  workspace_status TEXT NOT NULL DEFAULT 'requested' CHECK (workspace_status IN ('requested','provisioned','suspended')),
+  workspace_user_id TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+-- Bootstrap the current broker-admin identity and stage Jennifer's requested HBE
+-- identity without granting access until the Google Workspace account exists and
+-- HBE explicitly activates her professional record.
+INSERT OR IGNORE INTO hbe_professionals
+  (id,email,display_name,role,status,workspace_status,created_at,updated_at)
+VALUES
+  ('hbe-pro-christopher-whitehead','cwhitehead@hbexperts.com','Christopher Whitehead','broker_admin','active','provisioned',datetime('now'),datetime('now'));
+
+INSERT OR IGNORE INTO hbe_professionals
+  (id,email,display_name,role,status,workspace_status,created_at,updated_at)
+VALUES
+  ('hbe-pro-jennifer-jrose','jrose@hbexperts.com','Jennifer','professional','pending','requested',datetime('now'),datetime('now'));
+
 CREATE INDEX IF NOT EXISTS idx_buyers_email ON buyers(email);
 CREATE INDEX IF NOT EXISTS idx_buyers_submitted ON buyers(submitted_at DESC);
 CREATE INDEX IF NOT EXISTS idx_sessions_buyer ON buyer_sessions(buyer_id);
@@ -152,3 +180,4 @@ CREATE INDEX IF NOT EXISTS idx_case_invites_case ON buyer_case_invitations(case_
 CREATE INDEX IF NOT EXISTS idx_profiles_case ON buyer_person_profiles(case_id, completed_at);
 CREATE INDEX IF NOT EXISTS idx_time_case ON buyer_time_entries(case_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_time_professional ON buyer_time_entries(professional_email, ended_at, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_hbe_professionals_status ON hbe_professionals(status, workspace_status, email);
