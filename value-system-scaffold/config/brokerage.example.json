@@ -1,0 +1,44 @@
+{
+  "system": {
+    "name": "VALUE",
+    "expanded_name": "Values · Alternatives · Learning · Uncertainty · Evidence",
+    "descriptor": "Human-centered homebuying decision support.",
+    "core_line": "Price tells you what a home costs. VALUE helps you decide what that cost means to you."
+  },
+  "brokerage": {
+    "legal_name": "REPLACE_WITH_BROKERAGE_LEGAL_NAME",
+    "public_name": "REPLACE_WITH_BROKERAGE_PUBLIC_NAME",
+    "founded_year": 2004,
+    "years_serving_buyers": 22,
+    "broker_of_record": "REPLACE_WITH_BROKER_NAME",
+    "license_state": "REPLACE_WITH_STATE",
+    "license_number": "REPLACE_IF_PUBLICLY_REQUIRED",
+    "phone": "REPLACE_WITH_PHONE",
+    "email": "REPLACE_WITH_EMAIL",
+    "website": "https://REPLACE_WITH_DOMAIN",
+    "buyer_portal_domain": "https://REPLACE_WITH_BUYER_PORTAL_DOMAIN",
+    "service_area_display": "REPLACE_WITH_SERVICE_AREA",
+    "exclusive_buyer_agency": true
+  },
+  "brand": {
+    "primary_logo_path": "REPLACE_WITH_LOGO_ASSET",
+    "primary_color": "REPLACE_WITH_HEX",
+    "secondary_color": "REPLACE_WITH_HEX",
+    "accent_color": "REPLACE_WITH_HEX",
+    "public_attribution": "Brought to you by {{BROKERAGE_PUBLIC_NAME}}, serving homebuyers for {{BROKERAGE_YEARS}} years."
+  },
+  "practice": {
+    "north_star": "REPLACE_WITH_BROKERAGE_BUYER_FIRST_STANDARD",
+    "referral_compensation_policy": "REPLACE_WITH_POLICY",
+    "compensation_model": "REPLACE_WITH_CURRENT_COMPENSATION_MODEL",
+    "conflict_register_enabled": true,
+    "decision_aids_enabled": true,
+    "multi_buyer_individual_reflections": true,
+    "time_tracking_enabled": true
+  },
+  "security": {
+    "admin_email": "REPLACE_WITH_ADMIN_EMAIL",
+    "buyer_authentication_method": "REPLACE_WITH_AUTH_METHOD",
+    "sensitive_document_step_up_required": true
+  }
+}
