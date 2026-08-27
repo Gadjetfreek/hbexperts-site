@@ -10,6 +10,7 @@ theme = "hbe"
   email = "cwhitehead@hbexperts.com"
   location = "Northeast Ohio"
   counties = "Summit, Stark, Medina, Wayne & Cuyahoga Counties"
+  informationLastUpdated = "August 27, 2026"
 
 [menu]
   [[menu.main]]

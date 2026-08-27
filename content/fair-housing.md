@@ -1,14 +1,14 @@
 ---
 title: "Fair Housing"
 subtitle: "HomeBuyer Experts is committed to equal housing opportunity for everyone."
-description: "HomeBuyer Experts Fair Housing statement. We support and comply with the Fair Housing Act and are committed to equal housing opportunity."
+description: "HomeBuyer Experts Fair Housing statement for federal, Ohio, and applicable local fair-housing protections."
 ---
 
 ## Our Commitment to Fair Housing
 
-HomeBuyer Experts is committed to the principle that every person has the right to pursue homeownership free from discrimination.
+HomeBuyer Experts is committed to the principle that every person has the right to pursue housing free from unlawful discrimination.
 
-We fully support and comply with the **Fair Housing Act** (Title VIII of the Civil Rights Act of 1968, as amended), which prohibits discrimination in the sale, purchase, rental, or financing of housing based on:
+The **federal Fair Housing Act** prohibits housing discrimination based on:
 
 - Race
 - Color
@@ -18,63 +18,71 @@ We fully support and comply with the **Fair Housing Act** (Title VIII of the Civ
 - Familial status
 - Disability
 
-Many states and localities extend these protections further. We respect and comply with all applicable fair housing laws.
+**Ohio fair-housing law** also expressly protects:
+
+- Ancestry
+- Military status
+
+HBE also complies with any additional fair-housing protections that apply in the local communities where we provide brokerage services.
 
 ---
 
 ## Equal Housing Opportunity
 
-```
-  ____
- |    |
- |    |
- |____|
-Equal Housing Opportunity
-```
+<img src="https://www.hud.gov/sites/dfiles/FHEO/images/fheo100.gif" alt="Equal Housing Opportunity" width="120" loading="lazy">
 
 **HomeBuyer Experts is an Equal Housing Opportunity provider.**
 
-We serve all buyers equally, with the same dedication, expertise, and advocacy — regardless of background, identity, or circumstance.
+The image above is the official Equal Housing Opportunity logotype provided by the U.S. Department of Housing and Urban Development (HUD).
 
 ---
 
 ## What This Means in Practice
 
-At HBE, fair housing is not a compliance checkbox — it is a reflection of who we are and how we work.
+At HBE, fair housing is not merely a compliance requirement. It is part of treating every buyer with dignity, independence, and equal professional care.
 
-We will never:
+We will not:
 
-- Steer buyers toward or away from neighborhoods based on protected characteristics
-- Provide different levels of service based on a buyer's background
-- Discourage or delay access to properties based on discriminatory grounds
-- Represent any property in a way that signals preference or limitation based on protected characteristics
+- Steer buyers toward or away from neighborhoods because of protected characteristics
+- Provide different levels of service because of a buyer's protected status
+- Discourage or delay access to properties on discriminatory grounds
+- Use protected characteristics, or proxies for them, to decide where a buyer should live
+- Describe neighborhoods in ways intended to signal a preferred type of resident
 
-We will always:
+We will:
 
-- Provide every client with the same high standard of representation
-- Present properties and neighborhoods based on **your** stated goals and needs
-- Advocate fully and equally on your behalf throughout the process
+- Provide every buyer with the same high standard of professional representation
+- Base search and property work on the buyer's stated, lawful, objective criteria
+- Help buyers locate objective third-party information when they want to research schools, public services, transportation, taxes, property records, or other community facts
+- Protect each buyer's ability to make their own housing choice
+
+---
+
+## Blockbusting Is Illegal
+
+It is illegal, for profit, to induce or attempt to induce a person to sell or rent a dwelling by making representations about the entry into a neighborhood of people belonging to a protected class.
+
+HBE does not participate in blockbusting, discriminatory steering, or other practices intended to manipulate housing decisions based on protected characteristics.
 
 ---
 
 ## Reporting a Fair Housing Concern
 
-If you believe you have been the victim of housing discrimination, you have the right to file a complaint with:
+If you believe you have experienced housing discrimination, you may contact:
 
-**U.S. Department of Housing and Urban Development (HUD)**
-Fair Housing and Equal Opportunity
-[www.hud.gov/fairhousing](https://www.hud.gov/fairhousing)
-1-800-669-9777 (toll-free)
-1-800-927-9275 (TTY)
+**U.S. Department of Housing and Urban Development (HUD)**  
+Fair Housing and Equal Opportunity  
+[HUD Fair Housing](https://www.hud.gov/fairhousing)  
+1-800-669-9777
 
-You may also contact the **Ohio Civil Rights Commission** for state-level protections.
+You may also contact the **Ohio Civil Rights Commission** regarding protections under Ohio law.
 
 ---
 
 ## Questions or Concerns
 
-If you have any questions about our fair housing practices or want to raise a concern directly, please contact us.
+If you have a question about HBE's fair-housing practices or want to raise a concern directly, please contact us.
 
-**HomeBuyer Experts**
-Christopher Whitehead
+**HomeBuyer Experts**  
+Christopher Whitehead, Broker of Record  
 [cwhitehead@hbexperts.com](mailto:cwhitehead@hbexperts.com)
