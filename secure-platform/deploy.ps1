@@ -11,6 +11,7 @@ npx --yes wrangler@latest whoami
 $dbName = 'hbe-buyer-journey-v2'
 $buyerBaseUrl = 'https://buyer.hbexperts.com'
 $configPath = Join-Path $root 'wrangler.toml'
+$tempConfigPath = Join-Path $root '.wrangler.deploy.toml'
 $config = Get-Content $configPath -Raw
 
 Write-Host '2/6 Locating or creating D1 database...'
@@ -26,40 +27,53 @@ if (-not $db -or -not $db.uuid) {
 }
 
 $config = [regex]::Replace($config, 'database_id\s*=\s*"[^"]+"', "database_id = `"$($db.uuid)`"")
-Set-Content -Path $configPath -Value $config -Encoding UTF8
+Set-Content -Path $tempConfigPath -Value $config -Encoding UTF8
 Write-Host "Using D1 database $dbName ($($db.uuid))"
 
-Write-Host '3/6 Applying database schema...'
-npx --yes wrangler@latest d1 execute $dbName --remote --file=schema.sql
+try {
+  Write-Host '3/6 Applying database schema...'
+  npx --yes wrangler@latest d1 execute $dbName --remote --file=schema.sql --config $tempConfigPath
 
-Write-Host '4/6 Running local source checks...'
-node --check src/worker.js
-if (Select-String -Path src/worker.js -Pattern 'donald-kelley|localStorage|buyer_token_hash' -Quiet) {
-  throw 'Security/source check failed: legacy buyer-specific or browser-local journey code detected.'
+  Write-Host '4/6 Running local source checks...'
+  node --check src/worker.js
+  node --check src/ui-worker.js
+  node --check src/portal-worker.js
+  node --check src/access-code-worker.js
+  node --check src/hbe-worker.js
+  node --check src/hbe-portal-sync-worker.js
+  if (Select-String -Path src/worker.js -Pattern 'donald-kelley|localStorage|buyer_token_hash' -Quiet) {
+    throw 'Security/source check failed: legacy buyer-specific or browser-local journey code detected.'
+  }
+
+  Write-Host '5/6 Deploying Worker to buyer.hbexperts.com...'
+  $oldErrorActionPreference = $ErrorActionPreference
+  $ErrorActionPreference = 'Continue'
+  $deployOutput = & npx --yes wrangler@latest deploy --config $tempConfigPath 2>&1
+  $deployExitCode = $LASTEXITCODE
+  $ErrorActionPreference = $oldErrorActionPreference
+  $deployOutput | ForEach-Object { Write-Host $_ }
+  if ($deployExitCode -ne 0) {
+    throw "Wrangler deploy failed with exit code $deployExitCode."
+  }
+
+  Write-Host '6/6 Verifying custom-domain health endpoint...'
+  $health = Invoke-RestMethod -Uri "$buyerBaseUrl/health" -Method Get
+  if (-not $health.ok) {
+    throw 'Health verification failed.'
+  }
+
+  Write-Host ''
+  Write-Host 'LIVE' -ForegroundColor Green
+  Write-Host "Buyer Journey: $buyerBaseUrl/"
+  Write-Host "Buyer Portal:  $buyerBaseUrl/portal"
+  Write-Host "HBE Portal:    $buyerBaseUrl/hbe"
+  Write-Host "Health:        $buyerBaseUrl/health"
+  Write-Host ''
+  Write-Host 'HBE Portal must remain protected by Cloudflare Access before external beta use.' -ForegroundColor Yellow
+  Write-Host 'Sensitive uploads remain disabled until /sensitive* has fresh email-OTP Access protection.' -ForegroundColor Yellow
 }
-
-Write-Host '5/6 Deploying Worker to buyer.hbexperts.com...'
-$oldErrorActionPreference = $ErrorActionPreference
-$ErrorActionPreference = 'Continue'
-$deployOutput = & npx --yes wrangler@latest deploy 2>&1
-$deployExitCode = $LASTEXITCODE
-$ErrorActionPreference = $oldErrorActionPreference
-$deployOutput | ForEach-Object { Write-Host $_ }
-if ($deployExitCode -ne 0) {
-  throw "Wrangler deploy failed with exit code $deployExitCode."
+finally {
+  if (Test-Path $tempConfigPath) {
+    Remove-Item $tempConfigPath -Force
+  }
 }
-
-Write-Host '6/6 Verifying custom-domain health endpoint...'
-$health = Invoke-RestMethod -Uri "$buyerBaseUrl/health" -Method Get
-if (-not $health.ok) {
-  throw 'Health verification failed.'
-}
-
-Write-Host ''
-Write-Host 'LIVE' -ForegroundColor Green
-Write-Host "Buyer link: $buyerBaseUrl/"
-Write-Host "HBEUI:      $buyerBaseUrl/hbe"
-Write-Host "Health:     $buyerBaseUrl/health"
-Write-Host ''
-Write-Host 'Next: configure Cloudflare Access on /hbe* and /api/hbe/* before external beta use.' -ForegroundColor Yellow
-Write-Host 'Sensitive uploads remain disabled until /sensitive* has fresh email-OTP Access protection.' -ForegroundColor Yellow
