@@ -16,10 +16,6 @@ export default {
       if (!isHbe(request, env)) return forbidden();
       return addTime(request, env);
     }
-    if (request.method === 'POST' && url.pathname === '/api/hbe/household/link') {
-      if (!isHbe(request, env)) return forbidden();
-      return linkHousehold(request, env);
-    }
     if (request.method === 'POST' && url.pathname === '/api/hbe/financials') {
       if (!isHbe(request, env)) return forbidden();
       return saveFinancials(request, env);
@@ -73,32 +69,6 @@ async function addTime(request, env) {
   await env.BUYER_DB.prepare(`INSERT INTO buyer_time_entries (id,case_id,buyer_id,professional_email,created_at,minutes,category,stage,note) VALUES (?,?,?,?,?,?,?,?,?)`)
     .bind(crypto.randomUUID(), caseId, buyerId, professional, now, minutes, category, stage, note).run();
   return redirect(`/hbe?buyer=${encodeURIComponent(buyerId)}#pilot-ops`);
-}
-
-async function linkHousehold(request, env) {
-  const form = await request.formData();
-  const buyerId = clean(form.get('buyer_id'));
-  const otherEmail = clean(form.get('other_email')).toLowerCase();
-  if (!buyerId || !otherEmail) return redirect(`/hbe?buyer=${encodeURIComponent(buyerId)}`);
-
-  const primary = await env.BUYER_DB.prepare('SELECT id,email FROM buyers WHERE id=?').bind(buyerId).first();
-  const other = await env.BUYER_DB.prepare('SELECT id,email FROM buyers WHERE lower(email)=? ORDER BY submitted_at DESC LIMIT 1').bind(otherEmail).first();
-  if (!primary || !other || primary.id === other.id) return redirect(`/hbe?buyer=${encodeURIComponent(buyerId)}&pilot=link-not-found#pilot-ops`);
-
-  const caseId = await ensureCaseForBuyer(env, buyerId);
-  const otherMembership = await env.BUYER_DB.prepare('SELECT case_id FROM buyer_case_members WHERE buyer_id=?').bind(other.id).first();
-  if (otherMembership?.case_id && otherMembership.case_id !== caseId) {
-    const count = await env.BUYER_DB.prepare('SELECT COUNT(*) AS n FROM buyer_case_members WHERE case_id=?').bind(otherMembership.case_id).first();
-    if (Number(count?.n || 0) > 1) return redirect(`/hbe?buyer=${encodeURIComponent(buyerId)}&pilot=other-case#pilot-ops`);
-    await env.BUYER_DB.prepare('DELETE FROM buyer_case_members WHERE buyer_id=?').bind(other.id).run();
-  }
-  const now = new Date().toISOString();
-  await env.BUYER_DB.prepare('INSERT OR IGNORE INTO buyer_case_members (case_id,buyer_id,role,created_at) VALUES (?,?,?,?)')
-    .bind(caseId, other.id, 'buyer', now).run();
-  await env.BUYER_DB.prepare('INSERT OR IGNORE INTO buyer_person_profiles (buyer_id,case_id,created_at,updated_at,profile_json) VALUES (?,?,?,?,?)')
-    .bind(other.id, caseId, now, now, '{}').run();
-  await env.BUYER_DB.prepare('UPDATE buyer_person_profiles SET case_id=?,updated_at=? WHERE buyer_id=?').bind(caseId, now, other.id).run();
-  return redirect(`/hbe?buyer=${encodeURIComponent(buyerId)}&pilot=linked#pilot-ops`);
 }
 
 async function saveFinancials(request, env) {
@@ -165,7 +135,7 @@ function hbePilotPanel(data) {
         <form method="post" action="/api/hbe/time"><input type="hidden" name="buyer_id" value="${esc(data.selectedBuyerId)}"><div class="pilot-time-buttons">${[15,30,60,120].map(m=>`<button name="minutes" value="${m}">+${m<60?m+'m':m/60+'h'}</button>`).join('')}</div><label>Category<select name="category">${TIME_CATEGORIES.map(c=>`<option>${esc(c)}</option>`).join('')}</select></label><label>Note <span>optional</span><input name="note" maxlength="500" placeholder="What did we work on?"></label><button class="pilot-primary" name="minutes" value="30">Log 30 minutes</button></form>
       </article>
       <article class="pilot-card"><h3>Case workload</h3><div class="pilot-metric"><strong>${fmtHours(totalMinutes)}</strong><span>total professional time logged</span></div>${topCategories.length?`<div class="pilot-bars">${topCategories.map(([c,m])=>`<div><span>${esc(c)}</span><strong>${fmtHours(m)}</strong></div>`).join('')}</div>`:'<p class="pilot-muted">No time entries yet. Start loose; consistency matters more than precision.</p>'}</article>
-      <article class="pilot-card"><h3>Household</h3><p class="pilot-muted">Each person keeps their own login and answers while sharing one case.</p><div class="pilot-members">${data.members.map(m=>`<div><strong>${esc(m.first_name)} ${esc(m.last_name)}</strong><span>${esc(m.email)}</span></div>`).join('')}</div><form method="post" action="/api/hbe/household/link"><input type="hidden" name="buyer_id" value="${esc(data.selectedBuyerId)}"><label>Link another submitted buyer by email<input type="email" name="other_email" required placeholder="their@email.com"></label><button class="pilot-primary">Link to this case</button></form></article>
+      <article class="pilot-card"><h3>Household</h3><p class="pilot-muted">Each person keeps their own login and answers while sharing one case. New co-buyers join only through the buyer-consent invitation flow.</p><div class="pilot-members">${data.members.map(m=>`<div><strong>${esc(m.first_name)} ${esc(m.last_name)}</strong><span>${esc(m.email)}</span></div>`).join('')}</div></article>
     </div>
     <article id="pilot-economics" class="pilot-card pilot-economics"><div class="pilot-title"><div><div class="pilot-eyebrow">COMPENSATION LAB</div><h3>Pilot at 2.75%; compare alternatives beside it</h3></div></div><form class="pilot-fin-form" method="post" action="/api/hbe/financials"><input type="hidden" name="buyer_id" value="${esc(data.selectedBuyerId)}"><label>Projected purchase price<input type="number" min="0" step="1000" name="projected_purchase_price" value="${fin.projected_purchase_price||''}"></label><label>Final purchase price<input type="number" min="0" step="1000" name="final_purchase_price" value="${fin.final_purchase_price||''}"></label><label>Actual HBE compensation<input type="number" min="0" step="1" name="actual_hbe_comp" value="${fin.actual_hbe_comp||''}"></label><label>Notes<input name="notes" value="${esc(fin.notes||'')}"></label><button class="pilot-primary">Save</button></form>${comparisons.length?`<div class="pilot-compare">${comparisons.map(([name,amount])=>`<div><span>${esc(name)}</span><strong>${money(amount)}</strong>${totalMinutes?`<small>${money(amount/(totalMinutes/60))}/logged hr</small>`:''}</div>`).join('')}</div>`:'<p class="pilot-muted">Enter a projected purchase price to compare compensation models while the case develops.</p>'}</article>
   </section>`;
