@@ -42,6 +42,7 @@ try {
   node --check src/hbe-worker.js
   node --check src/hbe-portal-sync-worker.js
   node --check src/pilot-worker.js
+  node --check src/value-brand-worker.js
   if (Select-String -Path src/worker.js -Pattern 'donald-kelley|localStorage|buyer_token_hash' -Quiet) {
     throw 'Security/source check failed: legacy buyer-specific or browser-local journey code detected.'
   }
@@ -70,6 +71,7 @@ try {
   Write-Host "HBE Portal:    $buyerBaseUrl/hbe"
   Write-Host "Health:        $buyerBaseUrl/health"
   Write-Host ''
+  Write-Host 'VALUE language layer enabled.' -ForegroundColor Green
   Write-Host 'Pilot layer enabled: household cases, HBE time tracking, and 2.75% compensation comparison.' -ForegroundColor Green
   Write-Host 'HBE Portal must remain protected by Cloudflare Access before external beta use.' -ForegroundColor Yellow
   Write-Host 'Sensitive uploads remain disabled until /sensitive* has fresh email-OTP Access protection.' -ForegroundColor Yellow
