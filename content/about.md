@@ -58,17 +58,15 @@ That experience shaped a philosophy: **better decisions happen when buyers have 
 
 ## Meet Jennifer
 
-### The heart of the practice — and a guardian of the human side of the decision.
+### Client experience and coordination — keeping the human side visible.
 
 Buying a home can carry excitement, pressure, uncertainty, and competing priorities at the same time. Numbers and strategy matter, but so does feeling heard, supported, and never rushed.
 
-That is where Jen comes in.
+Jen supports the client experience by coordinating appointments and communication, helping questions reach the right person, and noticing when the human experience is getting lost inside the mechanics of the transaction.
 
-Jen stays close to the client relationship, coordinates appointments, helps questions get answered, and notices when the human experience is getting lost inside the mechanics of the transaction.
+**Licensed brokerage services — including market and property analysis, agency advice, negotiation, and brokerage recommendations — are provided by Christopher Whitehead, Broker.** Jen's role is client care and coordination so concerns, communication needs, and the buyer's lived experience stay visible throughout the process.
 
-When you work with HomeBuyer Experts, you work with both Chris and Jen. Chris focuses on evidence, market analysis, strategy, and negotiation. Jen helps make sure your concerns, communication needs, and lived experience remain visible throughout the process.
-
-Together, they help keep the decision connected to the people making it.
+Together, the goal is to keep the decision connected to the people making it while keeping professional roles clear.
 
 ---
 
