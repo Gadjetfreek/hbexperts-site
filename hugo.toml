@@ -29,9 +29,13 @@ theme = "hbe"
     url = "https://buyer.hbexperts.com/"
     weight = 4
   [[menu.main]]
+    name = "Conflict Register"
+    url = "/conflict-register/"
+    weight = 5
+  [[menu.main]]
     name = "Contact"
     url = "/contact/"
-    weight = 5
+    weight = 6
 
 [markup]
   [markup.goldmark]
