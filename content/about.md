@@ -1,7 +1,7 @@
 ---
 title: "Experience Matters When the Decision Matters"
 subtitle: "For more than 20 years, HomeBuyer Experts has focused on one question: what is best for the buyer?"
-description: "Meet HomeBuyer Experts — an exclusive buyer brokerage built to help Northeast Ohio buyers understand consequential housing decisions and choose wisely."
+description: "Meet HomeBuyer Experts — an exclusive buyer brokerage using VALUE, a human-centered decision-support system, to help Northeast Ohio buyers understand consequential housing decisions and choose wisely."
 ---
 
 ## Why HomeBuyer Experts Exists
@@ -17,6 +17,24 @@ HomeBuyer Experts was created around a simple North Star:
 That means your goals should guide the process — not the transaction.
 
 It also means our job is not to make every buyer buy. Our job is to help you see the decision clearly enough to choose: this home, another home, a different plan, more time, or no purchase at all.
+
+---
+
+## VALUE — The System Behind the Journey
+
+HBE uses **VALUE** as a repeating decision-support method throughout the homebuying journey:
+
+- **Values** — what matters to you and why
+- **Alternatives** — what other choices remain available
+- **Learning** — what each stage, showing, and new fact teaches us
+- **Uncertainty** — what remains unknown and how much it matters
+- **Evidence** — what facts and professional information support the decision
+
+> **Price tells you what a home costs. VALUE helps you decide what that cost means to you.**
+
+VALUE does not tell buyers what to choose. It helps make the choice easier to understand, revisit, and own as circumstances change.
+
+[Learn how VALUE works →]({{< relref "value" >}})
 
 ---
 
@@ -74,6 +92,8 @@ Our visible North Star is **What is best for the buyer?**
 
 Our working test is **Does this help the buyer choose more wisely?**
 
+VALUE gives us a practical structure for applying that test repeatedly instead of only asking it once.
+
 ---
 
 ## What Makes HBE Different
@@ -83,6 +103,8 @@ Our working test is **Does this help the buyer choose more wisely?**
 **Research Before Recommendation** — We investigate properties, neighborhoods, market conditions, alternatives, and meaningful unknowns before you commit.
 
 **Strategy Before Searching** — The search becomes more useful when we understand what you are actually trying to accomplish and why.
+
+**Learning From Every Showing** — Each property is information. VALUE preserves what the home taught you so the next decision can improve.
 
 **Tradeoffs Before Certainty** — Complex decisions rarely have a perfect answer. We help you compare consequences rather than pretending uncertainty does not exist.
 
@@ -94,7 +116,7 @@ Our working test is **Does this help the buyer choose more wisely?**
 
 ## Who We Serve
 
-Purchase price is irrelevant. Every buyer deserves excellent representation and meaningful agency.
+Your purchase price does not determine whether you deserve excellent representation and meaningful agency.
 
 HomeBuyer Experts serves first-time buyers, growing families, relocating professionals, move-up buyers, those downsizing, investors, and anyone who values thoughtful decision-making over sales pressure.
 
@@ -113,6 +135,8 @@ When you work with HomeBuyer Experts, you should expect:
 **Evidence** — Important claims and recommendations should be connected to facts, context, and uncertainty.
 
 **Partnership** — We learn how you make decisions so our guidance can become more useful to you over time.
+
+**A Living Decision Record** — What you learn should not disappear. VALUE is designed to preserve the reasoning that matters as the journey changes.
 
 ---
 
