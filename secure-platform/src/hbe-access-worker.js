@@ -24,19 +24,20 @@ export default {
     }
 
     if (request.method === 'POST' && url.pathname === '/api/hbe/admin/professional') {
-      return createProfessional(request, env, auth.professional);
+      return createProfessional(request, env);
     }
 
     if (request.method === 'POST' && url.pathname === '/api/hbe/admin/professional/status') {
-      return updateProfessionalStatus(request, env, auth.professional);
+      return updateProfessionalStatus(request, env);
     }
 
     if (request.method === 'POST' && url.pathname === '/api/hbe/admin/workspace/status') {
-      return updateWorkspaceStatus(request, env, auth.professional);
+      return updateWorkspaceStatus(request, env);
     }
 
     const verified = withVerifiedProfessional(request, auth.professional);
-    const response = await appWorker.fetch(verified, env, ctx);
+    const downstreamEnv = { ...env, HBE_ADMIN_EMAIL: auth.professional.email };
+    const response = await appWorker.fetch(verified, downstreamEnv, ctx);
     return decorateHbeResponse(response, url, auth.professional);
   }
 };
@@ -44,7 +45,7 @@ export default {
 async function authenticateHbeProfessional(request, env) {
   const teamDomain = normalizedTeamDomain(env.CF_ACCESS_TEAM_DOMAIN || env.TEAM_DOMAIN);
   const audience = String(env.CF_ACCESS_AUD || env.POLICY_AUD || '').trim();
-  if (!teamDomain || !audience) {
+  if (!teamDomain || !audience || teamDomain.includes('REPLACE_') || audience.includes('REPLACE_')) {
     return { ok:false, response: forbidden('HBE Access is not fully configured.') };
   }
 
@@ -88,8 +89,7 @@ async function verifyAccessJwt(token, teamDomain, audience) {
   const payload = jsonPart(parts[1]);
   if (header.alg !== 'RS256' || !header.kid) throw new Error('Unexpected JWT algorithm or key id');
 
-  const issuer = teamDomain;
-  if (payload.iss !== issuer) throw new Error('Wrong issuer');
+  if (payload.iss !== teamDomain) throw new Error('Wrong issuer');
   const aud = Array.isArray(payload.aud) ? payload.aud : [payload.aud];
   if (!aud.includes(audience)) throw new Error('Wrong audience');
 
@@ -103,7 +103,7 @@ async function verifyAccessJwt(token, teamDomain, audience) {
   });
   if (!certs.ok) throw new Error(`Unable to load Access signing keys: ${certs.status}`);
   const jwks = await certs.json();
-  const jwk = (jwks.keys || []).find(k => k.kid === header.kid && k.kty === 'RSA');
+  const jwk = (jwks.keys || []).find(k => k.kid === header.kid && k.kty === 'RSA' && (!k.alg || k.alg === 'RS256'));
   if (!jwk) throw new Error('Unknown Access signing key');
 
   const key = await crypto.subtle.importKey(
@@ -149,7 +149,7 @@ async function adminPortal(env, professional) {
   </main></body></html>`);
 }
 
-async function createProfessional(request, env, actor) {
+async function createProfessional(request, env) {
   const form = await request.formData();
   const displayName = clean(form.get('display_name')).slice(0,120);
   const localPart = normalizeLocalPart(form.get('local_part'));
@@ -170,7 +170,7 @@ async function createProfessional(request, env, actor) {
   return redirect('/hbe/admin');
 }
 
-async function updateProfessionalStatus(request, env, actor) {
+async function updateProfessionalStatus(request, env) {
   const form = await request.formData();
   const id = clean(form.get('id'));
   const status = ['pending','active','disabled'].includes(clean(form.get('status'))) ? clean(form.get('status')) : 'pending';
@@ -184,7 +184,7 @@ async function updateProfessionalStatus(request, env, actor) {
   return redirect('/hbe/admin');
 }
 
-async function updateWorkspaceStatus(request, env, actor) {
+async function updateWorkspaceStatus(request, env) {
   const form = await request.formData();
   const id = clean(form.get('id'));
   const workspaceStatus = ['requested','provisioned','suspended'].includes(clean(form.get('workspace_status'))) ? clean(form.get('workspace_status')) : 'requested';
