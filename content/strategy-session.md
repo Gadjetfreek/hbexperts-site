@@ -107,7 +107,7 @@ This is **not** a sales call and **not** a meeting designed to move you toward s
 
 It is a conversation designed to increase your understanding and agency before the transaction begins exerting its own momentum.
 
-During the session, we can explain exclusive buyer representation and the **Buyer Value Agreement** — what it means, how compensation works, and what each party is committing to.
+During the session, we can explain exclusive buyer representation and the **buyer-agency agreement** — what representation means, how compensation works, and what each party is committing to.
 
 Nothing is signed merely because we had the conversation. You decide whether HBE is right for you and when you are ready to proceed.
 
