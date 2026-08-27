@@ -52,6 +52,20 @@ Anyone can help locate properties. True representation means:
 
 ---
 
+## Decision Aids and Values Clarification
+
+Important decisions get harder when options multiply, information arrives unevenly, and emotion or urgency narrows attention.
+
+HBE uses **decision aids** to help organize the choice. Depending on the situation, that may mean comparing options side by side, separating known facts from assumptions, identifying meaningful uncertainty, making tradeoffs explicit, or showing what changes if one priority is given more weight than another.
+
+We also use **values-clarification questions** before and during the search to help buyers identify what actually matters to them — not what the market, an agent, a family member, or a particular house is pressuring them to value in the moment.
+
+These tools are not designed to produce a predetermined answer.
+
+Their purpose is to make the buyer's own reasoning easier to see, test, revise, and ultimately own.
+
+---
+
 ## The HBE Buyer Advantage™
 
 ### 1. Unbiased Guidance
@@ -81,7 +95,11 @@ Our commitment includes:
 
 Compensation can shape behavior. We believe buyers deserve to understand those incentives clearly and to have conflicts reduced wherever possible.
 
+HBE does not accept referral compensation or kickbacks from lenders, inspectors, title companies, contractors, home-warranty providers, or similar service providers in exchange for sending buyers their business.
+
 Our compensation structure, rebates, guarantees, and any seller- or builder-paid incentives are explained before they can influence a decision.
+
+[See the HBE Conflict Register →]({{< relref "conflict-register" >}})
 
 ---
 
