@@ -81,6 +81,22 @@ CREATE TABLE IF NOT EXISTS buyer_case_members (
   FOREIGN KEY (buyer_id) REFERENCES buyers(id) ON DELETE CASCADE
 );
 
+-- Consent-based co-buyer invitations. Raw invitation tokens are never stored.
+CREATE TABLE IF NOT EXISTS buyer_case_invitations (
+  id TEXT PRIMARY KEY,
+  case_id TEXT NOT NULL,
+  created_by_buyer_id TEXT NOT NULL,
+  token_hash TEXT NOT NULL UNIQUE,
+  created_at TEXT NOT NULL,
+  expires_at TEXT NOT NULL,
+  accepted_at TEXT,
+  accepted_by_buyer_id TEXT,
+  revoked_at TEXT,
+  FOREIGN KEY (case_id) REFERENCES buyer_cases(id) ON DELETE CASCADE,
+  FOREIGN KEY (created_by_buyer_id) REFERENCES buyers(id) ON DELETE CASCADE,
+  FOREIGN KEY (accepted_by_buyer_id) REFERENCES buyers(id) ON DELETE SET NULL
+);
+
 CREATE TABLE IF NOT EXISTS buyer_person_profiles (
   buyer_id TEXT PRIMARY KEY,
   case_id TEXT NOT NULL,
@@ -130,6 +146,9 @@ CREATE INDEX IF NOT EXISTS idx_notifications_read ON notifications(read_at, crea
 CREATE INDEX IF NOT EXISTS idx_buyer_notes_buyer ON buyer_notes(buyer_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_buyer_tasks_buyer ON buyer_tasks(buyer_id, status, due_at);
 CREATE INDEX IF NOT EXISTS idx_case_members_case ON buyer_case_members(case_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_case_invites_token ON buyer_case_invitations(token_hash);
+CREATE INDEX IF NOT EXISTS idx_case_invites_creator ON buyer_case_invitations(created_by_buyer_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_case_invites_case ON buyer_case_invitations(case_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_profiles_case ON buyer_person_profiles(case_id, completed_at);
 CREATE INDEX IF NOT EXISTS idx_time_case ON buyer_time_entries(case_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_time_professional ON buyer_time_entries(professional_email, ended_at, created_at DESC);
