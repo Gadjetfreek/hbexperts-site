@@ -94,10 +94,6 @@ function validateSubmission(form) {
     if (!clean(form.get(name))) return message;
   }
 
-  if (clean(form.get('has_other_buyer')) === 'yes' && !clean(form.get('co_buyer_name'))) {
-    return 'Please enter the other buyer’s name. Their email and phone are optional.';
-  }
-
   if (values(form, 'priorities').length > 3) {
     return 'Please choose up to three priorities.';
   }
@@ -106,15 +102,10 @@ function validateSubmission(form) {
 }
 
 function richAnswers(form) {
-  const hasOther = clean(form.get('has_other_buyer')) === 'yes';
   return {
-    version: 'buyer-experience-2026-08-optional-reflections',
+    version: 'buyer-experience-2026-08-co-buyer-consent',
     phone: clean(form.get('phone')),
-    co_buyer: hasOther ? {
-      name: clean(form.get('co_buyer_name')),
-      email: clean(form.get('co_buyer_email')),
-      phone: clean(form.get('co_buyer_phone'))
-    } : null,
+    has_other_buyer: clean(form.get('has_other_buyer')) === 'yes',
     why: clean(form.get('why')),
     situation: clean(form.get('situation')),
     success_definition: clean(form.get('success_definition')),
@@ -201,8 +192,7 @@ ${message ? `<div class="error">${esc(message)}</div>` : ''}
 <div class="privacy"><strong>Nothing is sent to HBE yet.</strong> Your draft stays only in this browser session until you deliberately press <strong>Submit to HBE</strong> at the end.<br><br><strong>Reflective questions are optional.</strong> Share only what feels useful. You may skip them or choose “Prefer not to answer.” Skipping reflective questions will not reduce the quality of HBE representation or service you receive.</div>
 <div class="grid2 group"><label><span class="label">First name <span class="required">Required</span></span><input name="first_name" autocomplete="given-name" required></label><label><span class="label">Last name <span class="required">Required</span></span><input name="last_name" autocomplete="family-name" required></label></div>
 <div class="grid2 group"><label><span class="label">Email <span class="required">Required</span></span><input type="email" name="email" autocomplete="email" required></label><label><span class="label">Phone <span class="hint">Optional</span></span><input type="tel" name="phone" autocomplete="tel"></label></div>
-<div class="group"><span class="label">Is another buyer making this decision with you? <span class="required">Required</span></span><div class="choices"><label class="choice"><input type="radio" name="has_other_buyer" value="yes" required><span>Yes — another buyer is part of this decision</span></label><label class="choice"><input type="radio" name="has_other_buyer" value="no" required><span>No — I’m the only buyer</span></label></div></div>
-<div id="coBuyerBlock" class="subcard hidden"><h2>The other buyer</h2><p class="footer-note">Their name helps us keep each person’s voice distinct. Email and phone are optional.</p><div class="group"><label><span class="label">Name <span class="required">Required when another buyer is involved</span></span><input type="text" name="co_buyer_name" autocomplete="name"></label></div><div class="grid2 group"><label><span class="label">Email <span class="hint">Optional</span></span><input type="email" name="co_buyer_email" autocomplete="email"></label><label><span class="label">Phone <span class="hint">Optional</span></span><input type="tel" name="co_buyer_phone" autocomplete="tel"></label></div></div>
+<div class="group"><span class="label">Is another buyer making this decision with you? <span class="required">Required</span></span><div class="choices"><label class="choice"><input type="radio" name="has_other_buyer" value="yes" required><span>Yes — another buyer is part of this decision</span></label><label class="choice"><input type="radio" name="has_other_buyer" value="no" required><span>No — I’m the only buyer</span></label></div><p class="footer-note">If another buyer is involved, you will be able to create a private invitation from your Buyer Portal after you submit. They will enter their own identity and answers, and they decide whether to join the shared homebuying journey.</p></div>
 <div class="group"><label><span class="label">What has you thinking about buying a home now? <span class="hint">Optional — share only what feels useful.</span></span><textarea name="why"></textarea></label></div>
 <div class="group"><label><span class="label">Which best describes where you are starting?</span><select name="situation"><option value="">Choose one if helpful</option><option>First-time buyer</option><option>Moving up</option><option>Downsizing</option><option>Relocating</option><option>Investment purchase</option><option>Second home</option><option>Exploring possibilities</option><option>Something else</option></select></label></div>
 <div class="navrow"><a class="btn secondary" href="/">Back to Journey</a><button class="btn primary next" type="button">Continue</button></div>
@@ -279,23 +269,18 @@ const steps=[...document.querySelectorAll('.step')];
 const fill=document.querySelector('#progressFill');
 const stepName=document.querySelector('#stepName');
 const stepCount=document.querySelector('#stepCount');
-const coBlock=document.querySelector('#coBuyerBlock');
-const coName=form.elements.namedItem('co_buyer_name');
-const coEmail=form.elements.namedItem('co_buyer_email');
-const coPhone=form.elements.namedItem('co_buyer_phone');
 const priorityCount=document.querySelector('#priorityCount');
 let current=0;
 
 function show(i){current=Math.max(0,Math.min(steps.length-1,i));steps.forEach((s,n)=>s.classList.toggle('active',n===current));stepName.textContent=steps[current].dataset.title;stepCount.textContent=(current+1)+' of '+steps.length;fill.style.width=((current+1)/steps.length*100)+'%';window.scrollTo({top:0,behavior:'smooth'});}
-function otherBuyer(){const yes=form.querySelector('[name="has_other_buyer"]:checked')?.value==='yes';coBlock.classList.toggle('hidden',!yes);[coName,coEmail,coPhone].forEach(el=>el.disabled=!yes);coName.required=yes;}
 function priorities(){const selected=[...form.querySelectorAll('[name="priorities"]:checked')];priorityCount.textContent=selected.length+' selected · choose up to 3 if helpful';priorityCount.classList.toggle('good',selected.length>0);}
 function validate(step){const fields=[...step.querySelectorAll('input,textarea,select')].filter(el=>!el.disabled);for(const el of fields){if(!el.checkValidity()){el.reportValidity();return false;}}return true;}
 function save(){try{const data={};new FormData(form).forEach((v,k)=>{if(k==='remember_device')return;(data[k]??=[]).push(String(v));});sessionStorage.setItem('${DRAFT_KEY}',JSON.stringify(data));}catch{}}
-function restore(){try{const data=JSON.parse(sessionStorage.getItem('${DRAFT_KEY}')||'{}');Object.entries(data).forEach(([name,vals])=>{const list=[...form.querySelectorAll('[name="'+name+'"]')];list.forEach(el=>{if(el.type==='radio'||el.type==='checkbox')el.checked=vals.includes(el.value);else if(vals.length)el.value=vals[0];});});}catch{}otherBuyer();priorities();}
+function restore(){try{const data=JSON.parse(sessionStorage.getItem('${DRAFT_KEY}')||'{}');Object.entries(data).forEach(([name,vals])=>{const list=[...form.querySelectorAll('[name="'+name+'"]')];list.forEach(el=>{if(el.type==='radio'||el.type==='checkbox')el.checked=vals.includes(el.value);else if(vals.length)el.value=vals[0];});});}catch{}priorities();}
 
 document.querySelectorAll('.next').forEach(b=>b.addEventListener('click',()=>{if(validate(steps[current]))show(current+1);}));
 document.querySelectorAll('.back').forEach(b=>b.addEventListener('click',()=>show(current-1)));
-form.addEventListener('change',e=>{if(e.target.name==='has_other_buyer')otherBuyer();if(e.target.name==='priorities'){const selected=[...form.querySelectorAll('[name="priorities"]:checked')];if(selected.length>3){e.target.checked=false;}priorities();}save();});
+form.addEventListener('change',e=>{if(e.target.name==='priorities'){const selected=[...form.querySelectorAll('[name="priorities"]:checked')];if(selected.length>3){e.target.checked=false;}priorities();}save();});
 form.addEventListener('input',save);
 form.addEventListener('submit',e=>{for(let i=0;i<steps.length;i++){if(!validate(steps[i])){e.preventDefault();show(i);return;}}});
 restore();show(0);
