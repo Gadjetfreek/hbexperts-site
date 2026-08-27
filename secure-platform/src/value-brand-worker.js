@@ -1,4 +1,4 @@
-import appWorker from './co-buyer-consent-worker.js';
+import appWorker from './hbe-access-worker.js';
 
 export default {
   async fetch(request, env, ctx) {
