@@ -12,6 +12,10 @@ custom_domain = true
 HBE_ADMIN_EMAIL = "cwhitehead@hbexperts.com"
 HBE_ALERT_TO = "cwhitehead@hbexperts.com"
 HBE_ALERT_FROM = "buyer-alerts@hbexperts.com"
+# Replace these with the exact values from the single HBEUI Cloudflare Access app
+# before any #6 deployment. The Worker fails closed if they are missing/wrong.
+CF_ACCESS_TEAM_DOMAIN = "REPLACE_AFTER_ACCESS_APPLICATION"
+CF_ACCESS_AUD = "REPLACE_AFTER_ACCESS_APPLICATION"
 
 [[d1_databases]]
 binding = "BUYER_DB"
