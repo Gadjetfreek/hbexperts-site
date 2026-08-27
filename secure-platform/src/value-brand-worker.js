@@ -1,4 +1,4 @@
-import appWorker from './pilot-worker.js';
+import appWorker from './co-buyer-consent-worker.js';
 
 export default {
   async fetch(request, env, ctx) {
