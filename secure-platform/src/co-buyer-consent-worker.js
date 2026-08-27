@@ -7,8 +7,6 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
-    // Retire the old staff-side direct-link shortcut. A buyer must now self-identify
-    // and affirmatively accept an invitation before joining another buyer's case.
     if (request.method === 'POST' && url.pathname === '/api/hbe/household/link') {
       return new Response('Direct household linking is disabled. Use buyer consent invitations.', {
         status: 410,
@@ -37,6 +35,9 @@ export default {
         if (clean(intakeForm.get('household_join_consent')) !== 'yes') {
           return page(invitationMessage('Consent required', 'Joining another buyer’s homebuying journey is optional. Check the consent box only if you choose to join, or remove the invitation and submit your Buyer Experience independently.'), 400);
         }
+        if (clean(intakeForm.get('has_other_buyer')) !== 'yes') {
+          return page(invitationMessage('Please confirm the shared decision', 'You selected that you are the only buyer while also accepting an invitation to join another buyer’s case. Return to the Buyer Experience and choose the answer that matches your situation before joining.'), 400);
+        }
         invite = await validInvitationByToken(env, token);
         if (!invite) {
           return page(invitationMessage('Invitation unavailable', 'This invitation is invalid, expired, already used, or revoked. Ask the other buyer to create a new invitation if you still want to connect your journeys.'), 400);
@@ -57,8 +58,6 @@ export default {
 
     let text = await response.text();
 
-    // Remove the pilot's legacy direct-link form from HBEUI without touching the rest
-    // of the pilot. Staff can see connected members but cannot bypass buyer consent.
     if (request.method === 'GET' && url.pathname === '/hbe') {
       text = text.replace(
         /<form method="post" action="\/api\/hbe\/household\/link">[\s\S]*?<\/form>/,
@@ -106,7 +105,7 @@ async function createInvitation(request, env) {
 
   const base = new URL(request.url);
   const inviteUrl = `${base.origin}/invite/${encodeURIComponent(token)}`;
-  return page(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive"><title>Buyer invitation | HomeBuyer Experts</title>${INVITE_STYLE}</head><body><main class="invite-wrap"><div class="invite-card"><div class="eyebrow">PRIVATE BUYER INVITATION</div><h1>Share this invitation with the other buyer.</h1><p>This link expires in ${INVITE_DAYS} days and can be used once. The other buyer will enter their own identity, complete their own Buyer Experience, and choose whether to join your shared homebuying journey.</p><p><strong>You will not see their private reflective answers, and they will not see yours.</strong></p><label>Invitation link<input readonly value="${esc(inviteUrl)}" onclick="this.select()"></label><p class="muted">HBE does not need the other buyer’s email or phone from you.</p><a class="btn" href="/portal">Back to Buyer Portal</a></div></main></body></html>`);
+  return page(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive"><title>Buyer invitation | HomeBuyer Experts</title>${INVITE_STYLE}</head><body><main class="invite-wrap"><div class="invite-card"><div class="eyebrow">PRIVATE BUYER INVITATION</div><h1>Share this invitation with the other buyer.</h1><p>This link expires in ${INVITE_DAYS} days and can be used once. The other buyer will enter their own identity, complete their own Buyer Experience, and choose whether to join your shared homebuying journey.</p><p><strong>You will not see their private reflective answers, and they will not see yours.</strong></p><label>Invitation link<input readonly value="${esc(inviteUrl)}"></label><p class="muted">HBE does not need the other buyer’s email or phone from you.</p><a class="btn" href="/portal">Back to Buyer Portal</a></div></main></body></html>`);
 }
 
 async function revokeInvitation(request, env) {
@@ -154,19 +153,28 @@ async function acceptInvitation(env, invite, email) {
   if (!buyer?.id) throw new Error('Submitted buyer not found for invitation');
 
   const now = new Date().toISOString();
-  const stillValid = await env.BUYER_DB.prepare(`SELECT id FROM buyer_case_invitations
-    WHERE id=? AND accepted_at IS NULL AND revoked_at IS NULL AND expires_at>? LIMIT 1`)
-    .bind(invite.id, now).first();
-  if (!stillValid) throw new Error('Invitation is no longer available');
+  const claim = await env.BUYER_DB.prepare(`UPDATE buyer_case_invitations
+    SET accepted_at=?, accepted_by_buyer_id=?
+    WHERE id=? AND accepted_at IS NULL AND revoked_at IS NULL AND expires_at>?`)
+    .bind(now, buyer.id, invite.id, now).run();
 
-  await env.BUYER_DB.batch([
-    env.BUYER_DB.prepare('INSERT INTO buyer_case_members (case_id,buyer_id,role,created_at) VALUES (?,?,?,?)')
-      .bind(invite.case_id, buyer.id, 'buyer', now),
-    env.BUYER_DB.prepare('INSERT INTO buyer_person_profiles (buyer_id,case_id,created_at,updated_at,profile_json) VALUES (?,?,?,?,?)')
-      .bind(buyer.id, invite.case_id, now, now, '{}'),
-    env.BUYER_DB.prepare('UPDATE buyer_case_invitations SET accepted_at=?,accepted_by_buyer_id=? WHERE id=? AND accepted_at IS NULL AND revoked_at IS NULL')
-      .bind(now, buyer.id, invite.id)
-  ]);
+  if (Number(claim.meta?.changes || 0) !== 1) {
+    throw new Error('Invitation was already used, revoked, or expired');
+  }
+
+  try {
+    await env.BUYER_DB.batch([
+      env.BUYER_DB.prepare('INSERT INTO buyer_case_members (case_id,buyer_id,role,created_at) VALUES (?,?,?,?)')
+        .bind(invite.case_id, buyer.id, 'buyer', now),
+      env.BUYER_DB.prepare('INSERT INTO buyer_person_profiles (buyer_id,case_id,created_at,updated_at,profile_json) VALUES (?,?,?,?,?)')
+        .bind(buyer.id, invite.case_id, now, now, '{}')
+    ]);
+  } catch (err) {
+    await env.BUYER_DB.prepare(`UPDATE buyer_case_invitations SET accepted_at=NULL,accepted_by_buyer_id=NULL
+      WHERE id=? AND accepted_by_buyer_id=? AND accepted_at=?`)
+      .bind(invite.id, buyer.id, now).run();
+    throw err;
+  }
 }
 
 async function invitationPanel(env, buyerId) {
