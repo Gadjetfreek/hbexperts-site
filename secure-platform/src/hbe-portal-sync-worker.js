@@ -44,7 +44,7 @@ export default {
 };
 
 function addHeaderPortalNav(text) {
-  const nav = '<nav class="portal-header-nav" aria-label="Portal navigation"><a href="/portal">Buyer Portal</a><a href="/hbe">HBE Portal</a></nav>';
+  const nav = '<nav class="portal-header-nav" aria-label="Portal navigation"><a href="/portal">Buyer Portal</a></nav>';
   text = text.replace('<span class="context">Buyer Journey</span>', nav);
   text = text.replace('<span class="secure-site-context">Buyer Journey</span>', nav);
   return text;
@@ -71,5 +71,5 @@ function getCookie(request,name){const raw=request.headers.get('cookie')||'';for
 function esc(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
 async function sha256(value){const digest=await crypto.subtle.digest('SHA-256',enc.encode(value));return Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('')}
 
-const HEADER_NAV_CSS=`<style id="portal-header-nav-style">.portal-header-nav{display:flex;align-items:center;gap:1.15rem;font-size:.9rem;font-weight:600}.portal-header-nav a{color:#2d5a3d;text-decoration:none}.portal-header-nav a:hover,.portal-header-nav a:focus{text-decoration:underline;text-underline-offset:3px}.portal-header-nav a+ a{position:relative}.portal-header-nav a+ a:before{content:"";position:absolute;left:-.62rem;top:50%;width:1px;height:14px;background:#ddd8cf;transform:translateY(-50%)}@media(max-width:520px){.portal-header-nav{gap:.65rem;font-size:.78rem}.portal-header-nav a+ a:before{left:-.35rem}}</style>`;
+const HEADER_NAV_CSS=`<style id="portal-header-nav-style">.portal-header-nav{display:flex;align-items:center;gap:1.15rem;font-size:.9rem;font-weight:600}.portal-header-nav a{color:#2d5a3d;text-decoration:none}.portal-header-nav a:hover,.portal-header-nav a:focus{text-decoration:underline;text-underline-offset:3px}@media(max-width:520px){.portal-header-nav{gap:.65rem;font-size:.78rem}}</style>`;
 const PORTAL_SYNC_CSS=`<style id="hbe-portal-sync">.from-hbe{margin-top:2rem;padding:1.25rem;background:#faf9f6;border:1px solid #e8e5e0;border-radius:12px}.from-hbe h2{font:600 1.45rem Georgia,serif;color:#1a1a2e;margin:.25rem 0 1rem}.portal-eyebrow{font-size:.72rem;font-weight:800;letter-spacing:.13em;color:#2d5a3d}.portal-task-list,.portal-notes{display:grid;gap:.65rem}.portal-task{display:grid;grid-template-columns:14px 1fr;gap:.6rem;align-items:start;background:#fff;border:1px solid #e8e5e0;border-radius:8px;padding:.75rem}.portal-task.critical{border-left:3px solid #9b3434}.portal-dot{width:9px;height:9px;border-radius:50%;background:#2d5a3d;margin-top:.4rem}.portal-task strong{display:block;color:#1a1a2e}.portal-task small{display:block;color:#6b6b6b;margin-top:.15rem}.portal-notes{margin-top:1rem}.portal-note{padding:.75rem;border-top:1px solid #e8e5e0}.portal-note:first-child{border-top:0}.portal-note small{color:#6b6b6b}.portal-note p{margin:.2rem 0 0;white-space:pre-wrap}</style>`;
