@@ -4,8 +4,8 @@ title = "HomeBuyer Experts | Exclusive Buyer Representation"
 theme = "hbe"
 
 [params]
-  description = "Exclusive buyer representation for Northeast Ohio. Clearer information, stronger advocacy, and more agency for consequential home-buying decisions."
-  tagline = "When the decision matters, have someone at the table whose only job is helping you understand your options and protect your interests."
+  description = "Exclusive buyer representation for Northeast Ohio using VALUE — human-centered homebuying decision support built around values, alternatives, learning, uncertainty, and evidence."
+  tagline = "Price tells you what a home costs. VALUE helps you decide what that cost means to you."
   phone = "(330) 328-3170"
   email = "cwhitehead@hbexperts.com"
   location = "Northeast Ohio"
@@ -21,21 +21,25 @@ theme = "hbe"
     url = "/buyer-representation/"
     weight = 2
   [[menu.main]]
+    name = "VALUE"
+    url = "/value/"
+    weight = 3
+  [[menu.main]]
     name = "Your Strategy Session"
     url = "/strategy-session/"
-    weight = 3
+    weight = 4
   [[menu.main]]
     name = "Buyer Journey"
     url = "https://buyer.hbexperts.com/"
-    weight = 4
+    weight = 5
   [[menu.main]]
     name = "Conflict Register"
     url = "/conflict-register/"
-    weight = 5
+    weight = 6
   [[menu.main]]
     name = "Contact"
     url = "/contact/"
-    weight = 6
+    weight = 7
 
 [markup]
   [markup.goldmark]
