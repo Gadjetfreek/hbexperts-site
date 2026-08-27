@@ -6,7 +6,9 @@ description: "HomeBuyer Experts brokerage and licensing information. Licensed in
 
 ## Company Information
 
-**Company Name:** HomeBuyer Experts
+**Public Brand:** HomeBuyer Experts
+
+**Brokerage / Legal Name:** HomeBuyer Experts LLC
 
 **Business Type:** Exclusive Buyer Representation
 
@@ -73,7 +75,7 @@ Brokerage licensing information can be verified through the **Ohio Division of R
 ## Contact
 
 **Christopher Whitehead, Broker**
-HomeBuyer Experts
+HomeBuyer Experts LLC
 [cwhitehead@hbexperts.com](mailto:cwhitehead@hbexperts.com)
 
 [Explore the Buyer Journey →](https://buyer.hbexperts.com/)
