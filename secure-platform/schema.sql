@@ -123,6 +123,31 @@ CREATE TABLE IF NOT EXISTS buyer_consultation_records (
   FOREIGN KEY (case_id) REFERENCES buyer_cases(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS buyer_representation_choices (
+  buyer_id TEXT PRIMARY KEY,
+  case_id TEXT NOT NULL,
+  choice TEXT NOT NULL CHECK (choice IN ('prepare','need_time','not_now')),
+  choice_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  note TEXT,
+  FOREIGN KEY (buyer_id) REFERENCES buyers(id) ON DELETE CASCADE,
+  FOREIGN KEY (case_id) REFERENCES buyer_cases(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS buyer_representation_records (
+  case_id TEXT PRIMARY KEY,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  agreement_status TEXT NOT NULL DEFAULT 'not_started' CHECK (agreement_status IN ('not_started','sent','signed')),
+  agreement_version TEXT,
+  signed_at TEXT,
+  compensation_summary TEXT,
+  confirmed_by TEXT,
+  activated_at TEXT,
+  notes TEXT,
+  FOREIGN KEY (case_id) REFERENCES buyer_cases(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS buyer_time_entries (
   id TEXT PRIMARY KEY,
   case_id TEXT NOT NULL,
@@ -186,6 +211,8 @@ CREATE INDEX IF NOT EXISTS idx_case_invites_creator ON buyer_case_invitations(cr
 CREATE INDEX IF NOT EXISTS idx_case_invites_case ON buyer_case_invitations(case_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_profiles_case ON buyer_person_profiles(case_id, completed_at);
 CREATE INDEX IF NOT EXISTS idx_consultation_updated ON buyer_consultation_records(updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_rep_choices_case ON buyer_representation_choices(case_id, updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_rep_records_status ON buyer_representation_records(agreement_status, updated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_time_case ON buyer_time_entries(case_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_time_professional ON buyer_time_entries(professional_email, ended_at, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_hbe_professionals_status ON hbe_professionals(status, workspace_status, email);
