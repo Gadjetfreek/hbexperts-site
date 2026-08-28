@@ -17,6 +17,15 @@ HBE_ALERT_FROM = "buyer-alerts@hbexperts.com"
 CF_ACCESS_TEAM_DOMAIN = "REPLACE_AFTER_ACCESS_APPLICATION"
 CF_ACCESS_AUD = "REPLACE_AFTER_ACCESS_APPLICATION"
 
+# MLS integration is intentionally disconnected by default.
+# MLS_FEED_MODE should match the license approved by MLS Now (expected: VOW for the
+# authenticated buyer portal). The provider endpoint may be overridden if Trestle's
+# approved environment supplies a different base URL.
+MLS_FEED_MODE = "VOW"
+MLS_API_BASE = "https://api.cotality.com/trestle"
+# NEVER put MLS_CLIENT_ID or MLS_CLIENT_SECRET in this file/repository.
+# After MLS Now/Trestle approval, add them as encrypted Cloudflare Worker secrets.
+
 [[d1_databases]]
 binding = "BUYER_DB"
 database_name = "hbe-buyer-journey-v2"
