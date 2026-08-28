@@ -1,4 +1,4 @@
-import appWorker from './search-worker.js';
+import appWorker from './journey-state-worker.js';
 
 export default {
   async fetch(request, env, ctx) {
