@@ -94,6 +94,11 @@ async function saveHbeRepresentation(request, env) {
   if (!buyerId) return redirect('/hbe');
 
   const caseId = await ensureCaseForBuyer(env, buyerId);
+  const existing = await env.BUYER_DB.prepare('SELECT * FROM buyer_representation_records WHERE case_id=? LIMIT 1').bind(caseId).first();
+  if (existing?.agreement_status === 'signed') {
+    return messagePage('Representation is already active','The signed representation record is immutable. Use a future amendment/termination workflow rather than changing the activation record.',409);
+  }
+
   const status = allowedAgreementStatus(form.get('agreement_status'));
   const now = new Date().toISOString();
   const professional = clean(request.headers.get('Cf-Access-Authenticated-User-Email')) || 'verified HBE professional';
@@ -123,7 +128,7 @@ async function saveHbeRepresentation(request, env) {
       signed_at=excluded.signed_at,
       compensation_summary=excluded.compensation_summary,
       confirmed_by=excluded.confirmed_by,
-      activated_at=CASE WHEN excluded.agreement_status='signed' THEN COALESCE(buyer_representation_records.activated_at,excluded.activated_at) ELSE buyer_representation_records.activated_at END,
+      activated_at=excluded.activated_at,
       notes=excluded.notes`)
     .bind(
       caseId,now,now,status,
@@ -149,7 +154,8 @@ async function activateRepresentation(env, caseId, now) {
 
   const caseCompleted = addCompleted(caseRow?.completed_stages, ['consultation','representation']);
   const statements = [
-    env.BUYER_DB.prepare(`UPDATE buyer_cases SET stage='search',completed_stages=?,updated_at=? WHERE id=?`).bind(caseCompleted,now,caseId)
+    env.BUYER_DB.prepare(`UPDATE buyer_cases SET stage='search',completed_stages=?,updated_at=? WHERE id=?`).bind(caseCompleted,now,caseId),
+    env.BUYER_DB.prepare(`UPDATE buyer_case_invitations SET revoked_at=? WHERE case_id=? AND accepted_at IS NULL AND revoked_at IS NULL`).bind(now,caseId)
   ];
 
   for (const member of (members.results || [])) {
@@ -218,6 +224,11 @@ function hbeRepresentationPanel(data) {
   const r = data.record || {};
   const consultReady = data.consultation.next_step === 'representation';
   const allReady = data.members.length > 0 && data.members.every(m => m.choice === 'prepare');
+  const signed = r.agreement_status === 'signed';
+
+  if (signed) {
+    return `<section id="hire-hbe" class="rep-shell rep-hbe rep-active"><div class="rep-kicker">STAGE 3 · HIRE HBE · HBE WORKSPACE</div><div class="rep-hbe-head"><div><h2>Representation active</h2><p>The activation record is now immutable. Future changes belong in an explicit amendment or termination workflow so the history remains truthful.</p></div><span class="rep-status signed">Representation active</span></div><div class="rep-summary"><div><small>Agreement</small><strong>${esc(r.agreement_version || 'Recorded agreement')}</strong></div><div><small>Signed</small><strong>${esc(formatDate(r.signed_at))}</strong></div><div><small>Compensation</small><strong>${esc(r.compensation_summary || 'See signed agreement')}</strong></div></div></section>`;
+  }
 
   return `<section id="hire-hbe" class="rep-shell rep-hbe"><div class="rep-kicker">STAGE 3 · HIRE HBE · HBE WORKSPACE</div><div class="rep-hbe-head"><div><h2>Representation readiness</h2><p>Buyer intent and the actual written agreement stay separate. HBE may activate Stage 4 only after the agreement exists and the linked buyers have deliberately chosen to review/proceed.</p></div><span class="rep-status ${esc(r.agreement_status || 'not_started')}">${esc(statusLabel(r.agreement_status))}</span></div>
     <div class="rep-readiness ${consultReady ? 'ready' : ''}"><strong>Consultation outcome</strong><span>${consultReady ? 'Explore representation is the recorded next step.' : 'Representation is not the recorded consultation next step.'}</span></div>
