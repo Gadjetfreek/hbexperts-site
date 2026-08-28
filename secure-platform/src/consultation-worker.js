@@ -5,8 +5,6 @@ export default {
     const url = new URL(request.url);
 
     if (request.method === 'POST' && url.pathname === '/api/hbe/consultation') {
-      // HBE Access remains the security gate. The downstream route intentionally
-      // does not exist; a non-403 response means Access + HBE professional checks passed.
       const gate = await appWorker.fetch(request, env, ctx);
       if (gate.status === 403) return gate;
       return saveConsultation(request, env);
@@ -73,7 +71,58 @@ async function saveConsultation(request, env) {
       clean(form.get('summary')) || null
     ).run();
 
+  await applyConsultationOutcome(env, caseId, nextStep, now);
   return redirect(`/hbe?buyer=${encodeURIComponent(buyerId)}#consultation-workspace`);
+}
+
+async function applyConsultationOutcome(env, caseId, nextStep, now) {
+  const [caseRow, agreement, membersResult] = await Promise.all([
+    env.BUYER_DB.prepare('SELECT stage,completed_stages FROM buyer_cases WHERE id=?').bind(caseId).first(),
+    env.BUYER_DB.prepare('SELECT agreement_status FROM buyer_representation_records WHERE case_id=? LIMIT 1').bind(caseId).first(),
+    env.BUYER_DB.prepare(`SELECT b.id,b.stage,b.completed_stages
+      FROM buyer_case_members m JOIN buyers b ON b.id=m.buyer_id
+      WHERE m.case_id=?`).bind(caseId).all()
+  ]);
+  if (!caseRow) return;
+
+  // A signed representation relationship is canonical. Editing the historical
+  // consultation record must never regress an active represented case.
+  if (agreement?.agreement_status === 'signed') return;
+
+  const members = membersResult.results || [];
+  if (nextStep === 'representation') {
+    const statements = [
+      env.BUYER_DB.prepare(`UPDATE buyer_cases SET stage='representation',completed_stages=?,updated_at=? WHERE id=?`)
+        .bind(addCompleted(caseRow.completed_stages,['consultation']),now,caseId)
+    ];
+    for (const member of members) {
+      statements.push(
+        env.BUYER_DB.prepare(`UPDATE buyers SET stage='representation',completed_stages=?,updated_at=? WHERE id=?`)
+          .bind(addCompleted(member.completed_stages,['consultation']),now,member.id)
+      );
+    }
+    await env.BUYER_DB.batch(statements);
+    return;
+  }
+
+  // If HBE changes the consultation outcome before representation is signed,
+  // return the case to Consultation instead of leaving two conflicting truths.
+  if (caseRow.stage === 'representation') {
+    const statements = [
+      env.BUYER_DB.prepare(`UPDATE buyer_cases SET stage='consultation',completed_stages=?,updated_at=? WHERE id=?`)
+        .bind(removeCompleted(caseRow.completed_stages,['consultation']),now,caseId)
+    ];
+    for (const member of members) {
+      statements.push(
+        env.BUYER_DB.prepare(`UPDATE buyers SET stage='consultation',completed_stages=?,updated_at=? WHERE id=?`)
+          .bind(removeCompleted(member.completed_stages,['consultation']),now,member.id)
+      );
+    }
+    await env.BUYER_DB.batch(statements);
+    return;
+  }
+
+  await env.BUYER_DB.prepare('UPDATE buyer_cases SET updated_at=? WHERE id=?').bind(now,caseId).run();
 }
 
 async function consultationData(env, caseId, selectedBuyerId) {
@@ -100,7 +149,7 @@ function consultationWorkspace(data) {
 
   return `<section id="consultation-workspace" class="consult-shell">
     <div class="consult-head">
-      <div><div class="consult-eyebrow">STAGE 2 · CONSULTATION</div><h2>Turn the Buyer Experience into understanding.</h2><p>Prepare from what the buyer already told us, then record what the human conversation changes. The consultation does not automatically move anyone into representation.</p></div>
+      <div><div class="consult-eyebrow">STAGE 2 · CONSULTATION</div><h2>Turn the Buyer Experience into understanding.</h2><p>Prepare from what the buyer already told us, then record what the human conversation changes. Choosing representation as the next best step completes Consultation and opens Stage 3; other outcomes remain explicitly recorded here without pretending the buyer advanced.</p></div>
       <a class="consult-top-link" href="#consultation-record">Jump to record</a>
     </div>
     ${householdNote}
@@ -121,7 +170,7 @@ function consultationWorkspace(data) {
         <label>Why is that the next best step?<textarea name="next_step_notes" rows="3" placeholder="Explain the reasoning without turning the recommendation into pressure.">${esc(r.next_step_notes || '')}</textarea></label>
         <label>Consultation summary<textarea name="summary" rows="5" placeholder="A concise human record of the conversation, important tradeoffs, and what should stay visible going forward.">${esc(r.summary || '')}</textarea></label>
       </div>
-      <div class="consult-save"><div><strong>Saving records learning; it does not hire HBE for the buyer.</strong><small>If representation is the next useful step, the buyer still chooses it deliberately in Stage 3.</small></div><button type="submit">Save consultation record</button></div>
+      <div class="consult-save"><div><strong>Saving records learning; it does not hire HBE for the buyer.</strong><small>If representation is the next useful step, Stage 3 opens and the buyer still chooses it deliberately.</small></div><button type="submit">Save consultation record</button></div>
     </form>
   </section>`;
 }
@@ -208,6 +257,17 @@ async function newestBuyerId(env) {
 function allowedNextStep(value) {
   const v = clean(value);
   return ['representation','prepare','research','wait','stop','other'].includes(v) ? v : '';
+}
+function addCompleted(jsonValue, stages) {
+  let a=[];
+  try { a=JSON.parse(jsonValue || '[]'); if(!Array.isArray(a)) a=[]; } catch {}
+  for (const stage of stages) if (!a.includes(stage)) a.push(stage);
+  return JSON.stringify(a);
+}
+function removeCompleted(jsonValue, stages) {
+  let a=[];
+  try { a=JSON.parse(jsonValue || '[]'); if(!Array.isArray(a)) a=[]; } catch {}
+  return JSON.stringify(a.filter(stage => !stages.includes(stage)));
 }
 
 function injectBeforeMainEnd(text, panel) {
