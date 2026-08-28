@@ -27,6 +27,12 @@ if (-not $db -or -not $db.uuid) {
 }
 
 $config = [regex]::Replace($config, 'database_id\s*=\s*"[^"]+"', "database_id = `"$($db.uuid)`"")
+if ($config -match 'REPLACE_[A-Z0-9_]+') {
+  throw 'Deployment preflight failed: unresolved REPLACE_ placeholder remains in Wrangler configuration.'
+}
+if ($config -notmatch '(?m)^keep_vars\s*=\s*true\s*$') {
+  throw 'Deployment preflight failed: keep_vars=true is required so live dashboard-managed Access variables are preserved.'
+}
 Set-Content -Path $tempConfigPath -Value $config -Encoding UTF8
 Write-Host "Using D1 database $dbName ($($db.uuid))"
 
@@ -49,10 +55,14 @@ try {
   node --check src/representation-worker.js
   node --check src/mls-adapter.js
   node --check src/search-worker.js
+  node --check src/journey-state-worker.js
   node --check src/value-brand-worker.js
   if (Select-String -Path src/worker.js -Pattern 'donald-kelley|localStorage|buyer_token_hash' -Quiet) {
     throw 'Security/source check failed: legacy buyer-specific or browser-local journey code detected.'
   }
+
+  Write-Host 'Running Wrangler bundle dry-run...'
+  npx --yes wrangler@latest deploy --dry-run --config $tempConfigPath
 
   Write-Host '5/6 Deploying Worker to buyer.hbexperts.com...'
   $oldErrorActionPreference = $ErrorActionPreference
@@ -79,14 +89,11 @@ try {
   Write-Host "Health:        $buyerBaseUrl/health"
   Write-Host ''
   Write-Host 'VALUE language layer enabled.' -ForegroundColor Green
-  Write-Host 'Consultation workspace enabled: Buyer Experience brief + case-level consultation record.' -ForegroundColor Green
-  Write-Host 'Representation workflow enabled: buyer choice + written-agreement activation gate.' -ForegroundColor Green
-  Write-Host 'Home Search workflow enabled: versioned criteria + household confirmation + objective MLS query adapter.' -ForegroundColor Green
-  if ($env:MLS_CLIENT_ID -and $env:MLS_CLIENT_SECRET) {
-    Write-Host 'MLS credentials detected in deployment environment. Verify the approved MLS Now/Trestle license before enabling live queries.' -ForegroundColor Yellow
-  } else {
-    Write-Host 'MLS adapter is deployed disconnected. Configure approved Trestle credentials only after MLS Now data-license approval.' -ForegroundColor Yellow
-  }
+  Write-Host 'Consultation workspace enabled: Buyer Experience brief + canonical Stage 2 transition.' -ForegroundColor Green
+  Write-Host 'Representation workflow enabled: buyer choice + immutable signed-agreement activation gate.' -ForegroundColor Green
+  Write-Host 'Home Search workflow enabled: versioned criteria + separate household confirmation + objective MLS query adapter.' -ForegroundColor Green
+  Write-Host 'Household membership freezes when representation activates; later additions require an amendment workflow.' -ForegroundColor Green
+  Write-Host 'MLS adapter is deployed disconnected/unapproved until MLS Now approves the exact feed and encrypted credentials are configured.' -ForegroundColor Yellow
   Write-Host 'Pilot layer enabled: household cases, HBE time tracking, and 2.75% compensation comparison.' -ForegroundColor Green
   Write-Host 'HBE Portal must remain protected by Cloudflare Access before external beta use.' -ForegroundColor Yellow
   Write-Host 'Sensitive uploads remain disabled until /sensitive* has fresh email-OTP Access protection.' -ForegroundColor Yellow
