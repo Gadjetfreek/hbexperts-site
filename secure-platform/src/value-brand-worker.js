@@ -1,4 +1,4 @@
-import appWorker from './hbe-access-worker.js';
+import appWorker from './consultation-worker.js';
 
 export default {
   async fetch(request, env, ctx) {
