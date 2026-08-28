@@ -3,6 +3,7 @@ main = "src/value-brand-worker.js"
 compatibility_date = "2026-08-26"
 workers_dev = false
 preview_urls = false
+keep_vars = true
 
 [[routes]]
 pattern = "buyer.hbexperts.com"
@@ -12,16 +13,14 @@ custom_domain = true
 HBE_ADMIN_EMAIL = "cwhitehead@hbexperts.com"
 HBE_ALERT_TO = "cwhitehead@hbexperts.com"
 HBE_ALERT_FROM = "buyer-alerts@hbexperts.com"
-# Replace these with the exact values from the single HBEUI Cloudflare Access app
-# before any #6 deployment. The Worker fails closed if they are missing/wrong.
-CF_ACCESS_TEAM_DOMAIN = "REPLACE_AFTER_ACCESS_APPLICATION"
-CF_ACCESS_AUD = "REPLACE_AFTER_ACCESS_APPLICATION"
+# CF_ACCESS_TEAM_DOMAIN and CF_ACCESS_AUD are intentionally not stored here.
+# They are live, non-secret dashboard variables and keep_vars=true preserves them.
+# hbe-access-worker.js fails closed if either value is missing or invalid.
 
-# MLS integration is intentionally disconnected by default.
-# MLS_FEED_MODE should match the license approved by MLS Now (expected: VOW for the
-# authenticated buyer portal). The provider endpoint may be overridden if Trestle's
-# approved environment supplies a different base URL.
-MLS_FEED_MODE = "VOW"
+# MLS integration is intentionally disconnected and unlicensed by default.
+# Change MLS_FEED_MODE only after MLS Now approves the exact feed/license for the
+# finished HBE use case. Do not infer VOW/IDX/private broker feed in advance.
+MLS_FEED_MODE = "UNAPPROVED"
 MLS_API_BASE = "https://api.cotality.com/trestle"
 # NEVER put MLS_CLIENT_ID or MLS_CLIENT_SECRET in this file/repository.
 # After MLS Now/Trestle approval, add them as encrypted Cloudflare Worker secrets.
