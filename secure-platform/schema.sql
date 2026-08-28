@@ -61,7 +61,6 @@ CREATE TABLE IF NOT EXISTS buyer_tasks (
   FOREIGN KEY (buyer_id) REFERENCES buyers(id) ON DELETE CASCADE
 );
 
--- Pilot household layer. Existing buyer records remain valid and are mapped lazily.
 CREATE TABLE IF NOT EXISTS buyer_cases (
   id TEXT PRIMARY KEY,
   created_at TEXT NOT NULL,
@@ -81,7 +80,6 @@ CREATE TABLE IF NOT EXISTS buyer_case_members (
   FOREIGN KEY (buyer_id) REFERENCES buyers(id) ON DELETE CASCADE
 );
 
--- Consent-based co-buyer invitations. Raw invitation tokens are never stored.
 CREATE TABLE IF NOT EXISTS buyer_case_invitations (
   id TEXT PRIMARY KEY,
   case_id TEXT NOT NULL,
@@ -109,7 +107,22 @@ CREATE TABLE IF NOT EXISTS buyer_person_profiles (
   FOREIGN KEY (buyer_id) REFERENCES buyers(id) ON DELETE CASCADE
 );
 
--- Loose internal measurement only during the pilot; not a buyer billing meter.
+CREATE TABLE IF NOT EXISTS buyer_consultation_records (
+  case_id TEXT PRIMARY KEY,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  meeting_at TEXT,
+  updated_by TEXT NOT NULL,
+  clearer TEXT,
+  changed TEXT,
+  unknowns TEXT,
+  evidence_needed TEXT,
+  next_step TEXT,
+  next_step_notes TEXT,
+  summary TEXT,
+  FOREIGN KEY (case_id) REFERENCES buyer_cases(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS buyer_time_entries (
   id TEXT PRIMARY KEY,
   case_id TEXT NOT NULL,
@@ -138,9 +151,6 @@ CREATE TABLE IF NOT EXISTS buyer_case_financials (
   FOREIGN KEY (case_id) REFERENCES buyer_cases(id) ON DELETE CASCADE
 );
 
--- HBE professional identity is deny-by-default. Google Workspace provisioning and
--- HBE application authorization are tracked separately so creating/requesting an
--- @hbexperts.com address never grants HBEUI access by itself.
 CREATE TABLE IF NOT EXISTS hbe_professionals (
   id TEXT PRIMARY KEY,
   email TEXT NOT NULL UNIQUE COLLATE NOCASE,
@@ -153,9 +163,6 @@ CREATE TABLE IF NOT EXISTS hbe_professionals (
   updated_at TEXT NOT NULL
 );
 
--- Bootstrap the current broker-admin identity and stage Jennifer's requested HBE
--- identity without granting access until the Google Workspace account exists and
--- HBE explicitly activates her professional record.
 INSERT OR IGNORE INTO hbe_professionals
   (id,email,display_name,role,status,workspace_status,created_at,updated_at)
 VALUES
@@ -178,6 +185,7 @@ CREATE INDEX IF NOT EXISTS idx_case_invites_token ON buyer_case_invitations(toke
 CREATE INDEX IF NOT EXISTS idx_case_invites_creator ON buyer_case_invitations(created_by_buyer_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_case_invites_case ON buyer_case_invitations(case_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_profiles_case ON buyer_person_profiles(case_id, completed_at);
+CREATE INDEX IF NOT EXISTS idx_consultation_updated ON buyer_consultation_records(updated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_time_case ON buyer_time_entries(case_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_time_professional ON buyer_time_entries(professional_email, ended_at, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_hbe_professionals_status ON hbe_professionals(status, workspace_status, email);
