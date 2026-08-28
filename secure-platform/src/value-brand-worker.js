@@ -1,4 +1,4 @@
-import appWorker from './consultation-worker.js';
+import appWorker from './representation-worker.js';
 
 export default {
   async fetch(request, env, ctx) {
