@@ -1,12 +1,14 @@
 const DEFAULT_BASE = 'https://api.cotality.com/trestle';
+const DEFAULT_MODE = 'UNAPPROVED';
 
 export function mlsConfigured(env) {
-  return !!(String(env.MLS_CLIENT_ID || '').trim() && String(env.MLS_CLIENT_SECRET || '').trim());
+  return !!(String(env.MLS_CLIENT_ID || '').trim() && String(env.MLS_CLIENT_SECRET || '').trim() && approvedFeedMode(env));
 }
 
 export async function searchMls(env, profile, {top=25}={}) {
+  const feedMode = String(env.MLS_FEED_MODE || DEFAULT_MODE).trim() || DEFAULT_MODE;
   if (!mlsConfigured(env)) {
-    return {configured:false, provider:'Trestle', feedMode:String(env.MLS_FEED_MODE || 'VOW'), query:null, count:null, listings:[]};
+    return {configured:false, provider:'Trestle', feedMode, query:null, count:null, listings:[]};
   }
 
   const token = await accessToken(env);
@@ -33,7 +35,7 @@ export async function searchMls(env, profile, {top=25}={}) {
   return {
     configured:true,
     provider:'Trestle',
-    feedMode:String(env.MLS_FEED_MODE || 'VOW'),
+    feedMode,
     query,
     count:Number.isFinite(body['@odata.count']) ? body['@odata.count'] : null,
     listings:Array.isArray(body.value) ? body.value : []
@@ -92,6 +94,10 @@ async function accessToken(env) {
   return data.access_token;
 }
 
+function approvedFeedMode(env) {
+  const mode = String(env.MLS_FEED_MODE || DEFAULT_MODE).trim().toUpperCase();
+  return !!mode && !['UNAPPROVED','UNKNOWN','TBD','DISABLED'].includes(mode);
+}
 function number(value) {
   if (value === null || value === undefined || value === '') return null;
   const n = Number(value);
