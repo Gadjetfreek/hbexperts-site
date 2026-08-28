@@ -33,6 +33,7 @@ Write-Host "Using D1 database $dbName ($($db.uuid))"
 try {
   Write-Host '3/6 Applying database schema...'
   npx --yes wrangler@latest d1 execute $dbName --remote --file=schema.sql --config $tempConfigPath
+  npx --yes wrangler@latest d1 execute $dbName --remote --file=schema-stage4.sql --config $tempConfigPath
 
   Write-Host '4/6 Running local source checks...'
   node --check src/worker.js
@@ -46,6 +47,8 @@ try {
   node --check src/hbe-access-worker.js
   node --check src/consultation-worker.js
   node --check src/representation-worker.js
+  node --check src/mls-adapter.js
+  node --check src/search-worker.js
   node --check src/value-brand-worker.js
   if (Select-String -Path src/worker.js -Pattern 'donald-kelley|localStorage|buyer_token_hash' -Quiet) {
     throw 'Security/source check failed: legacy buyer-specific or browser-local journey code detected.'
@@ -78,6 +81,12 @@ try {
   Write-Host 'VALUE language layer enabled.' -ForegroundColor Green
   Write-Host 'Consultation workspace enabled: Buyer Experience brief + case-level consultation record.' -ForegroundColor Green
   Write-Host 'Representation workflow enabled: buyer choice + written-agreement activation gate.' -ForegroundColor Green
+  Write-Host 'Home Search workflow enabled: versioned criteria + household confirmation + objective MLS query adapter.' -ForegroundColor Green
+  if ($env:MLS_CLIENT_ID -and $env:MLS_CLIENT_SECRET) {
+    Write-Host 'MLS credentials detected in deployment environment. Verify the approved MLS Now/Trestle license before enabling live queries.' -ForegroundColor Yellow
+  } else {
+    Write-Host 'MLS adapter is deployed disconnected. Configure approved Trestle credentials only after MLS Now data-license approval.' -ForegroundColor Yellow
+  }
   Write-Host 'Pilot layer enabled: household cases, HBE time tracking, and 2.75% compensation comparison.' -ForegroundColor Green
   Write-Host 'HBE Portal must remain protected by Cloudflare Access before external beta use.' -ForegroundColor Yellow
   Write-Host 'Sensitive uploads remain disabled until /sensitive* has fresh email-OTP Access protection.' -ForegroundColor Yellow
