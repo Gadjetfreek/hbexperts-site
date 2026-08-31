@@ -138,6 +138,16 @@ When you work with HomeBuyer Experts, you should expect:
 
 ---
 
+## What Others Have Said
+
+Independent reviews and professional recommendations can add useful context, but we prefer that you see them at their original source rather than only through our retelling.
+
+We have collected links to recommendations and reviews for HomeBuyer Experts and Christopher Whitehead on LinkedIn, Angi, Zillow, and Google.
+
+[Read Reviews & Recommendations →]({{< relref "reviews" >}})
+
+---
+
 ## Explore before you decide
 
 You can see the whole HBE Buyer Journey before sharing anything with us.
