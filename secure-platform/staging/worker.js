@@ -18,6 +18,7 @@
  *
  * Persistence gap: checklist / invite-accept / view-mode live in cookies.
  * D1 is optional and not bound in wrangler.toml.
+ * Perimeter: fail closed. Access for cwhitehead@hbexperts.com on the whole hostname, or Worker secret STAGING_PREVIEW_TOKEN. Demo codes are not the gate.
  */
 import {
   ADMIN_EMAIL,
@@ -34,7 +35,9 @@ const VIEW = 'hbe_stg_view';
 const CHECKS = 'hbe_stg_checks';
 const FLASH = 'hbe_stg_flash';
 const JOINED = 'hbe_stg_sam_joined';
-const COOKIE_BASE = 'Path=/; SameSite=Lax; HttpOnly; Max-Age=28800';
+const PREVIEW = 'hbe_stg_preview';
+const COOKIE_BASE = 'Path=/; Secure; SameSite=Lax; HttpOnly; Max-Age=28800';
+const PREVIEW_COOKIE = 'Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=14400';
 
 const CODES = {
   [DEMO.alexCode]: 'alex',
@@ -43,7 +46,10 @@ const CODES = {
 };
 
 export default {
-  async fetch(request) {
+  async fetch(request, env) {
+    const gate = authorizePreview(request, env);
+    if (!gate.ok) return gate.response;
+
     const url = new URL(request.url);
     const cookies = parseCookies(request);
     const setCookies = [];
@@ -644,7 +650,49 @@ function shell(title, body) {
 }
 
 
+function authorizePreview(request, env) {
+  env = env || {};
+  const url = new URL(request.url);
+  const expectedEmail = String(env.HBE_ADMIN_EMAIL || ADMIN_EMAIL || '').trim().toLowerCase();
+  const accessEmail = String(request.headers.get('Cf-Access-Authenticated-User-Email') || '').trim().toLowerCase();
+  if (accessEmail && expectedEmail && accessEmail === expectedEmail) return { ok: true };
+
+  const token = String(env.STAGING_PREVIEW_TOKEN || '');
+  const cookies = parseCookies(request);
+  const supplied = String(url.searchParams.get('preview') || cookies[PREVIEW] || '');
+  if (token && supplied && timingSafeEqualText(token, supplied)) {
+    if (url.searchParams.has('preview')) {
+      url.searchParams.delete('preview');
+      const headers = securityHeaders();
+      headers.set('location', `${url.pathname}${url.search}${url.hash}`);
+      headers.append('set-cookie', `${PREVIEW}=${encodeURIComponent(token)}; ${PREVIEW_COOKIE}`);
+      return { ok: false, response: new Response(null, { status: 303, headers }) };
+    }
+    return { ok: true };
+  }
+
+  const headers = securityHeaders();
+  headers.set('content-type', 'text/plain; charset=utf-8');
+  return {
+    ok: false,
+    response: new Response(
+      'HBE staging is gated. Use Cloudflare Access for cwhitehead@hbexperts.com, or the separately supplied staging preview credential. Demo codes are not the perimeter.',
+      { status: 403, headers }
+    )
+  };
+}
+
+function timingSafeEqualText(a, b) {
+  const left = String(a);
+  const right = String(b);
+  if (left.length !== right.length) return false;
+  let diff = 0;
+  for (let i = 0; i < left.length; i++) diff |= left.charCodeAt(i) ^ right.charCodeAt(i);
+  return diff === 0;
+}
+
 function hbeAllowed(request) {
+  // Secondary identity check only. Perimeter is authorizePreview on every route.
   const email = String(request.headers.get('Cf-Access-Authenticated-User-Email') || '').trim().toLowerCase();
   if (!email) return true;
   return email === String(ADMIN_EMAIL || '').toLowerCase();
@@ -688,7 +736,7 @@ function cookie(name, value) {
   return `${name}=${encodeURIComponent(String(value))}; ${COOKIE_BASE}`;
 }
 function expire(name) {
-  return `${name}=; Path=/; SameSite=Lax; HttpOnly; Max-Age=0`;
+  return `${name}=; Path=/; Secure; SameSite=Lax; HttpOnly; Max-Age=0`;
 }
 function redirect(location, cookies = []) {
   const headers = securityHeaders();

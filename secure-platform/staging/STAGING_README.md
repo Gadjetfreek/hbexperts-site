@@ -40,7 +40,7 @@ ForgePT PR #26 used a different post-keys count. Compare on purpose.
 
 - Alex Rivera: `ALEX-RIVERA-DEMO` — private buyer view; can preview Sam's invitation
 - Sam Rivera: `SAM-RIVERA-DEMO` — private buyer view, separate session
-- HBE staff (staging): `HBE-STAGING-DEMO` — HBE Dashboard (not Cloudflare Access)
+- HBE staff (staging): `HBE-STAGING-DEMO` — HBE Dashboard role after the Access/preview-token perimeter
 - Sam invite token: `forge-rivera-sam-invite` at `/invite/forge-rivera-sam-invite`
 - Identify as `Sam Rivera` or `sam.rivera@example.test`
 
@@ -60,7 +60,7 @@ From this directory only. Install packages, then start local Worker with the sta
 Worker name: hbe-buyer-platform-staging. workers_dev is true. No production routes. Use the staging config only.
 If cloud auth is missing, stop. Do not invent credentials or create a token.
 After a workers.dev URL exists, remaining human step: Access restricted to cwhitehead@hbexperts.com only. Never attach buyer.hbexperts.com.
-If an Access email header is present and is not that address, /hbe returns 403. If absent, staging still serves the page.
+Every route fails closed without Access or Worker secret STAGING_PREVIEW_TOKEN. Demo codes including HBE-STAGING-DEMO are roles after the gate, not the perimeter. Preview cookie is HttpOnly; Secure; SameSite=Strict. App cookies include Secure.
 
 ## D1
 
@@ -71,7 +71,7 @@ schema.sql is synthetic staging_meta only. Keep any real database id out of git.
 - No production data, no client PII, no secrets
 - No D1 persistence — cookies only, per browser
 - Invitation is seed-replayable (not hashed single-use D1 rows)
-- No email, no Access gate until a human attaches one
+- No email. Perimeter is Access or STAGING_PREVIEW_TOKEN secret (not in git). Do not deploy until Sebastian authorizes wrangler login.
 - No MLS, no P1.1, no Order #6
 - Staging questionnaire is a short thank-you path, not the full eight-part Buyer Experience
 

@@ -22,3 +22,8 @@ STAGING_HOUSEHOLD = "Alex and Sam Rivera"
 # binding = "STAGING_DB"
 # database_name = "hbe-buyer-journey-staging"
 # database_id = "REPLACE_AFTER_D1_CREATE"
+
+# Perimeter: prefer Cloudflare Access on the whole workers.dev hostname for
+# cwhitehead@hbexperts.com. Fallback: Worker secret STAGING_PREVIEW_TOKEN
+# (wrangler secret put STAGING_PREVIEW_TOKEN). Never commit that value.
+# Demo codes are roles after the gate, not the gate.
