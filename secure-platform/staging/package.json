@@ -1,0 +1,12 @@
+{
+  "name": "hbe-buyer-platform-staging",
+  "private": true,
+  "description": "Isolated synthetic HBEUI + Buyer Portal staging Worker. Do not bind production D1 or deploy Worker hbe-buyer-platform.",
+  "scripts": {
+    "deploy": "wrangler deploy --config wrangler.toml",
+    "dev": "wrangler dev --config wrangler.toml"
+  },
+  "dependencies": {
+    "wrangler": "^3.114.17"
+  }
+}

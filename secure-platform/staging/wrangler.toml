@@ -1,0 +1,24 @@
+# Isolated staging Worker. Never deploy this config as hbe-buyer-platform.
+# Never bind BUYER_DB to hbe-buyer-journey-v2 or any live Buyer Experience database.
+name = "hbe-buyer-platform-staging"
+main = "worker.js"
+compatibility_date = "2026-08-26"
+workers_dev = true
+preview_urls = false
+keep_vars = true
+
+# No production routes. Unlisted workers.dev hostname only until Access is attached.
+# Do not add buyer.hbexperts.com or any hbexperts.com custom domain here.
+
+[vars]
+HBE_ADMIN_EMAIL = "cwhitehead@hbexperts.com"
+STAGING_MODE = "synthetic"
+STAGING_HOUSEHOLD = "Alex and Sam Rivera"
+
+# Staging D1 is optional. Keep database_id as a placeholder in git.
+# Create with: wrangler d1 create hbe-buyer-journey-staging
+# Then put the real id in the Cloudflare dashboard / local wrangler state, not in this file.
+# [[d1_databases]]
+# binding = "STAGING_DB"
+# database_name = "hbe-buyer-journey-staging"
+# database_id = "REPLACE_AFTER_D1_CREATE"
