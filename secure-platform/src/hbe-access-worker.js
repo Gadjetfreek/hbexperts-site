@@ -42,7 +42,7 @@ export default {
   }
 };
 
-async function authenticateHbeProfessional(request, env) {
+export async function authenticateHbeProfessional(request, env) {
   const teamDomain = normalizedTeamDomain(env.CF_ACCESS_TEAM_DOMAIN || env.TEAM_DOMAIN);
   const audience = String(env.CF_ACCESS_AUD || env.POLICY_AUD || '').trim();
   if (!teamDomain || !audience || teamDomain.includes('REPLACE_') || audience.includes('REPLACE_')) {

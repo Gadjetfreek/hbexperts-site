@@ -62,12 +62,13 @@ CREATE TABLE IF NOT EXISTS household_checklist_items (
 CREATE TABLE IF NOT EXISTS household_checklist_completions (
   id TEXT PRIMARY KEY,
   case_id TEXT NOT NULL,
-  item_id TEXT NOT NULL UNIQUE,
+  item_id TEXT NOT NULL,
   item_key TEXT NOT NULL,
   stage_id TEXT NOT NULL,
   completed_at TEXT NOT NULL,
   completed_by_kind TEXT NOT NULL CHECK (completed_by_kind IN ('hbe','buyer','system')),
   completed_by_id TEXT NOT NULL,
+  scope_key TEXT NOT NULL UNIQUE,
   FOREIGN KEY (case_id) REFERENCES buyer_cases(id) ON DELETE CASCADE,
   FOREIGN KEY (item_id) REFERENCES household_checklist_items(id) ON DELETE CASCADE
 );

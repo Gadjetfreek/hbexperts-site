@@ -1,5 +1,5 @@
 import { STAGES, STAGE_CHECKLISTS, stageLabel, stageIndex, COMPENSATION_PUBLIC, COMPENSATION_POST_HIRE_NOTE } from './journey-stages.js';
-import { deriveWhatsNext, filterStory, defaultCompass, canSeeItem } from './household-state.js';
+import { deriveWhatsNext, filterStory, defaultCompass, canSeeItem, isCompletedForActor } from './household-state.js';
 
 export function esc(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
 
@@ -19,6 +19,7 @@ export const ISSUE29_CSS = `<style id="issue29-convergence">
 .i29-stop{position:relative;display:grid;grid-template-columns:34px 1fr;gap:.55rem;min-height:104px;padding:.9rem;border:1px solid var(--border);border-radius:12px;background:#fff;color:inherit;text-align:left;font:inherit;cursor:pointer}
 .i29-stop.future{opacity:.7}
 .i29-stop.current{border-color:rgba(45,90,61,.55);box-shadow:0 6px 22px rgba(45,90,61,.1)}
+.i29-stop.viewing{border-color:rgba(201,168,76,.7)}
 .i29-stop.done .i29-num{background:var(--green);color:#fff}
 .i29-num{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--section);font-weight:800;font-size:.8rem}
 .i29-stop strong,.i29-stop small{display:block}
@@ -88,15 +89,17 @@ document.addEventListener('click',e=>{if(!e.target.closest('[data-i29-stop]'))st
 })();
 </script>`;
 
-export function stageMapHtml({ currentStage, completed = [], actor = { kind: 'buyer' }, hrefFor }) {
+export function stageMapHtml({ currentStage, selectedStage, completed = [], actor = { kind: 'buyer' }, hrefFor }) {
   const currentIndex = stageIndex(currentStage);
   const journeyComplete = currentStage === 'complete';
+  const viewing = selectedStage || currentStage;
   return `<div class="i29-map" aria-label="HomeBuyer 17-stage journey">${STAGES.map((s,i)=>{
     const done = journeyComplete || completed.includes(s[0]) || (currentIndex>i && currentIndex>=0);
     const current = s[0]===currentStage;
+    const viewingThis = s[0]===viewing;
     const items = (STAGE_CHECKLISTS[s[0]]||[]).filter(it=>canSeeItem(it, actor)).slice(0,5);
     const href = hrefFor ? hrefFor(s[0]) : `#stage-${s[0]}`;
-    return `<div class="i29-stop ${done?'done':''} ${current?'current':''} ${!done&&!current?'future':''}" data-i29-stop data-stage="${esc(s[0])}" tabindex="0" role="button" aria-expanded="false">
+    return `<div class="i29-stop ${done?'done':''} ${current?'current':''} ${viewingThis&&!current?'viewing':''} ${!done&&!current?'future':''}" data-i29-stop data-stage="${esc(s[0])}" tabindex="0" role="button" aria-expanded="${viewingThis?'true':'false'}">
       <span class="i29-num">${done?'✓':i+1}</span>
       <div><strong>${esc(s[1])}</strong><small>${esc(s[2])}</small></div>
       <div class="i29-peek">
@@ -120,7 +123,7 @@ export function splitHouseholdCard({ householdName, members, stage, selected, hb
   </article>`;
 }
 
-export function storyPanel(story, { mode, actor }) {
+export function storyPanel(story, { mode, actor, csrfField = '' }) {
   const view = filterStory(story || {}, actor, mode);
   const isHbe = actor.kind === 'hbe';
   const title = isHbe ? 'Household story — HBE synthesis' : (mode === 'shared' ? 'Shared household story' : 'Your story in this household');
@@ -138,15 +141,16 @@ export function storyPanel(story, { mode, actor }) {
       ${isHbe?dl('Risks', view.risks):''}${isHbe?dl('Decision style', view.decision_style):''}
       ${dl('Unresolved questions', view.unresolved_questions)}${dl('Evidence', view.evidence)}${dl('What changed', view.what_changed)}
     </div>
-    ${isHbe?storyForm(story):''}
+    ${isHbe?storyForm(story, csrfField):''}
   </section>`;
 }
 
 function dl(k,v){return v?`<div><small>${esc(k)}</small><strong>${esc(v)}</strong></div>`:''}
 
-function storyForm(story){
+function storyForm(story, csrfField=''){
   const s=story||{};
   return `<form method="post" action="/api/hbe/story" class="i29-story-form">
+    ${csrfField}
     <input type="hidden" name="case_id" value="${esc(s.case_id||'')}">
     <input type="hidden" name="buyer_id" value="${esc(s.selected_buyer_id||'')}">
     <label>Shared story<textarea name="shared_story" rows="4">${esc(s.shared_story||'')}</textarea></label>
@@ -165,7 +169,7 @@ function storyForm(story){
   </form>`;
 }
 
-export function compassPanel(compass) {
+export function compassPanel(compass, options = {}) {
   const c = compass && (compass.optimizing_for || compass.tradeoffs || compass.uncertainty || compass.evidence || compass.next_conversation)
     ? compass
     : defaultCompass('consultation');
@@ -179,7 +183,22 @@ export function compassPanel(compass) {
       <div><small>Evidence learned so far</small><strong>${esc(c.evidence)}</strong></div>
       <div><small>Next conversation / decision</small><strong>${esc(c.next_conversation)}</strong></div>
     </div>
+    ${options.editable ? compassForm(c, options) : ''}
   </section>`;
+}
+
+function compassForm(compass, options = {}) {
+  const c = compass || {};
+  return `<form method="post" action="/api/hbe/compass" class="i29-story-form">
+    ${options.csrfField || ''}
+    ${options.hiddenFields || ''}
+    <label>Optimizing for<textarea name="optimizing_for" rows="3">${esc(c.optimizing_for || '')}</textarea></label>
+    <label>Tradeoffs being tested<textarea name="tradeoffs" rows="3">${esc(c.tradeoffs || '')}</textarea></label>
+    <label>Unresolved uncertainty<textarea name="uncertainty" rows="3">${esc(c.uncertainty || '')}</textarea></label>
+    <label>Evidence learned so far<textarea name="evidence" rows="3">${esc(c.evidence || '')}</textarea></label>
+    <label>Next conversation / decision<textarea name="next_conversation" rows="3">${esc(c.next_conversation || '')}</textarea></label>
+    <button class="i29-open-full" type="submit">Save journey compass</button>
+  </form>`;
 }
 
 export function whatsNextPanel({ stage, checklistItems, completions, tasks, actor }) {
@@ -195,18 +214,19 @@ export function whatsNextPanel({ stage, checklistItems, completions, tasks, acto
   </section>`;
 }
 
-export function checklistPanel({ stageId, items, completions, actor, action, hiddenFields = '' }) {
+export function checklistPanel({ stageId, items, completions, actor, action, hiddenFields = '', csrfField = '' }) {
   const stage = STAGES.find(s=>s[0]===stageId);
-  const done = new Set((completions||[]).map(c=>c.item_id || c.item_key));
   const rows = (items||[]).filter(i=>i.stage_id===stageId && canSeeItem(i, actor));
-  return `<section class="i29-checklist" id="stage-${esc(stageId)}">
+  return `<section class="i29-checklist" id="stage-${esc(stageId)}" data-selected-stage="${esc(stageId)}">
     <div class="i29-kicker">Stage checklist · ${esc(stageLabel(stageId))}</div>
     <h2>${esc(stage?stage[1]:stageId)}</h2>
     <p>${esc(stage?stage[2]:'')}</p>
     ${rows.map(item=>{
-      const isDone = done.has(item.id) || done.has(item.item_key);
+      const isDone = isCompletedForActor(item, completions, actor);
       return `<form class="i29-check-row" method="post" action="${esc(action)}">
+        ${csrfField}
         ${hiddenFields}
+        <input type="hidden" name="stage_id" value="${esc(stageId)}">
         <input type="hidden" name="item_id" value="${esc(item.id||item.item_key)}">
         <input type="hidden" name="reopen" value="${isDone?'yes':'no'}">
         <button type="submit" aria-pressed="${isDone?'true':'false'}">${isDone?'✓':'○'}</button>
@@ -263,6 +283,49 @@ export function compensationPublicHtml() {
 
 export function compensationPostHireHtml(summary) {
   return `<section class="i29-comp"><div class="i29-kicker">After hire · private household</div><p>${esc(COMPENSATION_POST_HIRE_NOTE)}</p>${summary?`<p><strong>Recorded arrangement:</strong> ${esc(summary)}</p>`:''}</section>`;
+}
+
+export function buyerDashboardBody({
+  buyer,
+  bundle,
+  actor,
+  mode = 'mine',
+  currentStage,
+  selectedStage,
+  checklistAction,
+  hiddenFields = '',
+  csrfField = '',
+  compensationHtml = '',
+  others = [],
+  mineHref = '/portal?view=mine',
+  sharedHref = '/portal?view=shared',
+  compassEditable = false,
+  compassHiddenFields = '',
+  stageHrefFor,
+  storyExtras = {}
+}) {
+  const stage = currentStage || buyer?.stage || 'consultation';
+  const viewing = selectedStage || stage;
+  const idx = STAGES.findIndex(s => s[0] === stage);
+  const completed = STAGES.slice(0, Math.max(0, idx)).map(s => s[0]);
+  const hrefFor = stageHrefFor || (id => `#stage-${id}`);
+  return `
+    ${modeSwitcher({ mode, firstName: buyer?.first_name || '', others, mineHref, sharedHref })}
+    ${stageMapHtml({ currentStage: stage, selectedStage: viewing, completed, actor, hrefFor })}
+    ${whatsNextPanel({ stage, checklistItems: bundle.items, completions: bundle.completions, tasks: bundle.tasks, actor })}
+    ${storyPanel({ ...(bundle.story || {}), ...storyExtras }, { mode, actor, csrfField })}
+    ${compassPanel(bundle.compass, { editable: compassEditable, hiddenFields: compassHiddenFields, csrfField })}
+    ${checklistPanel({
+      stageId: viewing,
+      items: bundle.items,
+      completions: bundle.completions,
+      actor,
+      action: checklistAction,
+      hiddenFields,
+      csrfField
+    })}
+    ${compensationHtml || ''}
+  `;
 }
 
 export function dashboardShell({ title, banner = '', body, extraHead = '' }) {

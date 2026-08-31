@@ -16,7 +16,13 @@ Persistence is D1 (`BUYER_DB`). Cookies/localStorage are not source of truth for
 
 Co-buyer invitations continue to use production `co-buyer-consent-worker.js`: 32-byte random token, SHA-256 hash stored, 7-day expiry, single-use, revocable. Prototype seed-replayable tokens from PR #27 are not shipped.
 
-HBE preview of buyer UI (`/hbe/preview`) is fail-closed: Cloudflare Access email required (`authorizePreview`), plus the existing `/hbe` Access gate.
+**Architecture blocker — invite email delivery:** `wrangler.toml` `send_email` / `HBE_ALERT` is commented out and unverified. This branch does not fake SMTP, add sending secrets, or collect the other buyer’s email. The safe path remains the hashed, expiring, copyable link; the other buyer identifies themselves.
+
+HBE preview of buyer UI (`/hbe/preview`) and every new `/api/hbe/*` POST are fail-closed: Cloudflare Access JWT (`Cf-Access-Jwt-Assertion`) is verified with the same `authenticateHbeProfessional` path as GET `/hbe` (signature, issuer, audience, active professional). Spoofable `Cf-Access-Authenticated-User-Email` / `X-HBE-Verified-Professional-*` headers are not a mutation shortcut.
+
+New POSTs (`/api/hbe/checklist/toggle`, `/api/portal/checklist/toggle`, `/api/hbe/story`, `/api/hbe/compass`) also require same-origin Origin/Referer plus a session-bound CSRF token (JWT for HBE, `hbe_session` for buyers). Fail closed on mismatch.
+
+Stage cards use `?stage=` as view state only. Rendering another stage’s checklist does not write `buyers.stage`. Completions for `visibility=buyer` are person-scoped (`scope_key`); shared/HBE items stay household-level while still recording who.
 
 ## Schema
 
@@ -26,7 +32,7 @@ Additive file: `schema-issue29.sql`
 - `buyer_private_context` — per-buyer private JSON; never shown on Shared Household View
 - `household_compass` — optimizing / tradeoffs / uncertainty / evidence / next conversation (never empty)
 - `household_checklist_items` — `visibility` IN (`buyer`,`shared`,`hbe`); completing may create a task
-- `household_checklist_completions` — who/when (`completed_by_kind`, `completed_by_id`, `completed_at`)
+- `household_checklist_completions` — who/when (`completed_by_kind`, `completed_by_id`, `completed_at`) plus `scope_key` UNIQUE (person-aware for buyer-private items; household-level for shared/HBE)
 - `household_tasks` — `visibility`, `source`, `is_whats_next`
 - `household_audit_events` — append-only who/when/what
 - `household_view_permissions` — shared vs private vs HBE-only flags

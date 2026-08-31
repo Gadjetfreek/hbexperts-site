@@ -14,6 +14,75 @@ export function canSeeItem(item, actor) {
   return true;
 }
 
+// Buyer-private items are per person. Shared and HBE-only items are household-level
+// (one completion) while still recording who completed them.
+export function completionScopeKey(item, actor) {
+  if (!item?.id) return '';
+  if (item.visibility === 'buyer') {
+    return `${item.id}:${actor.kind}:${actor.id}`;
+  }
+  return `${item.id}:household`;
+}
+
+export function isCompletedForActor(item, completions, actor) {
+  const rows = completions || [];
+  if (!item) return false;
+  if (item.visibility === 'buyer') {
+    const scope = completionScopeKey(item, actor);
+    return rows.some(c =>
+      (c.scope_key && c.scope_key === scope) ||
+      ((c.item_id === item.id || c.item_key === item.item_key) &&
+        c.completed_by_kind === actor.kind &&
+        c.completed_by_id === actor.id)
+    );
+  }
+  return rows.some(c =>
+    c.scope_key === `${item.id}:household` ||
+    c.item_id === item.id ||
+    c.item_key === item.item_key
+  );
+}
+
+export function sameOriginRequest(request) {
+  try {
+    const here = new URL(request.url).origin;
+    const origin = String(request.headers.get('Origin') || '').trim();
+    if (origin) return new URL(origin).origin === here;
+    const referer = String(request.headers.get('Referer') || '').trim();
+    if (!referer) return false;
+    return new URL(referer).origin === here;
+  } catch {
+    return false;
+  }
+}
+
+export async function mutationCsrfToken(secret) {
+  if (!secret) return '';
+  return sha256Hex(`hbe-csrf-v1:${secret}`);
+}
+
+function timingSafeEqual(a, b) {
+  const aa = enc.encode(String(a || ''));
+  const bb = enc.encode(String(b || ''));
+  if (aa.length !== bb.length) return false;
+  let out = 0;
+  for (let i = 0; i < aa.length; i++) out |= aa[i] ^ bb[i];
+  return out === 0;
+}
+
+export async function assertMutationCsrf(request, provided, secret) {
+  if (!secret) return false;
+  if (!sameOriginRequest(request)) return false;
+  const expected = await mutationCsrfToken(secret);
+  if (!expected) return false;
+  return timingSafeEqual(String(provided || ''), expected);
+}
+
+export function validStageId(value) {
+  const id = String(value || '').trim();
+  return STAGES.some(s => s[0] === id) ? id : '';
+}
+
 export function filterStory(record, actor, mode) {
   const shared = {
     shared_story: record.shared_story || '',
@@ -60,9 +129,8 @@ export function deriveWhatsNext({ stage, checklistItems, completions, tasks, act
     };
   }
 
-  const done = new Set((completions || []).map(c => c.item_key || c.item_id));
   const currentItems = (checklistItems || [])
-    .filter(i => i.stage_id === stage && allowed.includes(i.visibility) && !done.has(i.item_key) && !done.has(i.id));
+    .filter(i => i.stage_id === stage && allowed.includes(i.visibility) && !isCompletedForActor(i, completions, actor));
   const nextItem = currentItems[0];
   if (nextItem) {
     return {
@@ -237,62 +305,81 @@ export async function loadHouseholdBundle(env, caseId) {
 
 export async function completeChecklistItem(env, { caseId, itemId, actor, reopen = false, now = new Date() }) {
   const iso = now.toISOString();
+  if (!itemId) return { ok: false, error: 'missing-item' };
   const item = await env.BUYER_DB.prepare('SELECT * FROM household_checklist_items WHERE id=? AND case_id=?').bind(itemId, caseId).first();
   if (!item) return { ok: false, error: 'missing-item' };
   if (item.visibility === 'hbe' && actor.kind !== 'hbe') return { ok: false, error: 'forbidden' };
 
+  const scopeKey = completionScopeKey(item, actor);
+  const existing = await env.BUYER_DB.prepare(
+    'SELECT id FROM household_checklist_completions WHERE scope_key=? AND case_id=?'
+  ).bind(scopeKey, caseId).first();
+
   if (reopen) {
+    if (!existing) return { ok: true, reopened: false, already: true };
     await env.BUYER_DB.batch([
-      env.BUYER_DB.prepare('DELETE FROM household_checklist_completions WHERE item_id=? AND case_id=?').bind(itemId, caseId),
+      env.BUYER_DB.prepare('DELETE FROM household_checklist_completions WHERE scope_key=? AND case_id=?').bind(scopeKey, caseId),
       env.BUYER_DB.prepare(`INSERT INTO household_audit_events
         (id,case_id,actor_kind,actor_id,action,entity_type,entity_id,payload_json,created_at)
         VALUES (?,?,?,?,?,?,?,?,?)`).bind(
         crypto.randomUUID(), caseId, actor.kind, actor.id, 'checklist_reopened', 'checklist_item', itemId,
-        JSON.stringify({ item_key: item.item_key, stage_id: item.stage_id }), iso
+        JSON.stringify({ item_key: item.item_key, stage_id: item.stage_id, scope_key: scopeKey }), iso
       )
     ]);
     return { ok: true, reopened: true };
   }
 
-  const existing = await env.BUYER_DB.prepare('SELECT id FROM household_checklist_completions WHERE item_id=?').bind(itemId).first();
   if (existing) return { ok: true, already: true };
 
   const statements = [
     env.BUYER_DB.prepare(
       `INSERT INTO household_checklist_completions
-        (id,case_id,item_id,item_key,stage_id,completed_at,completed_by_kind,completed_by_id)
-       VALUES (?,?,?,?,?,?,?,?)`
-    ).bind(crypto.randomUUID(), caseId, itemId, item.item_key, item.stage_id, iso, actor.kind, actor.id),
+        (id,case_id,item_id,item_key,stage_id,completed_at,completed_by_kind,completed_by_id,scope_key)
+       VALUES (?,?,?,?,?,?,?,?,?)`
+    ).bind(crypto.randomUUID(), caseId, itemId, item.item_key, item.stage_id, iso, actor.kind, actor.id, scopeKey),
     env.BUYER_DB.prepare(
       `INSERT INTO household_audit_events
         (id,case_id,actor_kind,actor_id,action,entity_type,entity_id,payload_json,created_at)
        VALUES (?,?,?,?,?,?,?,?,?)`
     ).bind(
       crypto.randomUUID(), caseId, actor.kind, actor.id, 'checklist_completed', 'checklist_item', itemId,
-      JSON.stringify({ item_key: item.item_key, stage_id: item.stage_id, title: item.title }), iso
+      JSON.stringify({ item_key: item.item_key, stage_id: item.stage_id, title: item.title, scope_key: scopeKey }), iso
     )
   ];
 
   if (item.creates_action_kind && item.creates_action_title) {
     const vis = item.creates_action_kind === 'hbe_task' ? 'hbe' : (item.visibility === 'hbe' ? 'hbe' : 'shared');
     const due = dueDateFromOffset(now, item.creates_due_offset_days);
-    statements.push(env.BUYER_DB.prepare(
-      `INSERT INTO household_tasks
-        (id,case_id,buyer_id,created_at,updated_at,title,due_at,priority,status,stage,visibility,source,source_item_id,is_whats_next)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
-    ).bind(
-      crypto.randomUUID(), caseId, actor.kind === 'buyer' ? actor.id : null,
-      iso, iso, item.creates_action_title, due,
-      item.creates_priority || 'high', 'open', item.stage_id, vis, 'checklist', itemId, 1
-    ));
-    statements.push(env.BUYER_DB.prepare(
-      `INSERT INTO household_audit_events
-        (id,case_id,actor_kind,actor_id,action,entity_type,entity_id,payload_json,created_at)
-       VALUES (?,?,?,?,?,?,?,?,?)`
-    ).bind(
-      crypto.randomUUID(), caseId, actor.kind, actor.id, 'task_created_from_checklist', 'task', itemId,
-      JSON.stringify({ title: item.creates_action_title, visibility: vis, due_at: due }), iso
-    ));
+    const taskBuyerId = actor.kind === 'buyer' ? actor.id : null;
+    const existingTask = await env.BUYER_DB.prepare(
+      `SELECT id,status FROM household_tasks
+       WHERE case_id=? AND source_item_id=? AND COALESCE(buyer_id,'')=? LIMIT 1`
+    ).bind(caseId, itemId, taskBuyerId || '').first();
+    if (existingTask) {
+      if (existingTask.status !== 'open') {
+        statements.push(env.BUYER_DB.prepare(
+          "UPDATE household_tasks SET status='open', updated_at=?, is_whats_next=1 WHERE id=?"
+        ).bind(iso, existingTask.id));
+      }
+    } else {
+      statements.push(env.BUYER_DB.prepare(
+        `INSERT INTO household_tasks
+          (id,case_id,buyer_id,created_at,updated_at,title,due_at,priority,status,stage,visibility,source,source_item_id,is_whats_next)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+      ).bind(
+        crypto.randomUUID(), caseId, taskBuyerId,
+        iso, iso, item.creates_action_title, due,
+        item.creates_priority || 'high', 'open', item.stage_id, vis, 'checklist', itemId, 1
+      ));
+      statements.push(env.BUYER_DB.prepare(
+        `INSERT INTO household_audit_events
+          (id,case_id,actor_kind,actor_id,action,entity_type,entity_id,payload_json,created_at)
+         VALUES (?,?,?,?,?,?,?,?,?)`
+      ).bind(
+        crypto.randomUUID(), caseId, actor.kind, actor.id, 'task_created_from_checklist', 'task', itemId,
+        JSON.stringify({ title: item.creates_action_title, visibility: vis, due_at: due }), iso
+      ));
+    }
   }
 
   await env.BUYER_DB.batch(statements);
@@ -385,17 +472,5 @@ export async function caseIdForBuyer(env, buyerId) {
   return row?.case_id || null;
 }
 
-export function authorizePreview(request, env) {
-  const email = String(request.headers.get('Cf-Access-Authenticated-User-Email') || '').trim().toLowerCase();
-  const verifiedId = String(request.headers.get('X-HBE-Verified-Professional-Id') || '').trim();
-  const verifiedEmail = String(request.headers.get('X-HBE-Verified-Professional-Email') || '').trim().toLowerCase();
-  if (!email) return { ok: false, reason: 'missing-access-email' };
-  if (verifiedEmail && verifiedEmail !== email) return { ok: false, reason: 'header-mismatch' };
-  return {
-    ok: true,
-    professional: {
-      id: verifiedId || email,
-      email: verifiedEmail || email
-    }
-  };
-}
+// Header-only Access shortcuts are not used for /api/hbe/* mutations or preview.
+// authenticateHbeProfessional (JWT + active professional) is the production path.

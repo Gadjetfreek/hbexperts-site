@@ -2,8 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { STAGES, STAGE_CHECKLISTS, STAGE_COUNT, assertSeventeenStages, stageLabel, COMPENSATION_PUBLIC } from '../src/journey-stages.js';
-import { deriveWhatsNext, filterStory, defaultCompass, canSeeItem, sha256Hex, randomToken, dueDateFromOffset, authorizePreview } from '../src/household-state.js';
-import { stageMapHtml, splitHouseholdCard, storyPanel, compassPanel, whatsNextPanel, checklistPanel, modeSwitcher, thankYouHtml, compensationPublicHtml, dashboardShell, previewBanner, ISSUE29_CSS } from '../src/issue29-ui.js';
+import { generateKeyPairSync, sign as nodeSign } from 'node:crypto';
+import { deriveWhatsNext, filterStory, defaultCompass, canSeeItem, sha256Hex, randomToken, dueDateFromOffset, completeChecklistItem, isCompletedForActor, completionScopeKey, mutationCsrfToken, assertMutationCsrf, sameOriginRequest, validStageId } from '../src/household-state.js';
+import { stageMapHtml, splitHouseholdCard, storyPanel, compassPanel, whatsNextPanel, checklistPanel, modeSwitcher, thankYouHtml, compensationPublicHtml, dashboardShell, previewBanner, ISSUE29_CSS, buyerDashboardBody } from '../src/issue29-ui.js';
+import worker from '../src/issue29-convergence-worker.js';
 
 const RIVERA = {
   members: [
@@ -115,13 +117,47 @@ test('invite tokens are hashed, not stored in the clear, and not seed-replayable
   assert.notEqual(hash, a);
 });
 
-test('authorizePreview fail-closed without Access email', () => {
-  const missing = authorizePreview({ headers: { get: () => null } }, {});
-  assert.equal(missing.ok, false);
-  const mismatch = authorizePreview({ headers: { get: (k) => k === 'Cf-Access-Authenticated-User-Email' ? 'a@hbexperts.com' : (k === 'X-HBE-Verified-Professional-Email' ? 'b@hbexperts.com' : '') } }, {});
-  assert.equal(mismatch.ok, false);
-  const ok = authorizePreview({ headers: { get: (k) => k.includes('Email') ? 'cwhitehead@hbexperts.com' : 'hbe-pro-1' } }, {});
-  assert.equal(ok.ok, true);
+test('buyerDashboardBody is defined and preview HTML renders both views plus 17 stages', () => {
+  assert.equal(typeof buyerDashboardBody, 'function');
+  const items = [];
+  for (const [id] of STAGES) {
+    for (const spec of STAGE_CHECKLISTS[id]) {
+      items.push({ id: spec.key, stage_id: id, item_key: spec.key, title: spec.title, visibility: spec.visibility });
+    }
+  }
+  const actor = { kind: 'buyer', id: 'alex-rivera', private_context: RIVERA.private.alex };
+  const html = buyerDashboardBody({
+    buyer: RIVERA.members[0],
+    bundle: { items, completions: [], tasks: [], story: RIVERA.story, compass: defaultCompass('possibilities'), members: RIVERA.members, privateContexts: [] },
+    actor,
+    mode: 'mine',
+    currentStage: 'possibilities',
+    selectedStage: 'afterKeys',
+    checklistAction: '/api/hbe/checklist/toggle',
+    others: [RIVERA.members[1]],
+    mineHref: '/hbe/preview?buyer=alex-rivera&view=mine',
+    sharedHref: '/hbe/preview?buyer=alex-rivera&view=shared',
+    compensationHtml: compensationPublicHtml(),
+    stageHrefFor: id => `/hbe/preview?buyer=alex-rivera&view=mine&stage=${id}`
+  });
+  assert.match(html, /After the Keys/);
+  assert.match(html, /data-selected-stage="afterKeys"/);
+  assert.match(html, /My View/);
+  assert.match(html, /Shared Household View/);
+  assert.equal((html.match(/class="i29-stop /g) || []).length, 17);
+  assert.doesNotMatch(html, /buyerDashboardBody is not defined/);
+});
+
+test('compass HBE edit form posts to /api/hbe/compass', () => {
+  const html = compassPanel(defaultCompass('possibilities'), {
+    editable: true,
+    csrfField: '<input type="hidden" name="csrf" value="token">',
+    hiddenFields: '<input type="hidden" name="buyer_id" value="alex-rivera">'
+  });
+  assert.match(html, /action="\/api\/hbe\/compass"/);
+  assert.match(html, /name="optimizing_for"/);
+  assert.match(html, /name="csrf"/);
+  assert.match(html, /Save journey compass/);
 });
 
 test('public compensation has no percentages, dollars, packages, or seller-paid automatic', () => {
@@ -237,4 +273,477 @@ test('write desktop + mobile HTML evidence from synthetic Rivera fixtures', () =
   assert.ok(!buyer.includes(RIVERA.story.hbe_synthesis));
   assert.ok(!buyer.includes(RIVERA.private.sam));
   assert.ok(ISSUE29_CSS.includes('max-width:560px'));
+});
+
+const TEAM_DOMAIN = 'https://hbexperts.cloudflareaccess.com';
+const ACCESS_AUD = 'issue29-test-audience';
+const { publicKey, privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
+const TEST_JWK = publicKey.export({ format: 'jwk' });
+TEST_JWK.kid = 'issue29-test-kid';
+TEST_JWK.use = 'sig';
+TEST_JWK.alg = 'RS256';
+
+function mintAccessJwt(email, extra = {}) {
+  const header = { alg: 'RS256', kid: TEST_JWK.kid, typ: 'JWT' };
+  const now = Math.floor(Date.now() / 1000);
+  const payload = {
+    iss: TEAM_DOMAIN,
+    aud: ACCESS_AUD,
+    email,
+    exp: now + 3600,
+    iat: now,
+    ...extra
+  };
+  const h = Buffer.from(JSON.stringify(header)).toString('base64url');
+  const p = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const sig = nodeSign('RSA-SHA256', Buffer.from(`${h}.${p}`), privateKey).toString('base64url');
+  return `${h}.${p}.${sig}`;
+}
+
+const realFetch = globalThis.fetch;
+globalThis.fetch = async (input, init) => {
+  const url = String(input?.url || input);
+  if (url.includes('/cdn-cgi/access/certs')) {
+    return new Response(JSON.stringify({ keys: [TEST_JWK] }), { status: 200, headers: { 'content-type': 'application/json' } });
+  }
+  if (typeof realFetch === 'function') return realFetch(input, init);
+  throw new Error(`unexpected fetch ${url}`);
+};
+
+function createMemoryD1() {
+  const tables = {
+    buyers: [],
+    buyer_sessions: [],
+    buyer_cases: [],
+    buyer_case_members: [],
+    hbe_professionals: [],
+    household_checklist_items: [],
+    household_checklist_completions: [],
+    household_tasks: [],
+    household_audit_events: [],
+    household_stories: [],
+    household_compass: [],
+    household_view_permissions: [],
+    buyer_private_context: [],
+    buyer_tasks: [],
+    buyer_notes: [],
+    notifications: [],
+    buyer_representation_records: []
+  };
+  const log = [];
+
+  function getTable(name) {
+    if (!tables[name]) tables[name] = [];
+    return tables[name];
+  }
+
+  function parseWhere(sql, args) {
+    const idx = sql.search(/\bwhere\b/i);
+    if (idx < 0) return { filters: [] };
+    let where = sql.slice(idx + 5);
+    where = where.split(/\border\s+by\b|\blimit\b|\bgroup\s+by\b|\bon\s+conflict\b/i)[0];
+    const filters = [];
+    let i = 0;
+    const parts = where.split(/\s+AND\s+/i);
+    for (const part of parts) {
+      const p = part.trim().replace(/^\(|\)$/g, '').trim();
+      let m;
+      if ((m = p.match(/^lower\((\w+)\)\s*=\s*\?$/i))) {
+        filters.push({ col: m[1], value: args[i++], lower: true });
+      } else if ((m = p.match(/^(?:coalesce|ifnull)\((\w+),\s*''\)\s*=\s*\?$/i))) {
+        filters.push({ col: m[1], value: args[i++], coalesceEmpty: true });
+      } else if ((m = p.match(/^(\w+)\s*=\s*\?$/i))) {
+        filters.push({ col: m[1], value: args[i++] });
+      } else if ((m = p.match(/^(\w+)\s*>\s*\?$/i))) {
+        filters.push({ col: m[1], value: args[i++], gt: true });
+      }
+    }
+    return { filters };
+  }
+
+  function matchRow(row, filters) {
+    return filters.every(f => {
+      let v = row[f.col];
+      if (f.lower) return String(v || '').toLowerCase() === String(f.value || '').toLowerCase();
+      if (f.coalesceEmpty) return String(v ?? '') === String(f.value ?? '');
+      if (f.gt) return String(v) > String(f.value);
+      return v == f.value || String(v) === String(f.value);
+    });
+  }
+
+  function parseInsert(sql, args) {
+    const m = sql.match(/insert(?:\s+or\s+ignore)?\s+into\s+(\w+)\s*\(([^)]+)\)\s*values\s*\(([^)]+)\)/i);
+    if (!m) return null;
+    const cols = m[2].split(',').map(c => c.trim());
+    const row = {};
+    cols.forEach((c, idx) => { row[c] = args[idx]; });
+    return { table: m[1], row, ignore: /^\s*insert\s+or\s+ignore/i.test(sql), conflict: /on conflict/i.test(sql) };
+  }
+
+  const api = {
+    _tables: tables,
+    _log: log,
+    prepare(sql) {
+      const normalized = String(sql).replace(/\s+/g, ' ').trim();
+      const bound = (args = []) => ({
+        async first() {
+          log.push({ op: 'first', sql: normalized, args });
+          return api._select(normalized, args)[0] || null;
+        },
+        async all() {
+          log.push({ op: 'all', sql: normalized, args });
+          return { results: api._select(normalized, args) };
+        },
+        async run() {
+          log.push({ op: 'run', sql: normalized, args });
+          return api._run(normalized, args);
+        }
+      });
+      return Object.assign(bound([]), {
+        bind(...args) { return bound(args); }
+      });
+    },
+    async batch(statements) {
+      const out = [];
+      for (const s of statements) {
+        if (s && typeof s.run === 'function') out.push(await s.run());
+      }
+      return out;
+    },
+    _select(sql, args) {
+      const count = /^\s*select count\(\*\) as n from (\w+)/i.exec(sql);
+      if (count) {
+        const { filters } = parseWhere(sql, args);
+        return [{ n: getTable(count[1]).filter(r => matchRow(r, filters)).length }];
+      }
+      const from = sql.match(/\bfrom\s+(\w+)/i);
+      if (!from) return [];
+      const { filters } = parseWhere(sql, args);
+      if (/left join buyer_case_members/i.test(sql) && from[1] === 'buyers') {
+        return getTable('buyers').map(b => {
+          const m = getTable('buyer_case_members').find(x => x.buyer_id === b.id);
+          return { ...b, case_id: m?.case_id || null };
+        });
+      }
+      let rows = getTable(from[1]).filter(r => matchRow(r, filters));
+      if (/join\s+buyers/i.test(sql) && from[1] === 'buyer_sessions') {
+        rows = rows.map(s => {
+          const b = getTable('buyers').find(x => x.id === s.buyer_id);
+          return b ? { ...b, session_id: s.id, buyer_id: s.buyer_id, expires_at: s.expires_at, token_hash: s.token_hash } : null;
+        }).filter(Boolean).filter(r => matchRow(r, filters));
+      }
+      if (/join\s+buyers/i.test(sql) && from[1] === 'buyer_case_members') {
+        rows = getTable('buyer_case_members').filter(r => matchRow(r, filters)).flatMap(m => {
+          const b = getTable('buyers').find(x => x.id === m.buyer_id);
+          return b ? [{ ...b, ...m }] : [];
+        });
+      }
+      return rows;
+    },
+    _run(sql, args) {
+      if (/^\s*insert/i.test(sql)) {
+        const parsed = parseInsert(sql, args);
+        if (parsed) {
+          const t = getTable(parsed.table);
+          if (parsed.conflict || parsed.ignore) {
+            const pk = parsed.row.id != null ? 'id' : (parsed.row.case_id != null && parsed.table !== 'buyer_case_members' ? 'case_id' : 'id');
+            const existing = t.find(r => r[pk] === parsed.row[pk]);
+            if (existing) {
+              if (parsed.conflict) Object.assign(existing, parsed.row);
+              return { success: true, meta: { changes: parsed.conflict ? 1 : 0 } };
+            }
+          }
+          t.push({ ...parsed.row });
+          return { success: true, meta: { changes: 1 } };
+        }
+      }
+      if (/^\s*delete/i.test(sql)) {
+        const m = sql.match(/delete from (\w+)/i);
+        const { filters } = parseWhere(sql, args);
+        const t = getTable(m[1]);
+        const keep = t.filter(r => !matchRow(r, filters));
+        const changes = t.length - keep.length;
+        tables[m[1]] = keep;
+        return { success: true, meta: { changes } };
+      }
+      if (/^\s*update/i.test(sql)) {
+        const m = sql.match(/update\s+(\w+)\s+set\s+(.+?)\s+where\s+(.+)/i);
+        if (!m) return { success: true, meta: { changes: 0 } };
+        const setSql = m[2];
+        const whereSql = m[3];
+        const assigns = {};
+        let i = 0;
+        for (const part of setSql.split(',').map(s => s.trim())) {
+          const sm = part.match(/^(\w+)\s*=\s*\?$/);
+          if (sm) assigns[sm[1]] = args[i++];
+          else {
+            const lit = part.match(/^(\w+)\s*=\s*'([^']*)'$/);
+            if (lit) assigns[lit[1]] = lit[2];
+            else {
+              const num = part.match(/^(\w+)\s*=\s*(\d+)$/);
+              if (num) assigns[num[1]] = Number(num[2]);
+            }
+          }
+        }
+        const { filters } = parseWhere('WHERE ' + whereSql, args.slice(i));
+        let changes = 0;
+        for (const row of getTable(m[1])) {
+          if (matchRow(row, filters)) {
+            Object.assign(row, assigns);
+            changes += 1;
+          }
+        }
+        return { success: true, meta: { changes } };
+      }
+      return { success: true, meta: { changes: 0 } };
+    }
+  };
+  return api;
+}
+
+function seedRiveraHousehold(db) {
+  const now = '2026-08-31T12:00:00.000Z';
+  db._tables.hbe_professionals.push({
+    id: 'hbe-pro-christopher-whitehead',
+    email: 'cwhitehead@hbexperts.com',
+    display_name: 'Christopher Whitehead',
+    role: 'broker_admin',
+    status: 'active',
+    workspace_status: 'provisioned',
+    workspace_user_id: null
+  });
+  db._tables.buyers.push({
+    id: 'alex-rivera', created_at: now, submitted_at: now, updated_at: now,
+    first_name: 'Alex', last_name: 'Rivera', email: 'alex.rivera@example.test', phone: '',
+    stage: 'possibilities', completed_stages: '["buyerExperience","consultation","representation","search","market"]',
+    answers_json: '{}'
+  });
+  db._tables.buyers.push({
+    id: 'sam-rivera', created_at: now, submitted_at: now, updated_at: now,
+    first_name: 'Sam', last_name: 'Rivera', email: 'sam.rivera@example.test', phone: '',
+    stage: 'possibilities', completed_stages: '["buyerExperience","consultation","representation","search","market"]',
+    answers_json: '{}'
+  });
+  db._tables.buyer_cases.push({ id: 'case-rivera', created_at: now, updated_at: now, stage: 'possibilities', completed_stages: '[]', status: 'active' });
+  db._tables.buyer_case_members.push({ case_id: 'case-rivera', buyer_id: 'alex-rivera', role: 'buyer', created_at: now });
+  db._tables.buyer_case_members.push({ case_id: 'case-rivera', buyer_id: 'sam-rivera', role: 'buyer', created_at: now });
+  db._tables.household_checklist_items.push({
+    id: 'item-buyer-private', case_id: 'case-rivera', stage_id: 'possibilities', item_key: 'my_reaction',
+    title: 'Record my private reaction to today’s possibilities', visibility: 'buyer', sort_order: 1,
+    creates_action_kind: 'buyer_task', creates_action_title: 'Write a private reaction', creates_due_offset_days: 3, creates_priority: 'high'
+  });
+  db._tables.household_checklist_items.push({
+    id: 'item-shared', case_id: 'case-rivera', stage_id: 'possibilities', item_key: 'review_fits',
+    title: 'Review today’s best-fit possibilities', visibility: 'shared', sort_order: 2,
+    creates_action_kind: 'buyer_task', creates_action_title: 'Each buyer reacts privately, then compare only shared facts', creates_due_offset_days: 3, creates_priority: 'high'
+  });
+  db._tables.household_checklist_items.push({
+    id: 'item-hbe', case_id: 'case-rivera', stage_id: 'possibilities', item_key: 'rejection_pattern',
+    title: 'Record why rejected homes missed', visibility: 'hbe', sort_order: 3,
+    creates_action_kind: 'hbe_task', creates_action_title: 'Update the household story', creates_due_offset_days: 3, creates_priority: 'high'
+  });
+  return db;
+}
+
+function testEnv(db) {
+  return {
+    BUYER_DB: db,
+    CF_ACCESS_TEAM_DOMAIN: TEAM_DOMAIN,
+    CF_ACCESS_AUD: ACCESS_AUD,
+    HBE_ADMIN_EMAIL: 'cwhitehead@hbexperts.com'
+  };
+}
+
+async function hbeHeaders(extra = {}) {
+  const jwt = mintAccessJwt('cwhitehead@hbexperts.com');
+  return {
+    jwt,
+    headers: {
+      'Cf-Access-Jwt-Assertion': jwt,
+      origin: 'https://buyer.hbexperts.com',
+      ...extra
+    }
+  };
+}
+
+test('missing JWT is rejected on /api/hbe/*', async () => {
+  const db = seedRiveraHousehold(createMemoryD1());
+  const res = await worker.fetch(new Request('https://buyer.hbexperts.com/api/hbe/checklist/toggle', {
+    method: 'POST',
+    headers: { origin: 'https://buyer.hbexperts.com', 'content-type': 'application/x-www-form-urlencoded' },
+    body: 'item_id=item-shared&case_id=case-rivera&buyer_id=alex-rivera'
+  }), testEnv(db), {});
+  assert.equal(res.status, 403);
+  assert.match(await res.text(), /Cloudflare Access authentication required|HBE Access is not fully configured|HBE access required/);
+});
+
+test('spoofed Access email header alone is not enough for /api/hbe/*', async () => {
+  const db = seedRiveraHousehold(createMemoryD1());
+  const res = await worker.fetch(new Request('https://buyer.hbexperts.com/api/hbe/story', {
+    method: 'POST',
+    headers: {
+      origin: 'https://buyer.hbexperts.com',
+      'Cf-Access-Authenticated-User-Email': 'cwhitehead@hbexperts.com',
+      'X-HBE-Verified-Professional-Email': 'cwhitehead@hbexperts.com',
+      'X-HBE-Verified-Professional-Id': 'hbe-pro-christopher-whitehead',
+      'content-type': 'application/x-www-form-urlencoded'
+    },
+    body: 'case_id=case-rivera&buyer_id=alex-rivera&shared_story=nope'
+  }), testEnv(db), {});
+  assert.equal(res.status, 403);
+  const completions = db._tables.household_checklist_completions.length;
+  assert.equal(completions, 0);
+});
+
+test('preview renders without ReferenceError and supports My View plus Shared Household View', async () => {
+  const db = seedRiveraHousehold(createMemoryD1());
+  const { jwt, headers } = await hbeHeaders();
+  const res = await worker.fetch(new Request('https://buyer.hbexperts.com/hbe/preview?buyer=alex-rivera', {
+    method: 'GET',
+    headers
+  }), testEnv(db), {});
+  assert.equal(res.status, 200);
+  const html = await res.text();
+  assert.match(html, /Previewing buyer-facing UI for Alex Rivera/);
+  assert.match(html, /My View/);
+  assert.match(html, /Shared Household View/);
+  assert.match(html, /After the Keys/);
+  assert.doesNotMatch(html, /buyerDashboardBody is not defined/);
+  assert.doesNotMatch(html, /ReferenceError/);
+
+  const shared = await worker.fetch(new Request('https://buyer.hbexperts.com/hbe/preview?buyer=alex-rivera&view=shared', {
+    method: 'GET',
+    headers
+  }), testEnv(db), {});
+  assert.equal(shared.status, 200);
+  assert.match(await shared.text(), /Shared Household View/);
+  void jwt;
+});
+
+test('selecting stage 17 does not mutate current stage', async () => {
+  const db = seedRiveraHousehold(createMemoryD1());
+  const { headers } = await hbeHeaders();
+  const before = db._tables.buyers.find(b => b.id === 'alex-rivera').stage;
+  assert.equal(before, 'possibilities');
+  const res = await worker.fetch(new Request('https://buyer.hbexperts.com/hbe/preview?buyer=alex-rivera&stage=afterKeys', {
+    method: 'GET',
+    headers
+  }), testEnv(db), {});
+  assert.equal(res.status, 200);
+  const html = await res.text();
+  assert.match(html, /data-selected-stage="afterKeys"/);
+  assert.match(html, /Stage checklist · After the Keys/);
+  assert.equal(db._tables.buyers.find(b => b.id === 'alex-rivera').stage, 'possibilities');
+  const mutated = db._log.some(e => /update\s+buyers\s+set\s+stage/i.test(e.sql));
+  assert.equal(mutated, false);
+  assert.equal(validStageId('afterKeys'), 'afterKeys');
+});
+
+test('person A complete != person B for buyer-private items; shared stays household-level', async () => {
+  const db = seedRiveraHousehold(createMemoryD1());
+  const env = testEnv(db);
+  const alex = { kind: 'buyer', id: 'alex-rivera' };
+  const sam = { kind: 'buyer', id: 'sam-rivera' };
+  const privateItem = db._tables.household_checklist_items.find(i => i.id === 'item-buyer-private');
+  const sharedItem = db._tables.household_checklist_items.find(i => i.id === 'item-shared');
+
+  const alexDone = await completeChecklistItem(env, { caseId: 'case-rivera', itemId: privateItem.id, actor: alex });
+  assert.equal(alexDone.ok, true);
+  assert.equal(isCompletedForActor(privateItem, db._tables.household_checklist_completions, alex), true);
+  assert.equal(isCompletedForActor(privateItem, db._tables.household_checklist_completions, sam), false);
+
+  const samDone = await completeChecklistItem(env, { caseId: 'case-rivera', itemId: privateItem.id, actor: sam });
+  assert.equal(samDone.ok, true);
+  assert.equal(samDone.already, undefined);
+  assert.equal(db._tables.household_checklist_completions.filter(c => c.item_id === privateItem.id).length, 2);
+  assert.equal(isCompletedForActor(privateItem, db._tables.household_checklist_completions, sam), true);
+
+  const sharedAlex = await completeChecklistItem(env, { caseId: 'case-rivera', itemId: sharedItem.id, actor: alex });
+  assert.equal(sharedAlex.ok, true);
+  const sharedSam = await completeChecklistItem(env, { caseId: 'case-rivera', itemId: sharedItem.id, actor: sam });
+  assert.equal(sharedSam.already, true);
+  assert.equal(db._tables.household_checklist_completions.filter(c => c.item_id === sharedItem.id).length, 1);
+  assert.equal(completionScopeKey(sharedItem, alex), 'item-shared:household');
+  assert.match(completionScopeKey(privateItem, alex), /alex-rivera/);
+});
+
+test('reopen/complete is idempotent and does not duplicate tasks', async () => {
+  const db = seedRiveraHousehold(createMemoryD1());
+  const env = testEnv(db);
+  const actor = { kind: 'buyer', id: 'alex-rivera' };
+  const itemId = 'item-shared';
+
+  const first = await completeChecklistItem(env, { caseId: 'case-rivera', itemId, actor });
+  assert.equal(first.ok, true);
+  const second = await completeChecklistItem(env, { caseId: 'case-rivera', itemId, actor });
+  assert.equal(second.already, true);
+  assert.equal(db._tables.household_tasks.filter(t => t.source_item_id === itemId).length, 1);
+  const auditsAfterComplete = db._tables.household_audit_events.filter(a => a.action === 'checklist_completed').length;
+
+  const reopenOpen = await completeChecklistItem(env, { caseId: 'case-rivera', itemId, actor, reopen: true });
+  assert.equal(reopenOpen.reopened, true);
+  const reopenAgain = await completeChecklistItem(env, { caseId: 'case-rivera', itemId, actor, reopen: true });
+  assert.equal(reopenAgain.reopened, false);
+  assert.equal(reopenAgain.already, true);
+  assert.equal(db._tables.household_audit_events.filter(a => a.action === 'checklist_reopened').length, 1);
+
+  const recomplete = await completeChecklistItem(env, { caseId: 'case-rivera', itemId, actor });
+  assert.equal(recomplete.ok, true);
+  assert.equal(recomplete.already, undefined);
+  assert.equal(db._tables.household_tasks.filter(t => t.source_item_id === itemId).length, 1);
+  assert.equal(db._tables.household_tasks[0].status, 'open');
+  const recompleteAgain = await completeChecklistItem(env, { caseId: 'case-rivera', itemId, actor });
+  assert.equal(recompleteAgain.already, true);
+  assert.equal(db._tables.household_audit_events.filter(a => a.action === 'checklist_completed').length, auditsAfterComplete + 1);
+  assert.equal(db._tables.household_audit_events.filter(a => a.action === 'task_created_from_checklist').length, 1);
+});
+
+test('CSRF rejection on new POSTs: missing origin, wrong origin, missing token', async () => {
+  const db = seedRiveraHousehold(createMemoryD1());
+  const env = testEnv(db);
+  const jwt = mintAccessJwt('cwhitehead@hbexperts.com');
+  const token = await mutationCsrfToken(jwt);
+
+  const noOrigin = await worker.fetch(new Request('https://buyer.hbexperts.com/api/hbe/compass', {
+    method: 'POST',
+    headers: { 'Cf-Access-Jwt-Assertion': jwt, 'content-type': 'application/x-www-form-urlencoded' },
+    body: `csrf=${token}&case_id=case-rivera&buyer_id=alex-rivera&optimizing_for=x`
+  }), env, {});
+  assert.equal(noOrigin.status, 403);
+  assert.match(await noOrigin.text(), /CSRF rejected/);
+
+  const wrongOrigin = await worker.fetch(new Request('https://buyer.hbexperts.com/api/hbe/compass', {
+    method: 'POST',
+    headers: { 'Cf-Access-Jwt-Assertion': jwt, origin: 'https://evil.example', 'content-type': 'application/x-www-form-urlencoded' },
+    body: `csrf=${token}&case_id=case-rivera&buyer_id=alex-rivera&optimizing_for=x`
+  }), env, {});
+  assert.equal(wrongOrigin.status, 403);
+
+  const missingToken = await worker.fetch(new Request('https://buyer.hbexperts.com/api/hbe/checklist/toggle', {
+    method: 'POST',
+    headers: { 'Cf-Access-Jwt-Assertion': jwt, origin: 'https://buyer.hbexperts.com', 'content-type': 'application/x-www-form-urlencoded' },
+    body: 'item_id=item-shared&case_id=case-rivera&buyer_id=alex-rivera'
+  }), env, {});
+  assert.equal(missingToken.status, 403);
+
+  const ok = await worker.fetch(new Request('https://buyer.hbexperts.com/api/hbe/checklist/toggle', {
+    method: 'POST',
+    headers: { 'Cf-Access-Jwt-Assertion': jwt, origin: 'https://buyer.hbexperts.com', 'content-type': 'application/x-www-form-urlencoded' },
+    body: `csrf=${encodeURIComponent(token)}&item_id=item-shared&case_id=case-rivera&buyer_id=alex-rivera&stage_id=afterKeys`
+  }), env, {});
+  assert.equal(ok.status, 303);
+  assert.equal(db._tables.buyers.find(b => b.id === 'alex-rivera').stage, 'possibilities');
+  assert.match(ok.headers.get('location'), /stage=afterKeys/);
+
+  const fake = { url: 'https://buyer.hbexperts.com/x', headers: { get: k => k === 'Origin' ? 'https://buyer.hbexperts.com' : null } };
+  assert.equal(sameOriginRequest(fake), true);
+  assert.equal(await assertMutationCsrf(fake, token, jwt), true);
+  assert.equal(await assertMutationCsrf(fake, 'nope', jwt), false);
+});
+
+test('exactly 17 stages still after sentinel repairs', () => {
+  assert.equal(STAGES.length, 17);
+  assert.equal(STAGES[16][0], 'afterKeys');
+  assert.equal(STAGE_CHECKLISTS.afterKeys.some(i => /30-day/i.test(i.title)), true);
+  assert.equal(STAGES.some(s => s[0] === 'care30'), false);
 });

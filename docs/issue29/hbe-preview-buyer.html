@@ -14,6 +14,7 @@
 .i29-stop{position:relative;display:grid;grid-template-columns:34px 1fr;gap:.55rem;min-height:104px;padding:.9rem;border:1px solid var(--border);border-radius:12px;background:#fff;color:inherit;text-align:left;font:inherit;cursor:pointer}
 .i29-stop.future{opacity:.7}
 .i29-stop.current{border-color:rgba(45,90,61,.55);box-shadow:0 6px 22px rgba(45,90,61,.1)}
+.i29-stop.viewing{border-color:rgba(201,168,76,.7)}
 .i29-stop.done .i29-num{background:var(--green);color:#fff}
 .i29-num{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--section);font-weight:800;font-size:.8rem}
 .i29-stop strong,.i29-stop small{display:block}
@@ -63,7 +64,7 @@
     <a class="active" href="/portal?view=mine">My View</a>
     <a class="" href="/portal?view=shared">Shared Household View</a>
   </div>
-<div class="i29-map" aria-label="HomeBuyer 17-stage journey"><div class="i29-stop done  " data-i29-stop data-stage="buyerExperience" tabindex="0" role="button" aria-expanded="false">
+<div class="i29-map" aria-label="HomeBuyer 17-stage journey"><div class="i29-stop done   " data-i29-stop data-stage="buyerExperience" tabindex="0" role="button" aria-expanded="false">
       <span class="i29-num">✓</span>
       <div><strong>Buyer Experience</strong><small>Start with what matters to you</small></div>
       <div class="i29-peek">
@@ -74,7 +75,7 @@
         <ul><li>Buyer Experience submitted <em class="i29-vis ">shared</em></li></ul>
         <a class="i29-open-full" data-open-checklist href="#stage-buyerExperience">Open full checklist</a>
       </div>
-    </div><div class="i29-stop done  " data-i29-stop data-stage="consultation" tabindex="0" role="button" aria-expanded="false">
+    </div><div class="i29-stop done   " data-i29-stop data-stage="consultation" tabindex="0" role="button" aria-expanded="false">
       <span class="i29-num">✓</span>
       <div><strong>Consultation</strong><small>Turn answers into understanding</small></div>
       <div class="i29-peek">
@@ -85,7 +86,7 @@
         <ul><li>Consultation held <em class="i29-vis ">shared</em></li><li>Priorities and tradeoffs named in household language <em class="i29-vis ">shared</em></li><li>Fit with HBE discussed without pressure to hire <em class="i29-vis ">shared</em></li></ul>
         <a class="i29-open-full" data-open-checklist href="#stage-consultation">Open full checklist</a>
       </div>
-    </div><div class="i29-stop done  " data-i29-stop data-stage="representation" tabindex="0" role="button" aria-expanded="false">
+    </div><div class="i29-stop done   " data-i29-stop data-stage="representation" tabindex="0" role="button" aria-expanded="false">
       <span class="i29-num">✓</span>
       <div><strong>Hire HBE</strong><small>Choose your representation deliberately</small></div>
       <div class="i29-peek">
@@ -93,10 +94,10 @@
         <h3>Hire HBE</h3>
         <ul><li>Understand who HBE represents and what fiduciary representation means.</li><li>Review responsibilities and the written agency agreement.</li><li>Choose whether to hire HBE without pressure. Compensation is negotiable and belongs in the written arrangement — it is not a public rate card, and seller-paid compensation is not automatic.</li></ul>
         <div class="i29-kicker">Checklist preview</div>
-        <ul><li>Representation choice recorded for each buyer <em class="i29-vis ">shared</em></li><li>Written agreement reviewed <em class="i29-vis ">shared</em></li></ul>
+        <ul><li>Representation choice recorded for each buyer <em class="i29-vis ">shared</em></li><li>Record my representation choice from my login <em class="i29-vis ">buyer</em></li><li>Written agreement reviewed <em class="i29-vis ">shared</em></li></ul>
         <a class="i29-open-full" data-open-checklist href="#stage-representation">Open full checklist</a>
       </div>
-    </div><div class="i29-stop done  " data-i29-stop data-stage="search" tabindex="0" role="button" aria-expanded="false">
+    </div><div class="i29-stop done   " data-i29-stop data-stage="search" tabindex="0" role="button" aria-expanded="false">
       <span class="i29-num">✓</span>
       <div><strong>Build Your Home Search</strong><small>Turn priorities into a useful search</small></div>
       <div class="i29-peek">
@@ -107,7 +108,7 @@
         <ul><li>Shared search geography drafted <em class="i29-vis ">shared</em></li><li>Needs separated from preferences <em class="i29-vis ">shared</em></li><li>First criteria version confirmed by linked buyers <em class="i29-vis ">shared</em></li></ul>
         <a class="i29-open-full" data-open-checklist href="#stage-search">Open full checklist</a>
       </div>
-    </div><div class="i29-stop done  " data-i29-stop data-stage="market" tabindex="0" role="button" aria-expanded="false">
+    </div><div class="i29-stop done   " data-i29-stop data-stage="market" tabindex="0" role="button" aria-expanded="false">
       <span class="i29-num">✓</span>
       <div><strong>Learn the Market</strong><small>Understand what the market is really offering</small></div>
       <div class="i29-peek">
@@ -118,7 +119,7 @@
         <ul><li>Review representative listings and recent sales <em class="i29-vis ">shared</em></li><li>Name where expectations and the market disagree <em class="i29-vis ">shared</em></li></ul>
         <a class="i29-open-full" data-open-checklist href="#stage-market">Open full checklist</a>
       </div>
-    </div><div class="i29-stop  current " data-i29-stop data-stage="possibilities" tabindex="0" role="button" aria-expanded="false">
+    </div><div class="i29-stop  current  " data-i29-stop data-stage="possibilities" tabindex="0" role="button" aria-expanded="true">
       <span class="i29-num">6</span>
       <div><strong>Discover Possibilities</strong><small>Find homes worth learning from</small></div>
       <div class="i29-peek">
@@ -126,10 +127,10 @@
         <h3>Discover Possibilities</h3>
         <ul><li>Review homes that may fit your evolving profile.</li><li>Notice useful possibilities you did not originally expect.</li><li>Flag homes worth seeing without letting the search become noise.</li></ul>
         <div class="i29-kicker">Checklist preview</div>
-        <ul><li>Review today’s best-fit possibilities <em class="i29-vis ">shared</em></li><li>Flag homes worth seeing <em class="i29-vis ">shared</em></li></ul>
+        <ul><li>Review today’s best-fit possibilities <em class="i29-vis ">shared</em></li><li>Record my private reaction to today’s possibilities <em class="i29-vis ">buyer</em></li><li>Flag homes worth seeing <em class="i29-vis ">shared</em></li></ul>
         <a class="i29-open-full" data-open-checklist href="#stage-possibilities">Open full checklist</a>
       </div>
-    </div><div class="i29-stop   future" data-i29-stop data-stage="evaluation" tabindex="0" role="button" aria-expanded="false">
+    </div><div class="i29-stop    future" data-i29-stop data-stage="evaluation" tabindex="0" role="button" aria-expanded="false">
       <span class="i29-num">7</span>
       <div><strong>Evaluate Homes</strong><small>Learn from each property</small></div>
       <div class="i29-peek">
@@ -140,7 +141,7 @@
         <ul><li>Choose tour candidates <em class="i29-vis ">shared</em></li></ul>
         <a class="i29-open-full" data-open-checklist href="#stage-evaluation">Open full checklist</a>
       </div>
-    </div><div class="i29-stop   future" data-i29-stop data-stage="offer" tabindex="0" role="button" aria-expanded="false">
+    </div><div class="i29-stop    future" data-i29-stop data-stage="offer" tabindex="0" role="button" aria-expanded="false">
       <span class="i29-num">8</span>
       <div><strong>Ready to Offer?</strong><small>Decide before negotiating</small></div>
       <div class="i29-peek">
@@ -151,7 +152,7 @@
         <ul><li>Name the walk-away boundary <em class="i29-vis ">shared</em></li><li>Decide whether an offer serves the WHY <em class="i29-vis ">shared</em></li></ul>
         <a class="i29-open-full" data-open-checklist href="#stage-offer">Open full checklist</a>
       </div>
-    </div><div class="i29-stop   future" data-i29-stop data-stage="terms" tabindex="0" role="button" aria-expanded="false">
+    </div><div class="i29-stop    future" data-i29-stop data-stage="terms" tabindex="0" role="button" aria-expanded="false">
       <span class="i29-num">9</span>
       <div><strong>Build the Offer</strong><small>Construct price and terms deliberately</small></div>
       <div class="i29-peek">
@@ -162,7 +163,7 @@
         <ul><li>Confirm price and material terms <em class="i29-vis ">shared</em></li><li>Review the offer before signature <em class="i29-vis ">shared</em></li></ul>
         <a class="i29-open-full" data-open-checklist href="#stage-terms">Open full checklist</a>
       </div>
-    </div><div class="i29-stop   future" data-i29-stop data-stage="negotiation" tabindex="0" role="button" aria-expanded="false">
+    </div><div class="i29-stop    future" data-i29-stop data-stage="negotiation" tabindex="0" role="button" aria-expanded="false">
       <span class="i29-num">10</span>
       <div><strong>Negotiate Wisely</strong><small>Protect leverage and your WHY</small></div>
       <div class="i29-peek">
@@ -173,7 +174,7 @@
         <ul><li>Evaluate the counter against the WHY <em class="i29-vis ">shared</em></li><li>Choose proceed, counter, or walk away <em class="i29-vis ">shared</em></li></ul>
         <a class="i29-open-full" data-open-checklist href="#stage-negotiation">Open full checklist</a>
       </div>
-    </div><div class="i29-stop   future" data-i29-stop data-stage="diligence" tabindex="0" role="button" aria-expanded="false">
+    </div><div class="i29-stop    future" data-i29-stop data-stage="diligence" tabindex="0" role="button" aria-expanded="false">
       <span class="i29-num">11</span>
       <div><strong>Learn What We Did Not Know</strong><small>Investigate before commitment hardens</small></div>
       <div class="i29-peek">
@@ -184,7 +185,7 @@
         <ul><li>Review disclosures and transaction records <em class="i29-vis ">shared</em></li><li>Ask what each new fact changes about the decision <em class="i29-vis ">shared</em></li></ul>
         <a class="i29-open-full" data-open-checklist href="#stage-diligence">Open full checklist</a>
       </div>
-    </div><div class="i29-stop   future" data-i29-stop data-stage="inspection" tabindex="0" role="button" aria-expanded="false">
+    </div><div class="i29-stop    future" data-i29-stop data-stage="inspection" tabindex="0" role="button" aria-expanded="false">
       <span class="i29-num">12</span>
       <div><strong>Inspection Decision</strong><small>Put inspection findings in context</small></div>
       <div class="i29-peek">
@@ -195,7 +196,7 @@
         <ul><li>Separate routine maintenance from meaningful risk <em class="i29-vis ">shared</em></li><li>Choose repairs, credits, acceptance, or exit when available <em class="i29-vis ">shared</em></li></ul>
         <a class="i29-open-full" data-open-checklist href="#stage-inspection">Open full checklist</a>
       </div>
-    </div><div class="i29-stop   future" data-i29-stop data-stage="value" tabindex="0" role="button" aria-expanded="false">
+    </div><div class="i29-stop    future" data-i29-stop data-stage="value" tabindex="0" role="button" aria-expanded="false">
       <span class="i29-num">13</span>
       <div><strong>Value Check</strong><small>Compare price with independent evidence</small></div>
       <div class="i29-peek">
@@ -206,7 +207,7 @@
         <ul><li>Review appraisal and other value evidence <em class="i29-vis ">shared</em></li><li>Choose the response that best protects the household <em class="i29-vis ">shared</em></li></ul>
         <a class="i29-open-full" data-open-checklist href="#stage-value">Open full checklist</a>
       </div>
-    </div><div class="i29-stop   future" data-i29-stop data-stage="loan" tabindex="0" role="button" aria-expanded="false">
+    </div><div class="i29-stop    future" data-i29-stop data-stage="loan" tabindex="0" role="button" aria-expanded="false">
       <span class="i29-num">14</span>
       <div><strong>Final Financing</strong><small>Finish financing without surprises</small></div>
       <div class="i29-peek">
@@ -217,7 +218,7 @@
         <ul><li>Review final cash, payment, and financing expectations <em class="i29-vis ">shared</em></li></ul>
         <a class="i29-open-full" data-open-checklist href="#stage-loan">Open full checklist</a>
       </div>
-    </div><div class="i29-stop   future" data-i29-stop data-stage="commitment" tabindex="0" role="button" aria-expanded="false">
+    </div><div class="i29-stop    future" data-i29-stop data-stage="commitment" tabindex="0" role="button" aria-expanded="false">
       <span class="i29-num">15</span>
       <div><strong>Final Decision</strong><small>Ask whether this is still the right choice</small></div>
       <div class="i29-peek">
@@ -228,7 +229,7 @@
         <ul><li>Compare what you know now with what you knew at the start <em class="i29-vis ">shared</em></li><li>Make sure the home still serves your WHY <em class="i29-vis ">shared</em></li></ul>
         <a class="i29-open-full" data-open-checklist href="#stage-commitment">Open full checklist</a>
       </div>
-    </div><div class="i29-stop   future" data-i29-stop data-stage="closing" tabindex="0" role="button" aria-expanded="false">
+    </div><div class="i29-stop    future" data-i29-stop data-stage="closing" tabindex="0" role="button" aria-expanded="false">
       <span class="i29-num">16</span>
       <div><strong>Get the Keys</strong><small>Complete the purchase and take possession</small></div>
       <div class="i29-peek">
@@ -239,7 +240,7 @@
         <ul><li>Final walk-through completed <em class="i29-vis ">shared</em></li><li>Keys and possession confirmed <em class="i29-vis ">shared</em></li></ul>
         <a class="i29-open-full" data-open-checklist href="#stage-closing">Open full checklist</a>
       </div>
-    </div><div class="i29-stop   future" data-i29-stop data-stage="afterKeys" tabindex="0" role="button" aria-expanded="false">
+    </div><div class="i29-stop    future" data-i29-stop data-stage="afterKeys" tabindex="0" role="button" aria-expanded="false">
       <span class="i29-num">17</span>
       <div><strong>After the Keys</strong><small>Stay with the household after possession</small></div>
       <div class="i29-peek">
@@ -281,13 +282,16 @@ I want the real risks named rather than being surprised later.</p>
       <div><small>Evidence learned so far</small><strong>Consultation complete. Representation chosen. Criteria drafted around commute, quiet, gathering space, and condition.</strong></div>
       <div><small>Next conversation / decision</small><strong>Look at three homes that test the space-versus-location tradeoff.</strong></div>
     </div>
+    
   </section>
-<section class="i29-checklist" id="stage-possibilities">
+<section class="i29-checklist" id="stage-possibilities" data-selected-stage="possibilities">
     <div class="i29-kicker">Stage checklist · Discover Possibilities</div>
     <h2>Discover Possibilities</h2>
     <p>Find homes worth learning from</p>
     <form class="i29-check-row" method="post" action="/api/portal/checklist/toggle">
         
+        
+        <input type="hidden" name="stage_id" value="possibilities">
         <input type="hidden" name="item_id" value="review_fits">
         <input type="hidden" name="reopen" value="no">
         <button type="submit" aria-pressed="false">○</button>
@@ -295,6 +299,17 @@ I want the real risks named rather than being surprised later.</p>
         <span>Open</span>
       </form><form class="i29-check-row" method="post" action="/api/portal/checklist/toggle">
         
+        
+        <input type="hidden" name="stage_id" value="possibilities">
+        <input type="hidden" name="item_id" value="my_reaction">
+        <input type="hidden" name="reopen" value="no">
+        <button type="submit" aria-pressed="false">○</button>
+        <div><strong>Record my private reaction to today’s possibilities</strong><small><em class="i29-vis ">buyer</em></small></div>
+        <span>Open</span>
+      </form><form class="i29-check-row" method="post" action="/api/portal/checklist/toggle">
+        
+        
+        <input type="hidden" name="stage_id" value="possibilities">
         <input type="hidden" name="item_id" value="flag_tours">
         <input type="hidden" name="reopen" value="no">
         <button type="submit" aria-pressed="false">○</button>

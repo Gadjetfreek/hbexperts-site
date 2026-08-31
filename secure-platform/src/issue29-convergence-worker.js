@@ -1,13 +1,14 @@
 import appWorker from './value-brand-worker.js';
-import { STAGES, STAGE_CHECKLISTS, stageLabel, assertSeventeenStages } from './journey-stages.js';
+import { authenticateHbeProfessional } from './hbe-access-worker.js';
+import { STAGES, STAGE_CHECKLISTS, assertSeventeenStages } from './journey-stages.js';
 import {
   ensureHouseholdState, loadHouseholdBundle, completeChecklistItem, saveStory, saveCompass,
-  caseIdForBuyer, authorizePreview, deriveWhatsNext, filterStory
+  caseIdForBuyer, mutationCsrfToken, assertMutationCsrf, validStageId
 } from './household-state.js';
 import {
   ISSUE29_CSS, ISSUE29_JS, stageMapHtml, splitHouseholdCard, storyPanel, compassPanel,
-  whatsNextPanel, checklistPanel, modeSwitcher, previewBanner, thankYouHtml,
-  compensationPublicHtml, compensationPostHireHtml, dashboardShell, esc
+  whatsNextPanel, checklistPanel, previewBanner, thankYouHtml,
+  compensationPublicHtml, compensationPostHireHtml, dashboardShell, buyerDashboardBody, esc
 } from './issue29-ui.js';
 
 assertSeventeenStages();
@@ -19,16 +20,16 @@ export default {
     const url = new URL(request.url);
 
     if (request.method === 'POST' && url.pathname === '/api/hbe/checklist/toggle') {
-      return handleChecklistToggle(request, env, 'hbe');
+      return handleChecklistToggle(request, env, ctx, 'hbe');
     }
     if (request.method === 'POST' && url.pathname === '/api/portal/checklist/toggle') {
-      return handleChecklistToggle(request, env, 'buyer');
+      return handleChecklistToggle(request, env, ctx, 'buyer');
     }
     if (request.method === 'POST' && url.pathname === '/api/hbe/story') {
-      return handleStorySave(request, env);
+      return handleStorySave(request, env, ctx);
     }
     if (request.method === 'POST' && url.pathname === '/api/hbe/compass') {
-      return handleCompassSave(request, env);
+      return handleCompassSave(request, env, ctx);
     }
 
     if (request.method === 'GET' && url.pathname === '/hbe/preview') {
@@ -83,12 +84,32 @@ export default {
   }
 };
 
-async function handleChecklistToggle(request, env, expectedKind) {
+async function requireHbeProfessional(request, env, ctx) {
+  const auth = await authenticateHbeProfessional(request, env);
+  if (!auth.ok) return { ok: false, response: auth.response };
+  try {
+    const probe = new Request(new URL('/hbe', request.url), { method: 'GET', headers: request.headers });
+    const gate = await appWorker.fetch(probe, env, ctx);
+    if (gate.status === 403) return { ok: false, response: gate };
+  } catch (err) {
+    console.error('HBE /hbe probe failed after JWT verification', err);
+  }
+  return { ok: true, professional: auth.professional };
+}
+
+async function csrfFieldFor(secret) {
+  const token = await mutationCsrfToken(secret);
+  return token ? `<input type="hidden" name="csrf" value="${esc(token)}">` : '';
+}
+
+async function handleChecklistToggle(request, env, ctx, expectedKind) {
   if (expectedKind === 'hbe') {
-    const auth = authorizePreview(request, env);
-    if (!auth.ok) return forbidden(auth.reason);
+    const auth = await requireHbeProfessional(request, env, ctx);
+    if (!auth.ok) return auth.response;
     if (!env.BUYER_DB) return unavailable();
+    const jwt = String(request.headers.get('Cf-Access-Jwt-Assertion') || '');
     const form = await request.formData();
+    if (!await assertMutationCsrf(request, form.get('csrf'), jwt)) return forbidden('CSRF rejected.');
     const buyerId = clean(form.get('buyer_id'));
     const caseId = clean(form.get('case_id')) || (buyerId ? await caseIdForBuyer(env, buyerId) : '');
     if (!caseId) return redirect('/hbe');
@@ -99,13 +120,20 @@ async function handleChecklistToggle(request, env, expectedKind) {
       actor: { kind: 'hbe', id: auth.professional.email },
       reopen: clean(form.get('reopen')) === 'yes'
     });
-    return redirect(`/hbe?buyer=${encodeURIComponent(buyerId)}#stage-${encodeURIComponent(clean(form.get('stage_id')) || '')}`);
+    const selected = validStageId(form.get('stage_id'));
+    const q = new URLSearchParams();
+    if (buyerId) q.set('buyer', buyerId);
+    if (selected) q.set('stage', selected);
+    const qs = q.toString();
+    return redirect(`/hbe${qs ? `?${qs}` : ''}${selected ? `#stage-${selected}` : ''}`);
   }
 
   const buyer = await getBuyerSession(request, env);
   if (!buyer) return redirect('/login');
   if (!env.BUYER_DB) return unavailable();
+  const sessionToken = getCookie(request, 'hbe_session');
   const form = await request.formData();
+  if (!await assertMutationCsrf(request, form.get('csrf'), sessionToken)) return forbidden('CSRF rejected.');
   const caseId = await caseIdForBuyer(env, buyer.buyer.id);
   if (!caseId) return redirect('/portal');
   await ensureHouseholdState(env, caseId, { actorId: buyer.buyer.id });
@@ -116,14 +144,19 @@ async function handleChecklistToggle(request, env, expectedKind) {
     reopen: clean(form.get('reopen')) === 'yes'
   });
   const view = clean(form.get('view')) === 'shared' ? 'shared' : 'mine';
-  return redirect(`/portal?view=${view}#stage-${encodeURIComponent(clean(form.get('stage_id')) || '')}`);
+  const selected = validStageId(form.get('stage_id'));
+  const q = new URLSearchParams({ view });
+  if (selected) q.set('stage', selected);
+  return redirect(`/portal?${q.toString()}${selected ? `#stage-${selected}` : ''}`);
 }
 
-async function handleStorySave(request, env) {
-  const auth = authorizePreview(request, env);
-  if (!auth.ok) return forbidden(auth.reason);
+async function handleStorySave(request, env, ctx) {
+  const auth = await requireHbeProfessional(request, env, ctx);
+  if (!auth.ok) return auth.response;
   if (!env.BUYER_DB) return unavailable();
+  const jwt = String(request.headers.get('Cf-Access-Jwt-Assertion') || '');
   const form = await request.formData();
+  if (!await assertMutationCsrf(request, form.get('csrf'), jwt)) return forbidden('CSRF rejected.');
   const buyerId = clean(form.get('buyer_id'));
   const caseId = clean(form.get('case_id')) || (buyerId ? await caseIdForBuyer(env, buyerId) : '');
   if (!caseId) return redirect('/hbe');
@@ -146,11 +179,13 @@ async function handleStorySave(request, env) {
   return redirect(`/hbe?buyer=${encodeURIComponent(buyerId)}#household-story`);
 }
 
-async function handleCompassSave(request, env) {
-  const auth = authorizePreview(request, env);
-  if (!auth.ok) return forbidden(auth.reason);
+async function handleCompassSave(request, env, ctx) {
+  const auth = await requireHbeProfessional(request, env, ctx);
+  if (!auth.ok) return auth.response;
   if (!env.BUYER_DB) return unavailable();
+  const jwt = String(request.headers.get('Cf-Access-Jwt-Assertion') || '');
   const form = await request.formData();
+  if (!await assertMutationCsrf(request, form.get('csrf'), jwt)) return forbidden('CSRF rejected.');
   const buyerId = clean(form.get('buyer_id'));
   const caseId = clean(form.get('case_id')) || (buyerId ? await caseIdForBuyer(env, buyerId) : '');
   if (!caseId) return redirect('/hbe');
@@ -169,13 +204,13 @@ async function handleCompassSave(request, env) {
 }
 
 async function hbeBuyerPreview(request, env, ctx, url) {
-  const probe = new Request(new URL('/hbe', request.url), { method: 'GET', headers: request.headers });
-  const gate = await appWorker.fetch(probe, env, ctx);
-  if (gate.status === 403) return gate;
-  const auth = authorizePreview(request, env);
-  if (!auth.ok) return forbidden(auth.reason);
+  const auth = await requireHbeProfessional(request, env, ctx);
+  if (!auth.ok) return auth.response;
   const buyerId = clean(url.searchParams.get('buyer'));
   if (!buyerId) return redirect('/hbe');
+  const mode = url.searchParams.get('view') === 'shared' ? 'shared' : 'mine';
+  const jwt = String(request.headers.get('Cf-Access-Jwt-Assertion') || '');
+  const csrfField = await csrfFieldFor(jwt);
   if (!env.BUYER_DB) {
     return html(dashboardShell({
       title: 'Buyer Dashboard preview',
@@ -188,13 +223,25 @@ async function hbeBuyerPreview(request, env, ctx, url) {
   const caseId = await caseIdForBuyer(env, buyerId);
   if (caseId) await ensureHouseholdState(env, caseId, { actorId: auth.professional.email });
   const bundle = caseId ? await loadHouseholdBundle(env, caseId) : emptyBundle(buyer);
-  const actor = { kind: 'buyer', id: buyer.id, private_context: privateFor(bundle, buyer.id) };
+  const others = bundle.members.filter(m => m.id !== buyer.id);
+  const actor = { kind: 'buyer', id: buyer.id, private_context: mode === 'mine' ? privateFor(bundle, buyer.id) : '' };
   const hired = await isHired(env, caseId);
+  const currentStage = buyer.stage;
+  const selectedStage = validStageId(url.searchParams.get('stage')) || currentStage;
+  const compensationHtml = hired ? compensationPostHireHtml(await compensationSummary(env, caseId)) : compensationPublicHtml();
   const body = buyerDashboardBody({
-    buyer, bundle, actor, mode: 'mine', hired,
-    currentStage: buyer.stage,
+    buyer, bundle, actor, mode, hired,
+    currentStage,
+    selectedStage,
     checklistAction: '/api/hbe/checklist/toggle',
-    hiddenFields: `<input type="hidden" name="buyer_id" value="${esc(buyer.id)}"><input type="hidden" name="case_id" value="${esc(caseId||'')}"><input type="hidden" name="stage_id" value="${esc(buyer.stage)}">`
+    hiddenFields: `<input type="hidden" name="buyer_id" value="${esc(buyer.id)}"><input type="hidden" name="case_id" value="${esc(caseId||'')}"><input type="hidden" name="view" value="${esc(mode)}">`,
+    csrfField,
+    compensationHtml,
+    others,
+    mineHref: `/hbe/preview?buyer=${encodeURIComponent(buyerId)}&view=mine`,
+    sharedHref: `/hbe/preview?buyer=${encodeURIComponent(buyerId)}&view=shared`,
+    compassEditable: false,
+    stageHrefFor: id => `/hbe/preview?buyer=${encodeURIComponent(buyerId)}&view=${encodeURIComponent(mode)}&stage=${encodeURIComponent(id)}#stage-${encodeURIComponent(id)}`
   });
   return html(dashboardShell({
     title: `Preview · ${buyer.first_name} ${buyer.last_name}`,
@@ -239,20 +286,31 @@ async function enhanceHbeDashboard(request, env, url, text) {
   const actor = { kind: 'hbe', id: 'hbe' };
   const hired = await isHired(env, caseId);
   const currentStage = buyer.stage || 'consultation';
+  const selectedStage = validStageId(url.searchParams.get('stage')) || currentStage;
   const completed = STAGES.slice(0, Math.max(0, STAGES.findIndex(s => s[0] === currentStage))).map(s => s[0]);
+  const jwt = String(request.headers.get('Cf-Access-Jwt-Assertion') || '');
+  const csrfField = await csrfFieldFor(jwt);
+  const ids = `<input type="hidden" name="buyer_id" value="${esc(buyerId)}"><input type="hidden" name="case_id" value="${esc(caseId||'')}">`;
 
   const panel = `
-    ${stageMapHtml({ currentStage, completed, actor, hrefFor: id => `#stage-${id}` })}
+    ${stageMapHtml({
+      currentStage,
+      selectedStage,
+      completed,
+      actor,
+      hrefFor: id => `/hbe?buyer=${encodeURIComponent(buyerId)}&stage=${encodeURIComponent(id)}#stage-${encodeURIComponent(id)}`
+    })}
     ${whatsNextPanel({ stage: currentStage, checklistItems: bundle.items, completions: bundle.completions, tasks: bundle.tasks, actor })}
-    ${storyPanel({ ...bundle.story, case_id: caseId, selected_buyer_id: buyerId }, { mode: 'hbe', actor })}
-    ${compassPanel(bundle.compass)}
+    ${storyPanel({ ...bundle.story, case_id: caseId, selected_buyer_id: buyerId }, { mode: 'hbe', actor, csrfField })}
+    ${compassPanel(bundle.compass, { editable: true, hiddenFields: ids, csrfField })}
     ${checklistPanel({
-      stageId: currentStage,
+      stageId: selectedStage,
       items: bundle.items,
       completions: bundle.completions,
       actor,
       action: '/api/hbe/checklist/toggle',
-      hiddenFields: `<input type="hidden" name="buyer_id" value="${esc(buyerId)}"><input type="hidden" name="case_id" value="${esc(caseId||'')}"><input type="hidden" name="stage_id" value="${esc(currentStage)}">`
+      hiddenFields: ids,
+      csrfField
     })}
     ${hired ? compensationPostHireHtml(await compensationSummary(env, caseId)) : compensationPublicHtml()}
     ${ISSUE29_JS}`;
@@ -266,11 +324,25 @@ async function enhanceBuyerPortal(request, env, url, text) {
   const auth = await getBuyerSession(request, env);
   if (!auth) return text;
   const mode = url.searchParams.get('view') === 'shared' ? 'shared' : 'mine';
+  const sessionToken = getCookie(request, 'hbe_session');
+  const csrfField = await csrfFieldFor(sessionToken);
   if (!env.BUYER_DB) {
-    return injectBeforeMainEnd(text, modeSwitcher({
-      mode, firstName: auth.buyer.first_name, others: [],
-      mineHref: '/portal?view=mine', sharedHref: '/portal?view=shared'
-    }) + compensationPublicHtml());
+    return injectBeforeMainEnd(text, buyerDashboardBody({
+      buyer: auth.buyer,
+      bundle: emptyBundle(auth.buyer),
+      actor: { kind: 'buyer', id: auth.buyer.id },
+      mode,
+      currentStage: auth.buyer.stage || 'consultation',
+      selectedStage: validStageId(url.searchParams.get('stage')) || auth.buyer.stage || 'consultation',
+      checklistAction: '/api/portal/checklist/toggle',
+      hiddenFields: `<input type="hidden" name="view" value="${esc(mode)}">`,
+      csrfField,
+      compensationHtml: compensationPublicHtml(),
+      others: [],
+      mineHref: '/portal?view=mine',
+      sharedHref: '/portal?view=shared',
+      stageHrefFor: id => `/portal?view=${mode}&stage=${encodeURIComponent(id)}#stage-${encodeURIComponent(id)}`
+    }));
   }
   const caseId = await caseIdForBuyer(env, auth.buyer.id);
   if (caseId) await ensureHouseholdState(env, caseId, { actorId: auth.buyer.id });
@@ -278,26 +350,33 @@ async function enhanceBuyerPortal(request, env, url, text) {
   const others = bundle.members.filter(m => m.id !== auth.buyer.id);
   const actor = { kind: 'buyer', id: auth.buyer.id, private_context: mode === 'mine' ? privateFor(bundle, auth.buyer.id) : '' };
   const currentStage = auth.buyer.stage || 'consultation';
-  const completed = STAGES.slice(0, Math.max(0, STAGES.findIndex(s => s[0] === currentStage))).map(s => s[0]);
+  const selectedStage = validStageId(url.searchParams.get('stage')) || currentStage;
   const hired = await isHired(env, caseId);
+  const compensationHtml = hired ? compensationPostHireHtml(await compensationSummary(env, caseId)) : compensationPublicHtml();
 
-  const map = stageMapHtml({ currentStage, completed, actor, hrefFor: id => `/portal?view=${mode}#stage-${id}` });
-  const panel = `
-    ${modeSwitcher({ mode, firstName: auth.buyer.first_name, others, mineHref: '/portal?view=mine', sharedHref: '/portal?view=shared' })}
-    ${map}
-    ${whatsNextPanel({ stage: currentStage, checklistItems: bundle.items, completions: bundle.completions, tasks: bundle.tasks, actor })}
-    ${storyPanel({ ...bundle.story, case_id: caseId }, { mode, actor })}
-    ${compassPanel(bundle.compass)}
-    ${checklistPanel({
-      stageId: currentStage,
-      items: bundle.items,
-      completions: bundle.completions,
-      actor,
-      action: '/api/portal/checklist/toggle',
-      hiddenFields: `<input type="hidden" name="view" value="${esc(mode)}"><input type="hidden" name="stage_id" value="${esc(currentStage)}">`
-    })}
-    ${hired ? compensationPostHireHtml(await compensationSummary(env, caseId)) : compensationPublicHtml()}
-    ${ISSUE29_JS}`;
+  const map = stageMapHtml({
+    currentStage,
+    selectedStage,
+    completed: STAGES.slice(0, Math.max(0, STAGES.findIndex(s => s[0] === currentStage))).map(s => s[0]),
+    actor,
+    hrefFor: id => `/portal?view=${mode}&stage=${encodeURIComponent(id)}#stage-${encodeURIComponent(id)}`
+  });
+  const panel = buyerDashboardBody({
+    buyer: auth.buyer,
+    bundle,
+    actor,
+    mode,
+    currentStage,
+    selectedStage,
+    checklistAction: '/api/portal/checklist/toggle',
+    hiddenFields: `<input type="hidden" name="view" value="${esc(mode)}">`,
+    csrfField,
+    compensationHtml,
+    others,
+    mineHref: '/portal?view=mine',
+    sharedHref: '/portal?view=shared',
+    stageHrefFor: id => `/portal?view=${mode}&stage=${encodeURIComponent(id)}#stage-${encodeURIComponent(id)}`
+  }) + ISSUE29_JS;
 
   text = text.replace(/<div class="map"[\s\S]*?<\/div>/, map);
   if (text.includes('class="buyer-view-tabs"')) {

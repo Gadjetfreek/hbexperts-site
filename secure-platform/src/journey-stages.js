@@ -122,6 +122,7 @@ export const STAGE_CHECKLISTS = {
   ],
   representation: [
     item('choice_recorded','Representation choice recorded for each buyer','shared', buyerTask('Each buyer records a representation choice from their own login', 5)),
+    item('my_rep_choice','Record my representation choice from my login','buyer', buyerTask('Record your representation choice from your own login', 5)),
     item('agreement_reviewed','Written agreement reviewed','shared'),
     item('arrangement_recorded','Negotiated arrangement recorded in the signed agreement — not a public rate card','hbe')
   ],
@@ -137,6 +138,7 @@ export const STAGE_CHECKLISTS = {
   ],
   possibilities: [
     item('review_fits','Review today’s best-fit possibilities','shared', buyerTask('Each buyer reacts privately, then compare only shared facts', 3)),
+    item('my_reaction','Record my private reaction to today’s possibilities','buyer'),
     item('rejection_pattern','Record why rejected homes missed — without blaming either person','hbe', hbeTask('Update the household story with rejection patterns, not a score', 3)),
     item('flag_tours','Flag homes worth seeing','shared', buyerTask('Confirm which homes are worth an hour of household time', 4))
   ],
