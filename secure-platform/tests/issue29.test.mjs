@@ -3,9 +3,10 @@ import assert from 'node:assert/strict';
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { STAGES, STAGE_CHECKLISTS, STAGE_COUNT, assertSeventeenStages, stageLabel, COMPENSATION_PUBLIC } from '../src/journey-stages.js';
 import { generateKeyPairSync, sign as nodeSign } from 'node:crypto';
-import { deriveWhatsNext, filterStory, defaultCompass, canSeeItem, sha256Hex, randomToken, dueDateFromOffset, completeChecklistItem, isCompletedForActor, completionScopeKey, mutationCsrfToken, assertMutationCsrf, sameOriginRequest, validStageId } from '../src/household-state.js';
-import { stageMapHtml, splitHouseholdCard, storyPanel, compassPanel, whatsNextPanel, checklistPanel, modeSwitcher, thankYouHtml, compensationPublicHtml, dashboardShell, previewBanner, ISSUE29_CSS, buyerDashboardBody } from '../src/issue29-ui.js';
+import { deriveWhatsNext, filterStory, defaultCompass, canSeeItem, sha256Hex, randomToken, dueDateFromOffset, completeChecklistItem, isCompletedForActor, completionScopeKey, mutationCsrfToken, assertMutationCsrf, sameOriginRequest, validStageId, loadHouseholdBundle, taskVisibleToActor, generatedActionVisibility } from '../src/household-state.js';
+import { stageMapHtml, splitHouseholdCard, storyPanel, compassPanel, whatsNextPanel, checklistPanel, modeSwitcher, thankYouHtml, compensationPublicHtml, dashboardShell, previewBanner, ISSUE29_CSS, buyerDashboardBody, previewMemberNav } from '../src/issue29-ui.js';
 import worker from '../src/issue29-convergence-worker.js';
+import consentWorker, { inviteResultHtml } from '../src/co-buyer-consent-worker.js';
 
 const RIVERA = {
   members: [
@@ -328,7 +329,10 @@ function createMemoryD1() {
     buyer_tasks: [],
     buyer_notes: [],
     notifications: [],
-    buyer_representation_records: []
+    buyer_representation_records: [],
+    buyer_case_invitations: [],
+    buyer_person_profiles: [],
+    buyer_case_financials: []
   };
   const log = [];
 
@@ -746,4 +750,228 @@ test('exactly 17 stages still after sentinel repairs', () => {
   assert.equal(STAGES[16][0], 'afterKeys');
   assert.equal(STAGE_CHECKLISTS.afterKeys.some(i => /30-day/i.test(i.title)), true);
   assert.equal(STAGES.some(s => s[0] === 'care30'), false);
+});
+
+test('Alex-specific task is invisible to Sam My View / What’s Next and visible to Alex and HBE', async () => {
+  const db = seedRiveraHousehold(createMemoryD1());
+  const env = testEnv(db);
+  const alex = { kind: 'buyer', id: 'alex-rivera' };
+  const sam = { kind: 'buyer', id: 'sam-rivera' };
+  const hbe = { kind: 'hbe', id: 'cwhitehead@hbexperts.com' };
+  const privateItem = db._tables.household_checklist_items.find(i => i.id === 'item-buyer-private');
+  assert.equal(generatedActionVisibility(privateItem), 'buyer');
+
+  const done = await completeChecklistItem(env, { caseId: 'case-rivera', itemId: privateItem.id, actor: alex });
+  assert.equal(done.ok, true);
+  const task = db._tables.household_tasks.find(t => t.source_item_id === privateItem.id);
+  assert.ok(task);
+  assert.equal(task.visibility, 'buyer');
+  assert.equal(task.buyer_id, 'alex-rivera');
+  assert.equal(taskVisibleToActor(task, alex), true);
+  assert.equal(taskVisibleToActor(task, sam), false);
+  assert.equal(taskVisibleToActor(task, hbe), true);
+
+  const samBundle = await loadHouseholdBundle(env, 'case-rivera', sam);
+  assert.equal(samBundle.tasks.some(t => t.id === task.id), false);
+  const alexBundle = await loadHouseholdBundle(env, 'case-rivera', alex);
+  assert.equal(alexBundle.tasks.some(t => t.id === task.id), true);
+  const hbeBundle = await loadHouseholdBundle(env, 'case-rivera', hbe);
+  assert.equal(hbeBundle.tasks.some(t => t.id === task.id), true);
+
+  const samNext = deriveWhatsNext({
+    stage: 'possibilities',
+    checklistItems: db._tables.household_checklist_items,
+    completions: db._tables.household_checklist_completions,
+    tasks: db._tables.household_tasks,
+    actor: sam
+  });
+  assert.notEqual(samNext.id, task.id);
+  assert.notEqual(samNext.title, task.title);
+  assert.doesNotMatch(samNext.title, /Write a private reaction/);
+
+  const alexNext = deriveWhatsNext({
+    stage: 'possibilities',
+    checklistItems: db._tables.household_checklist_items,
+    completions: db._tables.household_checklist_completions,
+    tasks: db._tables.household_tasks,
+    actor: alex
+  });
+  assert.equal(alexNext.title, task.title);
+
+  const samPanel = whatsNextPanel({
+    stage: 'possibilities',
+    checklistItems: db._tables.household_checklist_items,
+    completions: db._tables.household_checklist_completions,
+    tasks: db._tables.household_tasks,
+    actor: sam
+  });
+  assert.doesNotMatch(samPanel, /Write a private reaction/);
+  const alexPanel = whatsNextPanel({
+    stage: 'possibilities',
+    checklistItems: db._tables.household_checklist_items,
+    completions: db._tables.household_checklist_completions,
+    tasks: db._tables.household_tasks,
+    actor: alex
+  });
+  assert.match(alexPanel, /Write a private reaction/);
+  const hbePanel = whatsNextPanel({
+    stage: 'possibilities',
+    checklistItems: db._tables.household_checklist_items,
+    completions: db._tables.household_checklist_completions,
+    tasks: db._tables.household_tasks,
+    actor: hbe
+  });
+  assert.match(hbePanel, /Write a private reaction/);
+});
+
+test('HBE cannot create an HBE-scoped completion for a buyer-private item without an explicit target', async () => {
+  const db = seedRiveraHousehold(createMemoryD1());
+  const env = testEnv(db);
+  const hbe = { kind: 'hbe', id: 'cwhitehead@hbexperts.com' };
+  const privateItem = db._tables.household_checklist_items.find(i => i.id === 'item-buyer-private');
+
+  const blocked = await completeChecklistItem(env, { caseId: 'case-rivera', itemId: privateItem.id, actor: hbe });
+  assert.equal(blocked.ok, false);
+  assert.equal(blocked.error, 'explicit-target-required');
+  assert.equal(db._tables.household_checklist_completions.length, 0);
+  assert.equal(db._tables.household_checklist_completions.some(c => String(c.scope_key || '').includes(':hbe:')), false);
+
+  const alex = { kind: 'buyer', id: 'alex-rivera' };
+  await completeChecklistItem(env, { caseId: 'case-rivera', itemId: privateItem.id, actor: alex });
+  const html = checklistPanel({
+    stageId: 'possibilities',
+    items: db._tables.household_checklist_items,
+    completions: db._tables.household_checklist_completions,
+    actor: hbe,
+    action: '/api/hbe/checklist/toggle',
+    members: RIVERA.members
+  });
+  assert.match(html, /Alex done \/ Sam not/);
+  assert.match(html, /read-only/i);
+  assert.doesNotMatch(html, /name="item_id" value="item-buyer-private"/);
+});
+
+test('HBE preview navigation reaches Alex My View, Sam My View, and Shared View', async () => {
+  const db = seedRiveraHousehold(createMemoryD1());
+  const { headers } = await hbeHeaders();
+  const res = await worker.fetch(new Request('https://buyer.hbexperts.com/hbe/preview?buyer=alex-rivera', {
+    method: 'GET',
+    headers
+  }), testEnv(db), {});
+  assert.equal(res.status, 200);
+  const html = await res.text();
+  assert.match(html, /Alex My View/);
+  assert.match(html, /Sam My View/);
+  assert.match(html, /Shared Household View/);
+  assert.match(html, /\/hbe\/preview\?buyer=alex-rivera&amp;view=mine/);
+  assert.match(html, /\/hbe\/preview\?buyer=sam-rivera&amp;view=mine/);
+  assert.match(html, /view=shared/);
+
+  const sam = await worker.fetch(new Request('https://buyer.hbexperts.com/hbe/preview?buyer=sam-rivera&view=mine', {
+    method: 'GET',
+    headers
+  }), testEnv(db), {});
+  assert.equal(sam.status, 200);
+  const samHtml = await sam.text();
+  assert.match(samHtml, /Sam My View/);
+  assert.match(samHtml, /Previewing buyer-facing UI for Sam Rivera/);
+
+  const shared = await worker.fetch(new Request('https://buyer.hbexperts.com/hbe/preview?buyer=alex-rivera&view=shared', {
+    method: 'GET',
+    headers
+  }), testEnv(db), {});
+  assert.equal(shared.status, 200);
+  const sharedHtml = await shared.text();
+  assert.match(sharedHtml, /Shared Household View/);
+
+  const nav = previewMemberNav({ members: RIVERA.members, currentBuyerId: 'alex-rivera', mode: 'mine' });
+  assert.match(nav, /Alex My View/);
+  assert.match(nav, /Sam My View/);
+  assert.match(nav, /Shared Household View/);
+});
+
+test('reopen suppresses generated task; re-complete reuses\/reactivates without duplicates', async () => {
+  const db = seedRiveraHousehold(createMemoryD1());
+  const env = testEnv(db);
+  const actor = { kind: 'buyer', id: 'alex-rivera' };
+  const itemId = 'item-buyer-private';
+
+  const first = await completeChecklistItem(env, { caseId: 'case-rivera', itemId, actor });
+  assert.equal(first.ok, true);
+  assert.equal(db._tables.household_tasks.filter(t => t.source_item_id === itemId).length, 1);
+  const taskId = db._tables.household_tasks[0].id;
+  assert.equal(db._tables.household_tasks[0].status, 'open');
+
+  const reopen = await completeChecklistItem(env, { caseId: 'case-rivera', itemId, actor, reopen: true });
+  assert.equal(reopen.reopened, true);
+  assert.equal(db._tables.household_tasks.length, 1);
+  assert.equal(db._tables.household_tasks[0].id, taskId);
+  assert.equal(db._tables.household_tasks[0].status, 'suppressed');
+  assert.equal(db._tables.household_tasks[0].is_whats_next, 0);
+  assert.equal(db._tables.household_audit_events.some(a => a.action === 'reopen_deactivated_task'), true);
+
+  const stale = deriveWhatsNext({
+    stage: 'possibilities',
+    checklistItems: db._tables.household_checklist_items,
+    completions: db._tables.household_checklist_completions,
+    tasks: db._tables.household_tasks,
+    actor
+  });
+  assert.notEqual(stale.id, taskId);
+
+  const recomplete = await completeChecklistItem(env, { caseId: 'case-rivera', itemId, actor });
+  assert.equal(recomplete.ok, true);
+  assert.equal(db._tables.household_tasks.length, 1);
+  assert.equal(db._tables.household_tasks[0].id, taskId);
+  assert.equal(db._tables.household_tasks[0].status, 'open');
+  assert.equal(db._tables.household_audit_events.some(a => a.action === 'complete_reactivated_task'), true);
+  const again = await completeChecklistItem(env, { caseId: 'case-rivera', itemId, actor });
+  assert.equal(again.already, true);
+  assert.equal(db._tables.household_tasks.filter(t => t.source_item_id === itemId).length, 1);
+});
+
+test('invite result includes mailto Email invitation and Copy link while persisting no invitee email', async () => {
+  const db = seedRiveraHousehold(createMemoryD1());
+  const sessionToken = 'alex-session-token';
+  const tokenHash = await sha256Hex(sessionToken);
+  db._tables.buyer_sessions.push({
+    id: 'sess-alex',
+    buyer_id: 'alex-rivera',
+    token_hash: tokenHash,
+    created_at: '2026-08-31T12:00:00.000Z',
+    last_seen_at: '2026-08-31T12:00:00.000Z',
+    expires_at: '2027-01-01T00:00:00.000Z',
+    remembered: 1
+  });
+
+  const snapshot = inviteResultHtml('https://buyer.hbexperts.com/invite/example-token');
+  assert.match(snapshot, /mailto:/);
+  assert.match(snapshot, /Email invitation/);
+  assert.match(snapshot, /Copy invitation link/);
+  assert.doesNotMatch(snapshot, /name="invitee_email"|name="email"/);
+
+  const res = await worker.fetch(new Request('https://buyer.hbexperts.com/api/household/invite', {
+    method: 'POST',
+    headers: {
+      origin: 'https://buyer.hbexperts.com',
+      cookie: `hbe_session=${sessionToken}`
+    }
+  }), testEnv(db), {});
+  assert.equal(res.status, 200);
+  const html = await res.text();
+  assert.match(html, /mailto:/);
+  assert.match(html, /Email invitation/);
+  assert.match(html, /Copy invitation link/);
+  assert.doesNotMatch(html, /name="invitee_email"/);
+  assert.doesNotMatch(html, /<input[^>]*name="email"/i);
+  assert.equal(db._tables.buyer_case_invitations.length, 1);
+  const row = db._tables.buyer_case_invitations[0];
+  assert.equal(row.invitee_email, undefined);
+  assert.equal(row.email, undefined);
+  assert.ok(row.token_hash);
+  assert.equal(row.token_hash.length, 64);
+  assert.notEqual(row.token_hash, sessionToken);
+  const keys = Object.keys(row).join(',');
+  assert.doesNotMatch(keys, /invitee|email/i);
+  void consentWorker;
 });

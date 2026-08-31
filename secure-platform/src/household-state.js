@@ -14,6 +14,38 @@ export function canSeeItem(item, actor) {
   return true;
 }
 
+export function generatedActionVisibility(item) {
+  if (!item) return 'shared';
+  if (item.creates_action_kind === 'hbe_task') return 'hbe';
+  if (item.visibility === 'hbe') return 'hbe';
+  if (item.visibility === 'buyer') return 'buyer';
+  return 'shared';
+}
+
+export function taskVisibleToActor(task, actor) {
+  if (!task) return false;
+  const vis = task.visibility || 'shared';
+  if (actor?.kind === 'hbe') return vis === 'buyer' || vis === 'shared' || vis === 'hbe';
+  if (vis === 'hbe') return false;
+  if (vis !== 'buyer' && vis !== 'shared') return false;
+  if (task.buyer_id == null || task.buyer_id === '') return true;
+  return task.buyer_id === actor?.id;
+}
+
+export function tasksForActor(tasks, actor) {
+  return (tasks || []).filter(t => taskVisibleToActor(t, actor));
+}
+
+export function buyerPrivateCompletionStatuses(item, completions, members) {
+  if (!item || item.visibility !== 'buyer') return [];
+  return (members || []).map(m => ({
+    id: m.id,
+    first_name: m.first_name || '',
+    last_name: m.last_name || '',
+    done: isCompletedForActor(item, completions, { kind: 'buyer', id: m.id })
+  }));
+}
+
 // Buyer-private items are per person. Shared and HBE-only items are household-level
 // (one completion) while still recording who completed them.
 export function completionScopeKey(item, actor) {
@@ -116,7 +148,7 @@ export function filterStory(record, actor, mode) {
 
 export function deriveWhatsNext({ stage, checklistItems, completions, tasks, actor }) {
   const allowed = visibilityForActor(actor.kind);
-  const openTasks = (tasks || []).filter(t => t.status === 'open' && allowed.includes(t.visibility || 'shared'));
+  const openTasks = tasksForActor(tasks, actor).filter(t => t.status === 'open' && allowed.includes(t.visibility || 'shared'));
   const labeled = openTasks.find(t => Number(t.is_whats_next) === 1) || chooseTopTask(openTasks);
   if (labeled) {
     return {
@@ -277,7 +309,7 @@ export async function ensureHouseholdState(env, caseId, { actorId = 'system', no
   return { seeded: true };
 }
 
-export async function loadHouseholdBundle(env, caseId) {
+export async function loadHouseholdBundle(env, caseId, actor) {
   const [items, completions, tasks, story, compass, audit, members, permissions] = await Promise.all([
     env.BUYER_DB.prepare('SELECT * FROM household_checklist_items WHERE case_id=? ORDER BY sort_order').bind(caseId).all(),
     env.BUYER_DB.prepare('SELECT * FROM household_checklist_completions WHERE case_id=?').bind(caseId).all(),
@@ -290,10 +322,12 @@ export async function loadHouseholdBundle(env, caseId) {
     env.BUYER_DB.prepare('SELECT * FROM household_view_permissions WHERE case_id=?').bind(caseId).all()
   ]);
   const privateRows = await env.BUYER_DB.prepare('SELECT * FROM buyer_private_context WHERE case_id=?').bind(caseId).all();
+  let taskRows = tasks.results || [];
+  if (actor) taskRows = tasksForActor(taskRows, actor);
   return {
     items: items.results || [],
     completions: completions.results || [],
-    tasks: tasks.results || [],
+    tasks: taskRows,
     story: story || {},
     compass: compass || defaultCompass('consultation'),
     audit: audit.results || [],
@@ -303,29 +337,63 @@ export async function loadHouseholdBundle(env, caseId) {
   };
 }
 
-export async function completeChecklistItem(env, { caseId, itemId, actor, reopen = false, now = new Date() }) {
+export async function completeChecklistItem(env, { caseId, itemId, actor, reopen = false, now = new Date(), targetBuyerId = '' }) {
   const iso = now.toISOString();
   if (!itemId) return { ok: false, error: 'missing-item' };
   const item = await env.BUYER_DB.prepare('SELECT * FROM household_checklist_items WHERE id=? AND case_id=?').bind(itemId, caseId).first();
   if (!item) return { ok: false, error: 'missing-item' };
   if (item.visibility === 'hbe' && actor.kind !== 'hbe') return { ok: false, error: 'forbidden' };
 
-  const scopeKey = completionScopeKey(item, actor);
+  const target = String(targetBuyerId || '').trim();
+  if (item.visibility === 'buyer' && actor.kind === 'hbe') {
+    if (!target) return { ok: false, error: 'explicit-target-required' };
+    const member = await env.BUYER_DB.prepare(
+      'SELECT buyer_id FROM buyer_case_members WHERE case_id=? AND buyer_id=? LIMIT 1'
+    ).bind(caseId, target).first();
+    if (!member) return { ok: false, error: 'invalid-target' };
+  }
+
+  const scopedActor = (item.visibility === 'buyer' && actor.kind === 'hbe' && target)
+    ? { kind: 'buyer', id: target }
+    : actor;
+  const scopeKey = completionScopeKey(item, scopedActor);
+  const taskOwnerId = item.visibility === 'buyer' ? scopedActor.id : null;
+  const vis = generatedActionVisibility(item);
+
   const existing = await env.BUYER_DB.prepare(
     'SELECT id FROM household_checklist_completions WHERE scope_key=? AND case_id=?'
   ).bind(scopeKey, caseId).first();
 
+  const existingTask = item.creates_action_kind && item.creates_action_title
+    ? await env.BUYER_DB.prepare(
+        `SELECT id,status FROM household_tasks
+         WHERE case_id=? AND source_item_id=? AND COALESCE(buyer_id,'')=? LIMIT 1`
+      ).bind(caseId, itemId, taskOwnerId || '').first()
+    : null;
+
   if (reopen) {
     if (!existing) return { ok: true, reopened: false, already: true };
-    await env.BUYER_DB.batch([
+    const statements = [
       env.BUYER_DB.prepare('DELETE FROM household_checklist_completions WHERE scope_key=? AND case_id=?').bind(scopeKey, caseId),
       env.BUYER_DB.prepare(`INSERT INTO household_audit_events
         (id,case_id,actor_kind,actor_id,action,entity_type,entity_id,payload_json,created_at)
         VALUES (?,?,?,?,?,?,?,?,?)`).bind(
         crypto.randomUUID(), caseId, actor.kind, actor.id, 'checklist_reopened', 'checklist_item', itemId,
-        JSON.stringify({ item_key: item.item_key, stage_id: item.stage_id, scope_key: scopeKey }), iso
+        JSON.stringify({ item_key: item.item_key, stage_id: item.stage_id, scope_key: scopeKey, target_buyer_id: target || null }), iso
       )
-    ]);
+    ];
+    if (existingTask && existingTask.status === 'open') {
+      statements.push(env.BUYER_DB.prepare(
+        "UPDATE household_tasks SET status='suppressed', updated_at=?, is_whats_next=0 WHERE id=?"
+      ).bind(iso, existingTask.id));
+      statements.push(env.BUYER_DB.prepare(`INSERT INTO household_audit_events
+        (id,case_id,actor_kind,actor_id,action,entity_type,entity_id,payload_json,created_at)
+        VALUES (?,?,?,?,?,?,?,?,?)`).bind(
+        crypto.randomUUID(), caseId, actor.kind, actor.id, 'reopen_deactivated_task', 'task', existingTask.id,
+        JSON.stringify({ source_item_id: itemId, previous_status: existingTask.status, target_buyer_id: target || null }), iso
+      ));
+    }
+    await env.BUYER_DB.batch(statements);
     return { ok: true, reopened: true };
   }
 
@@ -343,31 +411,32 @@ export async function completeChecklistItem(env, { caseId, itemId, actor, reopen
        VALUES (?,?,?,?,?,?,?,?,?)`
     ).bind(
       crypto.randomUUID(), caseId, actor.kind, actor.id, 'checklist_completed', 'checklist_item', itemId,
-      JSON.stringify({ item_key: item.item_key, stage_id: item.stage_id, title: item.title, scope_key: scopeKey }), iso
+      JSON.stringify({ item_key: item.item_key, stage_id: item.stage_id, title: item.title, scope_key: scopeKey, target_buyer_id: target || null }), iso
     )
   ];
 
   if (item.creates_action_kind && item.creates_action_title) {
-    const vis = item.creates_action_kind === 'hbe_task' ? 'hbe' : (item.visibility === 'hbe' ? 'hbe' : 'shared');
     const due = dueDateFromOffset(now, item.creates_due_offset_days);
-    const taskBuyerId = actor.kind === 'buyer' ? actor.id : null;
-    const existingTask = await env.BUYER_DB.prepare(
-      `SELECT id,status FROM household_tasks
-       WHERE case_id=? AND source_item_id=? AND COALESCE(buyer_id,'')=? LIMIT 1`
-    ).bind(caseId, itemId, taskBuyerId || '').first();
     if (existingTask) {
       if (existingTask.status !== 'open') {
         statements.push(env.BUYER_DB.prepare(
           "UPDATE household_tasks SET status='open', updated_at=?, is_whats_next=1 WHERE id=?"
         ).bind(iso, existingTask.id));
+        statements.push(env.BUYER_DB.prepare(`INSERT INTO household_audit_events
+          (id,case_id,actor_kind,actor_id,action,entity_type,entity_id,payload_json,created_at)
+          VALUES (?,?,?,?,?,?,?,?,?)`).bind(
+          crypto.randomUUID(), caseId, actor.kind, actor.id, 'complete_reactivated_task', 'task', existingTask.id,
+          JSON.stringify({ source_item_id: itemId, visibility: vis, target_buyer_id: target || null }), iso
+        ));
       }
     } else {
+      const taskId = crypto.randomUUID();
       statements.push(env.BUYER_DB.prepare(
         `INSERT INTO household_tasks
           (id,case_id,buyer_id,created_at,updated_at,title,due_at,priority,status,stage,visibility,source,source_item_id,is_whats_next)
          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
       ).bind(
-        crypto.randomUUID(), caseId, taskBuyerId,
+        taskId, caseId, taskOwnerId,
         iso, iso, item.creates_action_title, due,
         item.creates_priority || 'high', 'open', item.stage_id, vis, 'checklist', itemId, 1
       ));
@@ -376,8 +445,8 @@ export async function completeChecklistItem(env, { caseId, itemId, actor, reopen
           (id,case_id,actor_kind,actor_id,action,entity_type,entity_id,payload_json,created_at)
          VALUES (?,?,?,?,?,?,?,?,?)`
       ).bind(
-        crypto.randomUUID(), caseId, actor.kind, actor.id, 'task_created_from_checklist', 'task', itemId,
-        JSON.stringify({ title: item.creates_action_title, visibility: vis, due_at: due }), iso
+        crypto.randomUUID(), caseId, actor.kind, actor.id, 'task_created_from_checklist', 'task', taskId,
+        JSON.stringify({ title: item.creates_action_title, visibility: vis, due_at: due, buyer_id: taskOwnerId }), iso
       ));
     }
   }

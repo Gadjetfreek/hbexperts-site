@@ -1,5 +1,5 @@
 import { STAGES, STAGE_CHECKLISTS, stageLabel, stageIndex, COMPENSATION_PUBLIC, COMPENSATION_POST_HIRE_NOTE } from './journey-stages.js';
-import { deriveWhatsNext, filterStory, defaultCompass, canSeeItem, isCompletedForActor } from './household-state.js';
+import { deriveWhatsNext, filterStory, defaultCompass, canSeeItem, isCompletedForActor, taskVisibleToActor, buyerPrivateCompletionStatuses } from './household-state.js';
 
 export function esc(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
 
@@ -47,7 +47,7 @@ export const ISSUE29_CSS = `<style id="issue29-convergence">
 .i29-vis.hbe{background:#f4efe4;color:#745a14}
 .i29-mode{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin:1rem 0}
 .i29-mode a,.i29-mode span{border:1px solid var(--border);border-radius:999px;padding:.4rem .75rem;text-decoration:none;color:var(--navy);font-size:.85rem;font-weight:700}
-.i29-mode .active{background:var(--green);color:#fff;border-color:var(--green)}
+.i29-mode .active{background:var(--green);color:#fff;border-color:var(--green)}.i29-readonly{opacity:.92}.i29-preview-nav{margin-bottom:.35rem}
 .i29-banner{background:#1a1a2e;color:#fff;padding:.75rem 1rem;display:flex;justify-content:space-between;gap:1rem;align-items:center;flex-wrap:wrap}
 .i29-banner a{color:#c9a84c;font-weight:800}
 .i29-check-row{display:grid;grid-template-columns:auto 1fr auto;gap:.6rem;align-items:start;padding:.65rem 0;border-top:1px solid var(--border)}
@@ -202,9 +202,9 @@ function compassForm(compass, options = {}) {
 }
 
 export function whatsNextPanel({ stage, checklistItems, completions, tasks, actor }) {
-  const next = deriveWhatsNext({ stage, checklistItems, completions, tasks, actor });
-  const allowed = actor.kind === 'hbe' ? ['buyer','shared','hbe'] : ['buyer','shared'];
-  const general = (tasks||[]).filter(t => t.status==='open' && allowed.includes(t.visibility||'shared') && t.title !== next.title);
+  const visible = (tasks||[]).filter(t => t.status==='open' && taskVisibleToActor(t, actor));
+  const next = deriveWhatsNext({ stage, checklistItems, completions, tasks: visible, actor });
+  const general = visible.filter(t => t.title !== next.title);
   return `<section class="i29-next" id="whats-next">
     <div class="i29-kicker">What’s Next</div>
     <h2>Highest priority right now</h2>
@@ -214,7 +214,7 @@ export function whatsNextPanel({ stage, checklistItems, completions, tasks, acto
   </section>`;
 }
 
-export function checklistPanel({ stageId, items, completions, actor, action, hiddenFields = '', csrfField = '' }) {
+export function checklistPanel({ stageId, items, completions, actor, action, hiddenFields = '', csrfField = '', members = [], forcePrivateReadOnly = false }) {
   const stage = STAGES.find(s=>s[0]===stageId);
   const rows = (items||[]).filter(i=>i.stage_id===stageId && canSeeItem(i, actor));
   return `<section class="i29-checklist" id="stage-${esc(stageId)}" data-selected-stage="${esc(stageId)}">
@@ -222,6 +222,19 @@ export function checklistPanel({ stageId, items, completions, actor, action, hid
     <h2>${esc(stage?stage[1]:stageId)}</h2>
     <p>${esc(stage?stage[2]:'')}</p>
     ${rows.map(item=>{
+      const isBuyerPrivate = item.visibility === 'buyer';
+      const hbeReadOnly = isBuyerPrivate && (actor.kind === 'hbe' || forcePrivateReadOnly);
+      if (hbeReadOnly) {
+        const statuses = buyerPrivateCompletionStatuses(item, completions, members);
+        const statusText = statuses.length
+          ? statuses.map(s => `${esc(s.first_name)} ${s.done ? 'done' : 'not'}`).join(' / ')
+          : 'Per-buyer completion';
+        return `<div class="i29-check-row i29-readonly">
+        <span aria-hidden="true">○</span>
+        <div><strong>${esc(item.title)}</strong><small><em class="i29-vis">buyer-private · read-only</em> · ${statusText}${item.creates_action_title?` · completing creates: ${esc(item.creates_action_title)}`:''}</small></div>
+        <span>Read-only</span>
+      </div>`;
+      }
       const isDone = isCompletedForActor(item, completions, actor);
       return `<form class="i29-check-row" method="post" action="${esc(action)}">
         ${csrfField}
@@ -237,6 +250,7 @@ export function checklistPanel({ stageId, items, completions, actor, action, hid
   </section>`;
 }
 
+
 export function modeSwitcher({ mode, firstName, others, mineHref, sharedHref }) {
   const otherNames = (others||[]).map(o=>o.first_name).join(' & ');
   const greeting = mode === 'shared'
@@ -247,6 +261,24 @@ export function modeSwitcher({ mode, firstName, others, mineHref, sharedHref }) 
     <a class="${mode==='mine'?'active':''}" href="${esc(mineHref)}">My View</a>
     <a class="${mode==='shared'?'active':''}" href="${esc(sharedHref)}">Shared Household View</a>
   </div>`;
+}
+
+
+export function previewMemberNav({ members, currentBuyerId, mode, householdBuyerId }) {
+  const list = members || [];
+  const contextId = householdBuyerId || currentBuyerId || list[0]?.id || '';
+  const links = list.map(m => {
+    const href = `/hbe/preview?buyer=${encodeURIComponent(m.id)}&view=mine`;
+    const active = mode === 'mine' && m.id === currentBuyerId;
+    return `<a class="${active?'active':''}" href="${esc(href)}">${esc(m.first_name)} My View</a>`;
+  }).join('');
+  const sharedHref = contextId
+    ? `/hbe/preview?buyer=${encodeURIComponent(contextId)}&view=shared`
+    : '/hbe/preview?view=shared';
+  return `<nav class="i29-mode i29-preview-nav" role="navigation" aria-label="Household member preview">
+    ${links}
+    <a class="${mode==='shared'?'active':''}" href="${esc(sharedHref)}">Shared Household View</a>
+  </nav>`;
 }
 
 export function previewBanner({ buyerName, returnHref }) {
@@ -302,7 +334,10 @@ export function buyerDashboardBody({
   compassEditable = false,
   compassHiddenFields = '',
   stageHrefFor,
-  storyExtras = {}
+  storyExtras = {},
+  modeNavHtml = '',
+  members = [],
+  forcePrivateReadOnly = false
 }) {
   const stage = currentStage || buyer?.stage || 'consultation';
   const viewing = selectedStage || stage;
@@ -310,7 +345,7 @@ export function buyerDashboardBody({
   const completed = STAGES.slice(0, Math.max(0, idx)).map(s => s[0]);
   const hrefFor = stageHrefFor || (id => `#stage-${id}`);
   return `
-    ${modeSwitcher({ mode, firstName: buyer?.first_name || '', others, mineHref, sharedHref })}
+    ${modeNavHtml || modeSwitcher({ mode, firstName: buyer?.first_name || '', others, mineHref, sharedHref })}
     ${stageMapHtml({ currentStage: stage, selectedStage: viewing, completed, actor, hrefFor })}
     ${whatsNextPanel({ stage, checklistItems: bundle.items, completions: bundle.completions, tasks: bundle.tasks, actor })}
     ${storyPanel({ ...(bundle.story || {}), ...storyExtras }, { mode, actor, csrfField })}
@@ -322,7 +357,9 @@ export function buyerDashboardBody({
       actor,
       action: checklistAction,
       hiddenFields,
-      csrfField
+      csrfField,
+      members: members.length ? members : (bundle.members || []),
+      forcePrivateReadOnly
     })}
     ${compensationHtml || ''}
   `;

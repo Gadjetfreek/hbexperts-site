@@ -8,7 +8,7 @@ import {
 import {
   ISSUE29_CSS, ISSUE29_JS, stageMapHtml, splitHouseholdCard, storyPanel, compassPanel,
   whatsNextPanel, checklistPanel, previewBanner, thankYouHtml,
-  compensationPublicHtml, compensationPostHireHtml, dashboardShell, buyerDashboardBody, esc
+  compensationPublicHtml, compensationPostHireHtml, dashboardShell, buyerDashboardBody, previewMemberNav, esc
 } from './issue29-ui.js';
 
 assertSeventeenStages();
@@ -118,7 +118,8 @@ async function handleChecklistToggle(request, env, ctx, expectedKind) {
       caseId,
       itemId: clean(form.get('item_id')),
       actor: { kind: 'hbe', id: auth.professional.email },
-      reopen: clean(form.get('reopen')) === 'yes'
+      reopen: clean(form.get('reopen')) === 'yes',
+      targetBuyerId: clean(form.get('target_buyer_id'))
     });
     const selected = validStageId(form.get('stage_id'));
     const q = new URLSearchParams();
@@ -222,13 +223,20 @@ async function hbeBuyerPreview(request, env, ctx, url) {
   if (!buyer) return redirect('/hbe');
   const caseId = await caseIdForBuyer(env, buyerId);
   if (caseId) await ensureHouseholdState(env, caseId, { actorId: auth.professional.email });
-  const bundle = caseId ? await loadHouseholdBundle(env, caseId) : emptyBundle(buyer);
+  const previewActor = { kind: 'buyer', id: buyer.id };
+  const bundle = caseId ? await loadHouseholdBundle(env, caseId, previewActor) : emptyBundle(buyer);
   const others = bundle.members.filter(m => m.id !== buyer.id);
   const actor = { kind: 'buyer', id: buyer.id, private_context: mode === 'mine' ? privateFor(bundle, buyer.id) : '' };
   const hired = await isHired(env, caseId);
   const currentStage = buyer.stage;
   const selectedStage = validStageId(url.searchParams.get('stage')) || currentStage;
   const compensationHtml = hired ? compensationPostHireHtml(await compensationSummary(env, caseId)) : compensationPublicHtml();
+  const memberNav = previewMemberNav({
+    members: bundle.members,
+    currentBuyerId: buyer.id,
+    mode,
+    householdBuyerId: buyer.id
+  });
   const body = buyerDashboardBody({
     buyer, bundle, actor, mode, hired,
     currentStage,
@@ -238,6 +246,9 @@ async function hbeBuyerPreview(request, env, ctx, url) {
     csrfField,
     compensationHtml,
     others,
+    members: bundle.members,
+    modeNavHtml: memberNav,
+    forcePrivateReadOnly: true,
     mineHref: `/hbe/preview?buyer=${encodeURIComponent(buyerId)}&view=mine`,
     sharedHref: `/hbe/preview?buyer=${encodeURIComponent(buyerId)}&view=shared`,
     compassEditable: false,
@@ -281,7 +292,7 @@ async function enhanceHbeDashboard(request, env, url, text) {
 
   const caseId = await caseIdForBuyer(env, buyerId);
   if (caseId) await ensureHouseholdState(env, caseId, { actorId: 'hbe' });
-  const bundle = caseId ? await loadHouseholdBundle(env, caseId) : emptyBundle();
+  const bundle = caseId ? await loadHouseholdBundle(env, caseId, { kind: 'hbe', id: 'hbe' }) : emptyBundle();
   const buyer = bundle.members.find(m => m.id === buyerId) || { id: buyerId, stage: 'consultation', first_name: '', last_name: '' };
   const actor = { kind: 'hbe', id: 'hbe' };
   const hired = await isHired(env, caseId);
@@ -310,7 +321,8 @@ async function enhanceHbeDashboard(request, env, url, text) {
       actor,
       action: '/api/hbe/checklist/toggle',
       hiddenFields: ids,
-      csrfField
+      csrfField,
+      members: bundle.members
     })}
     ${hired ? compensationPostHireHtml(await compensationSummary(env, caseId)) : compensationPublicHtml()}
     ${ISSUE29_JS}`;
@@ -346,7 +358,7 @@ async function enhanceBuyerPortal(request, env, url, text) {
   }
   const caseId = await caseIdForBuyer(env, auth.buyer.id);
   if (caseId) await ensureHouseholdState(env, caseId, { actorId: auth.buyer.id });
-  const bundle = caseId ? await loadHouseholdBundle(env, caseId) : emptyBundle(auth.buyer);
+  const bundle = caseId ? await loadHouseholdBundle(env, caseId, { kind: 'buyer', id: auth.buyer.id }) : emptyBundle(auth.buyer);
   const others = bundle.members.filter(m => m.id !== auth.buyer.id);
   const actor = { kind: 'buyer', id: auth.buyer.id, private_context: mode === 'mine' ? privateFor(bundle, auth.buyer.id) : '' };
   const currentStage = auth.buyer.stage || 'consultation';

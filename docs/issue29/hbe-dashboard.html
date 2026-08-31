@@ -42,7 +42,7 @@
 .i29-vis.hbe{background:#f4efe4;color:#745a14}
 .i29-mode{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin:1rem 0}
 .i29-mode a,.i29-mode span{border:1px solid var(--border);border-radius:999px;padding:.4rem .75rem;text-decoration:none;color:var(--navy);font-size:.85rem;font-weight:700}
-.i29-mode .active{background:var(--green);color:#fff;border-color:var(--green)}
+.i29-mode .active{background:var(--green);color:#fff;border-color:var(--green)}.i29-readonly{opacity:.92}.i29-preview-nav{margin-bottom:.35rem}
 .i29-banner{background:#1a1a2e;color:#fff;padding:.75rem 1rem;display:flex;justify-content:space-between;gap:1rem;align-items:center;flex-wrap:wrap}
 .i29-banner a{color:#c9a84c;font-weight:800}
 .i29-check-row{display:grid;grid-template-columns:auto 1fr auto;gap:.6rem;align-items:start;padding:.65rem 0;border-top:1px solid var(--border)}
@@ -312,16 +312,11 @@
         <button type="submit" aria-pressed="false">○</button>
         <div><strong>Review today’s best-fit possibilities</strong><small><em class="i29-vis ">shared</em> · completing creates: Each buyer reacts privately, then compare only shared facts</small></div>
         <span>Open</span>
-      </form><form class="i29-check-row" method="post" action="/api/hbe/checklist/toggle">
-        
-        
-        <input type="hidden" name="stage_id" value="possibilities">
-        <input type="hidden" name="item_id" value="my_reaction">
-        <input type="hidden" name="reopen" value="no">
-        <button type="submit" aria-pressed="false">○</button>
-        <div><strong>Record my private reaction to today’s possibilities</strong><small><em class="i29-vis ">buyer</em></small></div>
-        <span>Open</span>
-      </form><form class="i29-check-row" method="post" action="/api/hbe/checklist/toggle">
+      </form><div class="i29-check-row i29-readonly">
+        <span aria-hidden="true">○</span>
+        <div><strong>Record my private reaction to today’s possibilities</strong><small><em class="i29-vis">buyer-private · read-only</em> · Per-buyer completion</small></div>
+        <span>Read-only</span>
+      </div><form class="i29-check-row" method="post" action="/api/hbe/checklist/toggle">
         
         
         <input type="hidden" name="stage_id" value="possibilities">
