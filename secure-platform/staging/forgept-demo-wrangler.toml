@@ -1,0 +1,12 @@
+name = "hbe-buyer-platform-staging-forgept"
+main = "forgept-demo-worker.js"
+compatibility_date = "2026-08-31"
+workers_dev = true
+preview_urls = false
+
+[vars]
+STAGING_ALLOWED_EMAIL = "cwhitehead@hbexperts.com"
+
+# Synthetic-only staging prototype. No D1, KV, email, queues, or production bindings.
+# Set STAGING_PREVIEW_TOKEN as an encrypted Worker secret only if Cloudflare Access
+# is not available for the preview hostname. Do not commit the token.
