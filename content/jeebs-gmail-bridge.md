@@ -2,6 +2,9 @@
 title: "Jeebs Gmail Bridge"
 description: "Secure multi-account Gmail access used by HomeBuyer Experts for user-authorized email attention and workflow support."
 slug: "jeebs-gmail-bridge"
+robots: "noindex,nofollow"
+sitemap:
+  disable: true
 ---
 
 # Jeebs Gmail Bridge

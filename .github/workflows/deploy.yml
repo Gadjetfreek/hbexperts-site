@@ -44,23 +44,55 @@ jobs:
           HUGO_CACHEDIR: ${{ runner.temp }}/hugo_cache
           TZ: America/New_York
         run: |
-          hugo --gc --minify --baseURL "${{ steps.pages.outputs.base_url }}/"
+          hugo --gc --minify --baseURL "https://hbexperts.com/"
 
       - name: Enforce public/private boundary
         run: |
-          # GitHub Pages is public static hosting. Private buyer or advisor surfaces
-          # must never be present in the deploy artifact, even if a future branch
-          # accidentally adds them back under static/.
-          rm -rf public/advisor public/buyers public/clients public/hbeui public/buyer-portal
+          # GitHub Pages is public static hosting. Private, legacy, or workshop
+          # surfaces must never be present in the deploy artifact.
+          rm -rf \
+            public/advisor \
+            public/buyers \
+            public/clients \
+            public/hbeui \
+            public/buyer-portal \
+            public/purchaseplanningworkbook \
+            public/assessment \
+            public/discovery \
+            public/home-dna \
+            public/next-choice-listening-room \
+            public/future-listening-7c4e9
 
-          for forbidden in public/advisor public/buyers public/clients public/hbeui public/buyer-portal; do
+          for forbidden in \
+            public/advisor \
+            public/buyers \
+            public/clients \
+            public/hbeui \
+            public/buyer-portal \
+            public/purchaseplanningworkbook \
+            public/assessment \
+            public/discovery \
+            public/home-dna \
+            public/next-choice-listening-room \
+            public/future-listening-7c4e9; do
             if [ -e "$forbidden" ]; then
-              echo "SECURITY FAILURE: forbidden private surface present: $forbidden" >&2
+              echo "SECURITY FAILURE: forbidden public surface present: $forbidden" >&2
               exit 1
             fi
           done
 
           test -f public/index.html
+          test -f public/sitemap.xml
+          test -f public/robots.txt
+          test -f public/jeebs-gmail-bridge/index.html
+
+          grep -q 'https://hbexperts.com/' public/sitemap.xml
+          if grep -Eqi 'purchaseplanning|listening-room|future-listening|assessment|discovery|home-dna|jeebs-gmail-bridge' public/sitemap.xml; then
+            echo 'SECURITY FAILURE: sitemap contains an excluded surface.' >&2
+            exit 1
+          fi
+          grep -q '<meta name="robots" content="noindex,nofollow">' public/jeebs-gmail-bridge/index.html
+          grep -q 'Sitemap: https://hbexperts.com/sitemap.xml' public/robots.txt
 
       - name: Stamp production release
         env:
@@ -88,6 +120,13 @@ jobs:
           test ! -e public/clients
           test ! -e public/hbeui
           test ! -e public/buyer-portal
+          test ! -e public/purchaseplanningworkbook
+          test ! -e public/assessment
+          test ! -e public/discovery
+          test ! -e public/home-dna
+          test ! -e public/next-choice-listening-room
+          test ! -e public/future-listening-7c4e9
+          test -f public/jeebs-gmail-bridge/index.html
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
@@ -131,14 +170,16 @@ jobs:
             sleep 10
           done
 
-          # These URLs must not return successful private application content.
-          for path in advisor advisor/consultation-brief.html buyers/donald-kelley clients hbeui buyer-portal; do
+          for path in advisor advisor/consultation-brief.html buyers/donald-kelley clients hbeui buyer-portal purchaseplanningworkbook assessment discovery home-dna next-choice-listening-room future-listening-7c4e9; do
             code="$(curl --silent --output /dev/null --write-out '%{http_code}' --location "${BASE}/${path}/?verify=${RELEASE_ID}" || true)"
             if [ "$code" = "200" ]; then
               echo "SECURITY FAILURE: /${path}/ is still publicly served." >&2
               exit 1
             fi
           done
+
+          BRIDGE="$(curl --fail --silent --show-error --location --max-time 15 "${BASE}/jeebs-gmail-bridge/?verify=${RELEASE_ID}")"
+          printf '%s' "$BRIDGE" | grep -q '<meta name="robots" content="noindex,nofollow">'
 
       - name: Record verified release
         run: |
