@@ -3,6 +3,8 @@ name: Deploy Public HBE Site to GitHub Pages
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -11,7 +13,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages"
+  group: "hbe-site-${{ github.ref }}"
   cancel-in-progress: false
 
 defaults:
@@ -36,6 +38,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Pages
+        if: github.event_name != 'pull_request'
         id: pages
         uses: actions/configure-pages@v5
 
@@ -44,25 +47,103 @@ jobs:
           HUGO_CACHEDIR: ${{ runner.temp }}/hugo_cache
           TZ: America/New_York
         run: |
-          hugo --gc --minify --baseURL "${{ steps.pages.outputs.base_url }}/"
+          hugo --gc --minify --baseURL "https://hbexperts.com/"
 
       - name: Enforce public/private boundary
         run: |
-          # GitHub Pages is public static hosting. Private buyer or advisor surfaces
-          # must never be present in the deploy artifact, even if a future branch
-          # accidentally adds them back under static/.
-          rm -rf public/advisor public/buyers public/clients public/hbeui public/buyer-portal
-
-          for forbidden in public/advisor public/buyers public/clients public/hbeui public/buyer-portal; do
+          # GitHub Pages is public static hosting. Private, legacy, or workshop
+          # surfaces must never be generated. Fail loudly rather than cleaning
+          # them out of the artifact, so a regression cannot pass unnoticed.
+          for forbidden in \
+            public/advisor \
+            public/buyers \
+            public/clients \
+            public/hbeui \
+            public/buyer-portal \
+            public/purchaseplanningworkbook \
+            public/assessment \
+            public/discovery \
+            public/home-dna \
+            public/next-choice-listening-room \
+            public/future-listening-7c4e9; do
             if [ -e "$forbidden" ]; then
-              echo "SECURITY FAILURE: forbidden private surface present: $forbidden" >&2
+              echo "SECURITY FAILURE: forbidden public surface generated: $forbidden" >&2
               exit 1
             fi
           done
 
           test -f public/index.html
+          test -f public/css/style.css
+          test -f public/js/nav.js
+          test -f public/sitemap.xml
+          test -f public/robots.txt
+          test -f public/jeebs-gmail-bridge/index.html
 
-      - name: Stamp production release
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+
+          class PageFacts(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.hrefs = set()
+                  self.scripts = set()
+                  self.robots = []
+
+              def handle_starttag(self, tag, attrs):
+                  values = {key.lower(): value for key, value in attrs if key and value is not None}
+                  tag = tag.lower()
+                  if tag == 'link' and 'href' in values:
+                      self.hrefs.add(values['href'])
+                  elif tag == 'script' and 'src' in values:
+                      self.scripts.add(values['src'])
+                  elif tag == 'meta' and values.get('name', '').lower() == 'robots':
+                      self.robots.append(values.get('content', ''))
+
+          def parse_html(path):
+              parser = PageFacts()
+              parser.feed(Path(path).read_text(encoding='utf-8'))
+              return parser
+
+          homepage = parse_html('public/index.html')
+          if '/css/style.css' not in homepage.hrefs:
+              raise SystemExit('VALIDATION FAILURE: homepage does not reference /css/style.css.')
+          if '/js/nav.js' not in homepage.scripts:
+              raise SystemExit('VALIDATION FAILURE: homepage does not reference /js/nav.js.')
+
+          bridge = parse_html('public/jeebs-gmail-bridge/index.html')
+          if not any(
+              {token.strip().lower() for token in value.split(',')} == {'noindex', 'nofollow'}
+              for value in bridge.robots
+          ):
+              raise SystemExit('VALIDATION FAILURE: Gmail Bridge robots meta is not noindex,nofollow.')
+
+          sitemap = Path('public/sitemap.xml')
+          root = ET.parse(sitemap).getroot()
+          locs = [
+              element.text.strip()
+              for element in root.iter()
+              if element.tag.endswith('loc') and element.text
+          ]
+          if not locs:
+              raise SystemExit('SECURITY FAILURE: sitemap contains no <loc> entries.')
+          bad = [loc for loc in locs if not loc.startswith('https://hbexperts.com/')]
+          if bad:
+              print('SECURITY FAILURE: sitemap contains non-canonical <loc> values:', flush=True)
+              for loc in bad:
+                  print(f'  {loc}', flush=True)
+              raise SystemExit(1)
+          print(f'Validated {len(locs)} sitemap URLs on https://hbexperts.com/.')
+          PY
+
+          if grep -Eqi 'purchaseplanning|listening-room|future-listening|assessment|discovery|home-dna|jeebs-gmail-bridge' public/sitemap.xml; then
+            echo 'SECURITY FAILURE: sitemap contains an excluded surface.' >&2
+            exit 1
+          fi
+          grep -q 'Sitemap: https://hbexperts.com/sitemap.xml' public/robots.txt
+
+      - name: Stamp release candidate
         env:
           RELEASE_ID: ${{ github.sha }}
         run: |
@@ -77,7 +158,7 @@ jobs:
               path.write_text(text, encoding='utf-8')
           PY
 
-      - name: Verify public release before upload
+      - name: Verify built release
         env:
           RELEASE_ID: ${{ github.sha }}
         run: |
@@ -88,13 +169,22 @@ jobs:
           test ! -e public/clients
           test ! -e public/hbeui
           test ! -e public/buyer-portal
+          test ! -e public/purchaseplanningworkbook
+          test ! -e public/assessment
+          test ! -e public/discovery
+          test ! -e public/home-dna
+          test ! -e public/next-choice-listening-room
+          test ! -e public/future-listening-7c4e9
+          test -f public/jeebs-gmail-bridge/index.html
 
       - name: Upload artifact
+        if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./public
 
   deploy:
+    if: github.event_name != 'pull_request'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -108,6 +198,7 @@ jobs:
         uses: actions/deploy-pages@v4
 
   verify-production:
+    if: github.event_name != 'pull_request'
     name: Verify public production release
     runs-on: ubuntu-latest
     needs: deploy
@@ -131,14 +222,41 @@ jobs:
             sleep 10
           done
 
-          # These URLs must not return successful private application content.
-          for path in advisor advisor/consultation-brief.html buyers/donald-kelley clients hbeui buyer-portal; do
+          for path in advisor advisor/consultation-brief.html buyers/donald-kelley clients hbeui buyer-portal purchaseplanningworkbook assessment discovery home-dna next-choice-listening-room future-listening-7c4e9; do
             code="$(curl --silent --output /dev/null --write-out '%{http_code}' --location "${BASE}/${path}/?verify=${RELEASE_ID}" || true)"
             if [ "$code" = "200" ]; then
               echo "SECURITY FAILURE: /${path}/ is still publicly served." >&2
               exit 1
             fi
           done
+
+          curl --fail --silent --show-error --location --max-time 15 \
+            "${BASE}/jeebs-gmail-bridge/?verify=${RELEASE_ID}" \
+            --output /tmp/hbe-jeebs-gmail-bridge.html
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+
+          class RobotsParser(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.values = []
+
+              def handle_starttag(self, tag, attrs):
+                  if tag.lower() != 'meta':
+                      return
+                  values = {key.lower(): value for key, value in attrs if key and value is not None}
+                  if values.get('name', '').lower() == 'robots':
+                      self.values.append(values.get('content', ''))
+
+          parser = RobotsParser()
+          parser.feed(Path('/tmp/hbe-jeebs-gmail-bridge.html').read_text(encoding='utf-8'))
+          if not any(
+              {token.strip().lower() for token in value.split(',')} == {'noindex', 'nofollow'}
+              for value in parser.values
+          ):
+              raise SystemExit('PRODUCTION VERIFICATION FAILURE: Gmail Bridge robots meta is not noindex,nofollow.')
+          PY
 
       - name: Record verified release
         run: |
