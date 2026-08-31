@@ -79,12 +79,45 @@ jobs:
           test -f public/robots.txt
           test -f public/jeebs-gmail-bridge/index.html
 
-          grep -q 'href="/css/style.css"' public/index.html
-          grep -q 'src="/js/nav.js"' public/index.html
-
           python3 - <<'PY'
+          from html.parser import HTMLParser
           from pathlib import Path
           import xml.etree.ElementTree as ET
+
+          class PageFacts(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.hrefs = set()
+                  self.scripts = set()
+                  self.robots = []
+
+              def handle_starttag(self, tag, attrs):
+                  values = {key.lower(): value for key, value in attrs if key and value is not None}
+                  tag = tag.lower()
+                  if tag == 'link' and 'href' in values:
+                      self.hrefs.add(values['href'])
+                  elif tag == 'script' and 'src' in values:
+                      self.scripts.add(values['src'])
+                  elif tag == 'meta' and values.get('name', '').lower() == 'robots':
+                      self.robots.append(values.get('content', ''))
+
+          def parse_html(path):
+              parser = PageFacts()
+              parser.feed(Path(path).read_text(encoding='utf-8'))
+              return parser
+
+          homepage = parse_html('public/index.html')
+          if '/css/style.css' not in homepage.hrefs:
+              raise SystemExit('VALIDATION FAILURE: homepage does not reference /css/style.css.')
+          if '/js/nav.js' not in homepage.scripts:
+              raise SystemExit('VALIDATION FAILURE: homepage does not reference /js/nav.js.')
+
+          bridge = parse_html('public/jeebs-gmail-bridge/index.html')
+          if not any(
+              {token.strip().lower() for token in value.split(',')} == {'noindex', 'nofollow'}
+              for value in bridge.robots
+          ):
+              raise SystemExit('VALIDATION FAILURE: Gmail Bridge robots meta is not noindex,nofollow.')
 
           sitemap = Path('public/sitemap.xml')
           root = ET.parse(sitemap).getroot()
@@ -108,7 +141,6 @@ jobs:
             echo 'SECURITY FAILURE: sitemap contains an excluded surface.' >&2
             exit 1
           fi
-          grep -q '<meta name="robots" content="noindex,nofollow">' public/jeebs-gmail-bridge/index.html
           grep -q 'Sitemap: https://hbexperts.com/sitemap.xml' public/robots.txt
 
       - name: Stamp release candidate
@@ -198,8 +230,33 @@ jobs:
             fi
           done
 
-          BRIDGE="$(curl --fail --silent --show-error --location --max-time 15 "${BASE}/jeebs-gmail-bridge/?verify=${RELEASE_ID}")"
-          printf '%s' "$BRIDGE" | grep -q '<meta name="robots" content="noindex,nofollow">'
+          curl --fail --silent --show-error --location --max-time 15 \
+            "${BASE}/jeebs-gmail-bridge/?verify=${RELEASE_ID}" \
+            --output /tmp/hbe-jeebs-gmail-bridge.html
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+
+          class RobotsParser(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.values = []
+
+              def handle_starttag(self, tag, attrs):
+                  if tag.lower() != 'meta':
+                      return
+                  values = {key.lower(): value for key, value in attrs if key and value is not None}
+                  if values.get('name', '').lower() == 'robots':
+                      self.values.append(values.get('content', ''))
+
+          parser = RobotsParser()
+          parser.feed(Path('/tmp/hbe-jeebs-gmail-bridge.html').read_text(encoding='utf-8'))
+          if not any(
+              {token.strip().lower() for token in value.split(',')} == {'noindex', 'nofollow'}
+              for value in parser.values
+          ):
+              raise SystemExit('PRODUCTION VERIFICATION FAILURE: Gmail Bridge robots meta is not noindex,nofollow.')
+          PY
 
       - name: Record verified release
         run: |
