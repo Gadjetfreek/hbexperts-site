@@ -78,7 +78,10 @@ export default {
       if (request.method === 'POST' && url.pathname.startsWith('/invite/')) return postInvite(ctx);
 
       if (url.pathname === '/' || url.pathname === '/login') return page(homePage(ctx), ctx);
-      if (url.pathname === '/hbe') return page(hbePage(ctx), ctx);
+      if (url.pathname === '/hbe') {
+        if (!hbeAllowed(request)) return new Response('HBE access required', { status: 403, headers: securityHeaders() });
+        return page(hbePage(ctx), ctx);
+      }
       if (url.pathname === '/portal') {
         if (who !== 'alex' && who !== 'sam') return redirect('/?need=login');
         return page(portalPage(ctx), ctx);
@@ -639,6 +642,12 @@ function shell(title, body) {
   </head><body>${body}</body></html>`;
 }
 
+
+function hbeAllowed(request) {
+  const email = String(request.headers.get('Cf-Access-Authenticated-User-Email') || '').trim().toLowerCase();
+  if (!email) return true;
+  return email === String(ADMIN_EMAIL || '').toLowerCase();
+}
 function currentStage() {
   return STAGES.find(s => s.id === HOUSEHOLD.currentStage) || STAGES[0];
 }
