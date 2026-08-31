@@ -50,9 +50,10 @@ export default {
 
     const codeParam = String(url.searchParams.get('code') || '').trim().toUpperCase();
     if (codeParam && CODES[codeParam]) {
-      setCookies.push(cookie(WHO, CODES[codeParam]));
-      url.searchParams.delete('code');
-      return redirect(url.pathname + url.search + url.hash, setCookies);
+      const whoNow = CODES[codeParam];
+      setCookies.push(cookie(WHO, whoNow));
+      const dest = whoNow === 'hbe' ? '/hbe' : '/portal';
+      return redirect(dest, setCookies);
     }
 
     if (url.pathname === '/robots.txt') {
