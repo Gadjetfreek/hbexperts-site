@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hbexperts.com/schemas/bimatrix-program.schema.json",
+  "title": "HBE Buyer Incentive Matrix Program",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "program_id",
+    "version",
+    "name",
+    "administrator",
+    "summary_plain_english",
+    "status",
+    "benefit",
+    "geography",
+    "criteria",
+    "terms",
+    "tradeoffs",
+    "rules",
+    "authoritative_sources",
+    "last_verified_date",
+    "last_materially_changed_date",
+    "human_caveats"
+  ],
+  "properties": {
+    "program_id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "version": {"type": ["string", "integer"]},
+    "name": {"type": "string", "minLength": 1},
+    "administrator": {"type": "string", "minLength": 1},
+    "summary_plain_english": {"type": "string", "minLength": 1},
+    "status": {"enum": ["open", "closed", "paused", "exhausted", "unknown", "retired"]},
+    "benefit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "summary"],
+      "properties": {
+        "type": {"enum": ["grant", "forgivable_assistance", "deferred_loan", "repayable_loan", "tax_credit", "tax_abatement", "mortgage_rate_program", "other"]},
+        "summary": {"type": "string"},
+        "amount_min": {"type": ["number", "null"]},
+        "amount_max": {"type": ["number", "null"]},
+        "amount_formula": {"type": ["string", "null"]}
+      }
+    },
+    "geography": {"type": "object"},
+    "criteria": {"type": "object"},
+    "terms": {"type": "object"},
+    "tradeoffs": {"type": "array", "items": {"type": "string"}},
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["rule_id", "fact_keys", "operator", "failure_effect", "missing_effect", "external_dependency", "source_ids"],
+        "properties": {
+          "rule_id": {"type": "string", "minLength": 1},
+          "fact_keys": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+          "operator": {"enum": ["equals", "not_equals", "in", "not_in", "gte", "lte", "between_inclusive", "present", "date_on_or_after", "date_on_or_before", "years_since_date_lte", "lte_lookup", "gte_lookup", "geography_in"]},
+          "comparison": {},
+          "failure_effect": {"enum": ["not_match", "worth_checking"]},
+          "missing_effect": {"enum": ["info_missing", "worth_checking"]},
+          "external_dependency": {"type": "boolean"},
+          "source_ids": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+          "buyer_reason_pass": {"type": "string"},
+          "buyer_reason_fail": {"type": "string"},
+          "buyer_reason_missing": {"type": "string"},
+          "hbe_caveat": {"type": "string"}
+        }
+      }
+    },
+    "authoritative_sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source_id", "label", "url", "publisher", "retrieved_date"],
+        "properties": {
+          "source_id": {"type": "string", "minLength": 1},
+          "label": {"type": "string", "minLength": 1},
+          "url": {"type": "string", "format": "uri"},
+          "publisher": {"type": "string", "minLength": 1},
+          "document_title": {"type": ["string", "null"]},
+          "effective_date": {"type": ["string", "null"], "format": "date"},
+          "retrieved_date": {"type": "string", "format": "date"},
+          "version_note": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "last_verified_date": {"type": "string", "format": "date"},
+    "last_materially_changed_date": {"type": "string", "format": "date"},
+    "human_caveats": {"type": "array", "items": {"type": "string"}}
+  }
+}
