@@ -28,8 +28,8 @@ if ($config -match 'REPLACE_[A-Z0-9_]+') {
 if ($config -notmatch '(?m)^keep_vars\s*=\s*true\s*$') {
   throw 'Deployment preflight failed: keep_vars=true is required so live dashboard-managed Access variables are preserved.'
 }
-if ($config -notmatch '(?m)^main\s*=\s*"src/issue29-production-worker\.js"\s*$') {
-  throw 'Deployment preflight failed: Wrangler must point to the final Issue 29 production wrapper.'
+if ($config -notmatch '(?m)^main\s*=\s*"src/issue33-production-worker\.js"\s*$') {
+  throw 'Deployment preflight failed: Wrangler must point to the final Issue 33 production wrapper.'
 }
 Set-Content -Path $tempConfigPath -Value $config -Encoding UTF8
 Write-Host "Using existing D1 database $dbName ($($db.uuid))"
@@ -39,8 +39,9 @@ try {
   npx --yes wrangler@latest d1 execute $dbName --remote --file=schema.sql --config $tempConfigPath
   npx --yes wrangler@latest d1 execute $dbName --remote --file=schema-stage4.sql --config $tempConfigPath
   npx --yes wrangler@latest d1 execute $dbName --remote --file=schema-issue29.sql --config $tempConfigPath
+  npx --yes wrangler@latest d1 execute $dbName --remote --file=schema-issue33.sql --config $tempConfigPath
 
-  Write-Host '4/6 Running local source and Issue 29 checks...'
+  Write-Host '4/6 Running local source, Issue 29, and Issue 33 checks...'
   node --check src/worker.js
   node --check src/ui-worker.js
   node --check src/portal-worker.js
@@ -61,7 +62,11 @@ try {
   node --check src/issue29-ui.js
   node --check src/issue29-convergence-worker.js
   node --check src/issue29-production-worker.js
+  node --check src/bimatrix/evaluator.js
+  node --check src/bimatrix/freshness.js
+  node --check src/issue33-production-worker.js
   node --test tests/issue29.test.mjs
+  node --test tests/bimatrix.test.mjs
   if (Select-String -Path src/worker.js -Pattern 'donald-kelley|localStorage|buyer_token_hash' -Quiet) {
     throw 'Security/source check failed: legacy buyer-specific or browser-local journey code detected.'
   }
@@ -88,6 +93,9 @@ try {
   if (-not $health.issue29 -or $health.issue29.stages -ne 17) {
     throw 'Issue 29 health verification failed: expected the 17-stage convergence layer.'
   }
+  if (-not $health.issue33 -or -not $health.issue33.bimatrix -or -not $health.issue33.buyer_refresh) {
+    throw 'Issue 33 health verification failed: expected BIMatrix and buyer refresh support.'
+  }
 
   Write-Host ''
   Write-Host 'LIVE' -ForegroundColor Green
@@ -96,7 +104,9 @@ try {
   Write-Host "HBE Portal:    $buyerBaseUrl/hbe"
   Write-Host "Health:        $buyerBaseUrl/health"
   Write-Host ''
-  Write-Host 'Issue 29 convergence enabled: 17-stage journey, household story/compass, What''s Next, per-buyer privacy, and After the Keys.' -ForegroundColor Green
+  Write-Host 'Issue 29 convergence remains enabled: 17-stage journey, household story/compass, What''s Next, per-buyer privacy, and After the Keys.' -ForegroundColor Green
+  Write-Host 'Issue 33 BIMatrix enabled: authenticated Possible Assistance, Last updated / Update now freshness check, canonical rules, and D1 household isolation.' -ForegroundColor Green
+  Write-Host 'Buyer-triggered freshness checks do not silently change canonical rules; unexpected source changes are sent to HBE review state.' -ForegroundColor Yellow
   Write-Host 'MLS adapter remains disconnected/unapproved until MLS Now approves the exact feed and encrypted credentials are configured.' -ForegroundColor Yellow
   Write-Host 'HBE Portal must remain protected by Cloudflare Access.' -ForegroundColor Yellow
   Write-Host 'Sensitive uploads remain disabled until /sensitive* has fresh email-OTP Access protection.' -ForegroundColor Yellow
