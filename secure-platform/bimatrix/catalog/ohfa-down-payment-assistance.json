@@ -1,0 +1,238 @@
+{
+  "program_id": "ohfa-down-payment-assistance",
+  "version": 1,
+  "name": "OHFA Down Payment Assistance",
+  "administrator": "Ohio Housing Finance Agency",
+  "summary_plain_english": "OHFA Down Payment Assistance can provide 3% of the purchase price with an eligible conventional OHFA loan or 3.5% with an eligible FHA, VA, or USDA-RD OHFA loan. It is an add-on to qualifying OHFA financing, not a stand-alone grant.",
+  "status": "open",
+  "benefit": {
+    "type": "forgivable_assistance",
+    "summary": "3% of purchase price for conventional OHFA loans or 3.5% for eligible FHA, VA, or USDA-RD OHFA loans. Assistance may be applied toward down payment, closing costs, or other eligible pre-closing expenses and is forgiven after seven years if program terms are satisfied.",
+    "amount_min": null,
+    "amount_max": null,
+    "amount_formula": "purchase_price * 0.03 for conventional; purchase_price * 0.035 for FHA/VA/USDA-RD"
+  },
+  "geography": {
+    "state": "OH",
+    "county_specific_income_and_purchase_price_limits": true,
+    "target_area_rules_may_change_first_time_requirement": true
+  },
+  "criteria": {
+    "eligible_loan_types": ["conventional", "FHA", "VA", "USDA-RD"],
+    "minimum_credit_scores": {
+      "conventional": 640,
+      "USDA-RD": 640,
+      "VA": 640,
+      "FHA": 650
+    },
+    "income_limits": "County- and target-area-specific OHFA limits apply.",
+    "purchase_price_limits": "County-specific OHFA limits apply.",
+    "debt_to_income": "Borrower must meet debt-to-income requirements for the applicable loan type.",
+    "primary_residence": true,
+    "first_time_path": "Generally the traditional first-time homebuyer pathway requires no ownership interest in a principal residence during the prior three years; qualified honorably discharged veterans and buyers purchasing in designated target areas can qualify without satisfying that ordinary first-time test.",
+    "repeat_buyer_path": "Repeat buyers may use the Next Home pathway if they meet its requirements.",
+    "homebuyer_education_required": true,
+    "approved_lender_required": true
+  },
+  "terms": {
+    "forgiveness_years": 7,
+    "repayment_if_sold_within_forgiveness_period": "OHFA states all assistance must be repaid if the home is sold within seven years under the standard DPA product.",
+    "reservation_and_lender_process_required": true
+  },
+  "tradeoffs": [
+    "OHFA mortgage rates depend on the homeownership product and whether down payment assistance is selected; rates change daily.",
+    "The DPA option can carry a higher mortgage rate than the comparable OHFA loan without assistance, so the assistance amount must be compared with monthly payment and long-term borrowing cost.",
+    "For example, OHFA's rate sheet updated August 31, 2026 showed the traditional first-time FHA/VA/USDA-RD rate at 6.375% without OHFA assistance versus 6.875% with 3.5% DPA, and conventional at 6.625% without assistance versus 7.125% with 3% DPA. These figures are a dated example only and must never be hard-coded as current pricing.",
+    "Income and purchase-price limits vary by county and target/non-target geography.",
+    "An OHFA-approved lender and an eligible underlying OHFA loan/product are required; screening alone cannot confirm underwriting or reservation availability."
+  ],
+  "rules": [
+    {
+      "rule_id": "ohio-property",
+      "fact_keys": ["target.state"],
+      "operator": "equals",
+      "comparison": "OH",
+      "failure_effect": "not_match",
+      "missing_effect": "info_missing",
+      "external_dependency": false,
+      "source_ids": ["ohfa-homeownership-products"],
+      "buyer_reason_fail": "OHFA homebuyer assistance is for an eligible Ohio home purchase.",
+      "buyer_reason_missing": "We need the target state or property address."
+    },
+    {
+      "rule_id": "eligible-loan-type",
+      "fact_keys": ["financing.type"],
+      "operator": "in",
+      "comparison": ["conventional", "FHA", "VA", "USDA-RD"],
+      "failure_effect": "not_match",
+      "missing_effect": "info_missing",
+      "external_dependency": false,
+      "source_ids": ["ohfa-homeownership-products", "ohfa-dpa-update"],
+      "buyer_reason_fail": "Current OHFA DPA is paired with eligible conventional, FHA, VA, or USDA-RD OHFA financing.",
+      "buyer_reason_missing": "We need the likely financing type to calculate the assistance percentage and screen credit requirements."
+    },
+    {
+      "rule_id": "credit-score-conventional-va-usda",
+      "fact_keys": ["financing.type", "credit.score"],
+      "operator": "gte_lookup",
+      "comparison": {"table": {"conventional": 640, "VA": 640, "USDA-RD": 640, "FHA": 650}, "key_fact": "financing.type", "value_fact": "credit.score"},
+      "failure_effect": "not_match",
+      "missing_effect": "info_missing",
+      "external_dependency": false,
+      "source_ids": ["ohfa-rates", "ohfa-homeownership-products"],
+      "buyer_reason_fail": "The known credit score appears below OHFA's published minimum for the selected loan type.",
+      "buyer_reason_missing": "An approximate credit score and likely loan type are needed to screen OHFA's published minimum."
+    },
+    {
+      "rule_id": "primary-residence",
+      "fact_keys": ["occupancy.intended"],
+      "operator": "equals",
+      "comparison": "primary_residence",
+      "failure_effect": "not_match",
+      "missing_effect": "info_missing",
+      "external_dependency": false,
+      "source_ids": ["ohfa-homeownership-products", "ohfa-next-home"],
+      "buyer_reason_fail": "OHFA homebuyer programs are designed for an eligible primary-residence purchase.",
+      "buyer_reason_missing": "We need to know whether the property will be the buyer's primary residence."
+    },
+    {
+      "rule_id": "county-income-limit",
+      "fact_keys": ["target.county", "household.size", "household.gross_income", "property.target_area_status"],
+      "operator": "present",
+      "comparison": true,
+      "failure_effect": "worth_checking",
+      "missing_effect": "info_missing",
+      "external_dependency": true,
+      "source_ids": ["ohfa-limits", "ohfa-homeownership-products"],
+      "buyer_reason_missing": "OHFA income limits vary by county, household size, and target/non-target area; those facts and the current published limit table are needed for a deterministic screen.",
+      "hbe_caveat": "Replace this external placeholder with county-specific deterministic lookup rules as the five-county limits are imported and versioned."
+    },
+    {
+      "rule_id": "county-purchase-price-limit",
+      "fact_keys": ["target.county", "property.purchase_price", "property.target_area_status"],
+      "operator": "present",
+      "comparison": true,
+      "failure_effect": "worth_checking",
+      "missing_effect": "info_missing",
+      "external_dependency": true,
+      "source_ids": ["ohfa-limits"],
+      "buyer_reason_missing": "The current OHFA purchase-price limit for the property's county/area must be checked.",
+      "hbe_caveat": "Replace this external placeholder with deterministic county/area lookup data during the five-county limits work package."
+    },
+    {
+      "rule_id": "first-time-or-exception-path",
+      "fact_keys": ["household.primary_residence_owned_within_3_years", "buyer.honorably_discharged_veteran", "property.target_area_status", "program.ohfa_path"],
+      "operator": "present",
+      "comparison": true,
+      "failure_effect": "worth_checking",
+      "missing_effect": "info_missing",
+      "external_dependency": true,
+      "source_ids": ["ohfa-faq", "ohfa-homeownership-products", "ohfa-next-home"],
+      "buyer_reason_missing": "We need enough information to determine the applicable OHFA pathway: first-time homebuyer, veteran/target-area exception, or Next Home repeat-buyer path.",
+      "hbe_caveat": "Path selection should become deterministic once First-Time, Target Area, and Next Home are modeled as linked canonical products."
+    },
+    {
+      "rule_id": "approved-lender",
+      "fact_keys": ["financing.ohfa_approved_lender_confirmed"],
+      "operator": "equals",
+      "comparison": true,
+      "failure_effect": "worth_checking",
+      "missing_effect": "worth_checking",
+      "external_dependency": true,
+      "source_ids": ["ohfa-homeownership-products"],
+      "buyer_reason_missing": "OHFA loans are originated through participating lenders; lender participation must be confirmed."
+    },
+    {
+      "rule_id": "dti-underwriting",
+      "fact_keys": ["financing.dti_approved"],
+      "operator": "equals",
+      "comparison": true,
+      "failure_effect": "worth_checking",
+      "missing_effect": "worth_checking",
+      "external_dependency": true,
+      "source_ids": ["ohfa-homeownership-products"],
+      "buyer_reason_missing": "Debt-to-income eligibility depends on the loan type and lender underwriting."
+    },
+    {
+      "rule_id": "current-rate-tradeoff-reviewed",
+      "fact_keys": ["program.ohfa_current_rate_comparison_reviewed"],
+      "operator": "equals",
+      "comparison": true,
+      "failure_effect": "worth_checking",
+      "missing_effect": "worth_checking",
+      "external_dependency": true,
+      "source_ids": ["ohfa-rates"],
+      "buyer_reason_missing": "Before recommending DPA, compare the current OHFA rate with assistance against the comparable no-assistance rate and total borrowing cost."
+    }
+  ],
+  "authoritative_sources": [
+    {
+      "source_id": "ohfa-homeownership-products",
+      "label": "OHFA Homeownership Products",
+      "url": "https://www.hudexchange.ohiohome.org/homebuyers.aspx",
+      "publisher": "Ohio Housing Finance Agency",
+      "document_title": "Homeownership Products",
+      "effective_date": null,
+      "retrieved_date": "2026-09-01",
+      "version_note": "Current OHFA product/eligibility overview."
+    },
+    {
+      "source_id": "ohfa-rates",
+      "label": "OHFA Mortgage Rates",
+      "url": "https://ohiohome.org/rates/",
+      "publisher": "Ohio Housing Finance Agency",
+      "document_title": "Mortgage Rates",
+      "effective_date": "2026-08-31",
+      "retrieved_date": "2026-09-01",
+      "version_note": "Rate sheet states rates change daily and are updated weekdays at 9:30 AM."
+    },
+    {
+      "source_id": "ohfa-limits",
+      "label": "OHFA Purchase Price & Income Limits",
+      "url": "https://ohiohome.org/limits/default.aspx",
+      "publisher": "Ohio Housing Finance Agency",
+      "document_title": "Purchase Price & Income Limits",
+      "effective_date": null,
+      "retrieved_date": "2026-09-01",
+      "version_note": "County and target/non-target limits must be separately versioned for deterministic evaluation."
+    },
+    {
+      "source_id": "ohfa-faq",
+      "label": "OHFA Homeownership Frequently Asked Questions",
+      "url": "https://ohiohome.org/partners/faqs.aspx",
+      "publisher": "Ohio Housing Finance Agency",
+      "document_title": "Homeownership Frequently Asked Questions",
+      "effective_date": null,
+      "retrieved_date": "2026-09-01",
+      "version_note": "Used for first-time buyer definition and target-area/veteran exceptions."
+    },
+    {
+      "source_id": "ohfa-dpa-update",
+      "label": "OHFA DPA program update",
+      "url": "https://ohiohome.org/partners/lenders.aspx",
+      "publisher": "Ohio Housing Finance Agency",
+      "document_title": "Lender Resources — DPA Updates",
+      "effective_date": "2025-07-01",
+      "retrieved_date": "2026-09-01",
+      "version_note": "Confirms current 3% conventional and 3.5% government-loan DPA structure."
+    },
+    {
+      "source_id": "ohfa-next-home",
+      "label": "OHFA Next Home",
+      "url": "https://ohiohome.org/partners/fillable/NextHome_Fillable.pdf",
+      "publisher": "Ohio Housing Finance Agency",
+      "document_title": "Next Home",
+      "effective_date": "2025-07-01",
+      "retrieved_date": "2026-09-01",
+      "version_note": "Repeat-buyer pathway source; revised July 1, 2025."
+    }
+  ],
+  "last_verified_date": "2026-09-01",
+  "last_materially_changed_date": "2025-07-01",
+  "human_caveats": [
+    "This record models the DPA add-on. It must eventually link to separate canonical OHFA base-product/path records rather than duplicating all first-time, target-area, veteran, and Next Home logic.",
+    "Current county income and purchase-price tables are not yet imported into the catalog; until they are, those checks remain explicit external dependencies and should not produce `likely`.",
+    "OHFA pricing changes daily. The August 31, 2026 rates are stored only as an example of the fiduciary tradeoff and must not be presented as a current quote after that date.",
+    "Final loan qualification, program reservation, and underwriting are determined by the participating lender/OHFA, not HBE."
+  ]
+}
