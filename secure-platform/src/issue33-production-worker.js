@@ -31,15 +31,15 @@ export const BUYER_FIRST_JS = `<script id="buyer-first-review-script">
   function openReview(){
     const rows=values();
     list.innerHTML=rows.length?rows.map(row=>'<div class="buyer-review-item"><small>'+escapeHtml(row.label)+'</small><div>'+escapeHtml(row.value)+'</div></div>').join(''):'<p class="buyer-review-empty">You have not entered any optional answers.</p>';
-    backdrop.classList.add('open'); document.body.style.overflow='hidden'; send.focus();
+    backdrop.classList.add('open'); backdrop.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden'; send.focus();
   }
-  function closeReview(){backdrop.classList.remove('open');document.body.style.overflow='';reviewButton.focus();}
-  function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+  function closeReview(){backdrop.classList.remove('open');backdrop.setAttribute('aria-hidden','true');document.body.style.overflow='';reviewButton.focus();}
+  function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));}
   reviewButton.addEventListener('click',()=>{if(form.reportValidity())openReview();});
   edit.addEventListener('click',closeReview);
   backdrop.addEventListener('click',e=>{if(e.target===backdrop)closeReview();});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&backdrop.classList.contains('open'))closeReview();});
-  send.addEventListener('click',()=>{approved=true;backdrop.classList.remove('open');document.body.style.overflow='';form.requestSubmit();});
+  send.addEventListener('click',()=>{approved=true;backdrop.classList.remove('open');backdrop.setAttribute('aria-hidden','true');document.body.style.overflow='';form.requestSubmit();});
   form.addEventListener('submit',e=>{if(!approved){e.preventDefault();openReview();}});
 })();
 </script>`;
@@ -58,7 +58,7 @@ export function addBuyerFirstClarity(text, pathname) {
       `<div class="submitbox"><strong>Nothing has been sent yet.</strong><p>Review exactly what HomeBuyer Experts will receive before you choose to send it.</p><button class="btn primary" id="review-before-send" type="button">Review before sending</button></div>`
     );
     if (!text.includes('id="buyer-review-backdrop"')) {
-      const review = `<div class="buyer-review-backdrop" id="buyer-review-backdrop" aria-hidden="false"><section class="buyer-review" role="dialog" aria-modal="true" aria-labelledby="buyer-review-title"><div class="eyebrow">BEFORE YOU SEND THIS</div><h2 id="buyer-review-title">Here is what HBE will receive.</h2><p class="buyer-review-intro">Read it over. You can go back and change anything before sending.</p><div class="buyer-review-list" id="buyer-review-list"></div><div class="buyer-review-trust"><strong>Sending this does not hire HBE, sign an agency agreement, or obligate you to buy a home.</strong><br>It creates your private buyer record so HomeBuyer Experts can review what you chose to share and follow up for a real conversation.</div><div class="buyer-review-actions"><button class="buyer-review-edit" id="buyer-review-edit" type="button">Back and edit</button><button class="buyer-review-send" id="buyer-review-send" type="button">Send to HomeBuyer Experts</button></div></section></div>`;
+      const review = `<div class="buyer-review-backdrop" id="buyer-review-backdrop" aria-hidden="true"><section class="buyer-review" role="dialog" aria-modal="true" aria-labelledby="buyer-review-title"><div class="eyebrow">BEFORE YOU SEND THIS</div><h2 id="buyer-review-title">Here is what HBE will receive.</h2><p class="buyer-review-intro">Read it over. You can go back and change anything before sending.</p><div class="buyer-review-list" id="buyer-review-list"></div><div class="buyer-review-trust"><strong>Sending this does not hire HBE, sign an agency agreement, or obligate you to buy a home.</strong><br>It creates your private buyer record so HomeBuyer Experts can review what you chose to share and follow up for a real conversation.</div><div class="buyer-review-actions"><button class="buyer-review-edit" id="buyer-review-edit" type="button">Back and edit</button><button class="buyer-review-send" id="buyer-review-send" type="button">Send to HomeBuyer Experts</button></div></section></div>`;
       text = text.replace('</body>', `${review}${BUYER_FIRST_JS}</body>`);
     }
   }
