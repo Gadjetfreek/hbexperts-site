@@ -1,0 +1,245 @@
+{
+  "program_id": "akron-dreams",
+  "version": 1,
+  "name": "Akron Dreams 2026",
+  "administrator": "East Akron Neighborhood Development Corporation (EANDC), in partnership with the City of Akron",
+  "summary_plain_english": "Akron Dreams is a City of Akron first-time homebuyer program that can provide a forgivable $7,500 loan toward down payment and closing costs for an eligible owner-occupant purchasing inside Akron city limits.",
+  "status": "open",
+  "benefit": {
+    "type": "forgivable_assistance",
+    "summary": "Forgivable down-payment/closing-cost assistance of $7,500, subject to program funding and final administrator approval.",
+    "amount_min": 7500,
+    "amount_max": 7500,
+    "amount_formula": null
+  },
+  "geography": {
+    "state": "OH",
+    "municipality": "Akron",
+    "property_must_be_inside_city_limits": true
+  },
+  "criteria": {
+    "funding_source": "HUD HOME Program",
+    "first_time_definition": "Buyer must not have been a property owner in the prior three years.",
+    "owner_occupied_required": true,
+    "mortgage_preapproval_required": true,
+    "mortgage_term_required": "30-year fixed-rate",
+    "homebuyer_education_required": "Minimum 8 hours with a HUD-approved counseling agency; EANDC program page states certification within the last two years.",
+    "minimum_credit_score": 620,
+    "bankruptcy_foreclosure_lookback_years": 2,
+    "minimum_buyer_contribution_percent_purchase_price": 1,
+    "liquid_asset_cap_dollars": 15000,
+    "property_units_allowed": [1, 2],
+    "underwriting_ratios": {"housing_percent": 35, "total_debt_percent": 45},
+    "income_limits_by_household_size": {
+      "1": 54400,
+      "2": 62200,
+      "3": 69950,
+      "4": 77701,
+      "5": 83950,
+      "6": 90150,
+      "7": 96350,
+      "8": 102600
+    },
+    "income_limit_basis": "80% HUD Area Median Income as published for Akron Dreams 2026",
+    "property_value_rule": "Property value cannot exceed 95% of Akron's median purchase price for single-family housing; the current dollar threshold requires administrator/source confirmation before deterministic evaluation."
+  },
+  "terms": {
+    "deed_restriction_years": 5,
+    "secured_by_second_mortgage_lien": true,
+    "cash_back_to_borrower_at_closing": false,
+    "funding_priority": "First-come, first-served"
+  },
+  "tradeoffs": [
+    "The property is deed-restricted for five years and the assistance is secured by a second-mortgage lien.",
+    "The buyer must contribute at least 1% of the purchase price.",
+    "Liquid assets above $15,000 must first be applied to the purchase under the published criteria.",
+    "Funding is first-come, first-served, so matching the eligibility rules does not guarantee money will still be available.",
+    "The buyer should compare this assistance with alternative financing based on cash required, monthly payment, rate, lien/forgiveness terms, and total borrowing cost."
+  ],
+  "rules": [
+    {
+      "rule_id": "akron-city-limits",
+      "fact_keys": ["target.municipality"],
+      "operator": "equals",
+      "comparison": "Akron",
+      "failure_effect": "not_match",
+      "missing_effect": "info_missing",
+      "external_dependency": false,
+      "source_ids": ["eandc-akron-dreams"],
+      "buyer_reason_fail": "The published program requires the property to be inside the City of Akron.",
+      "buyer_reason_missing": "We need the target municipality or property address to confirm Akron city limits."
+    },
+    {
+      "rule_id": "first-time-three-years",
+      "fact_keys": ["household.property_owner_within_3_years"],
+      "operator": "equals",
+      "comparison": false,
+      "failure_effect": "not_match",
+      "missing_effect": "info_missing",
+      "external_dependency": false,
+      "source_ids": ["eandc-akron-dreams", "akron-dreams-criteria-2026"],
+      "buyer_reason_fail": "Akron Dreams requires the buyer not to have been a property owner during the prior three years.",
+      "buyer_reason_missing": "We need to know whether any applicable buyer owned property during the prior three years."
+    },
+    {
+      "rule_id": "owner-occupied",
+      "fact_keys": ["occupancy.intended"],
+      "operator": "equals",
+      "comparison": "primary_residence",
+      "failure_effect": "not_match",
+      "missing_effect": "info_missing",
+      "external_dependency": false,
+      "source_ids": ["eandc-akron-dreams", "akron-dreams-criteria-2026"],
+      "buyer_reason_fail": "The home must be owner occupied.",
+      "buyer_reason_missing": "We need to know whether the home will be your primary residence."
+    },
+    {
+      "rule_id": "credit-score-620",
+      "fact_keys": ["credit.score"],
+      "operator": "gte",
+      "comparison": 620,
+      "failure_effect": "not_match",
+      "missing_effect": "info_missing",
+      "external_dependency": false,
+      "source_ids": ["akron-dreams-criteria-2026"],
+      "buyer_reason_fail": "The published criteria list a minimum credit score of 620.",
+      "buyer_reason_missing": "An approximate credit-score band is needed to screen the published 620 minimum."
+    },
+    {
+      "rule_id": "income-by-household-size",
+      "fact_keys": ["household.size", "household.gross_income"],
+      "operator": "lte_lookup",
+      "comparison": {"table": {"1": 54400, "2": 62200, "3": 69950, "4": 77701, "5": 83950, "6": 90150, "7": 96350, "8": 102600}, "key_fact": "household.size", "value_fact": "household.gross_income"},
+      "failure_effect": "not_match",
+      "missing_effect": "info_missing",
+      "external_dependency": false,
+      "source_ids": ["eandc-akron-dreams", "akron-dreams-criteria-2026"],
+      "buyer_reason_fail": "Known household income appears above the published Akron Dreams 2026 limit for that household size.",
+      "buyer_reason_missing": "Household size and approximate gross household income are needed to screen the published income limit."
+    },
+    {
+      "rule_id": "mortgage-preapproval",
+      "fact_keys": ["financing.preapproved"],
+      "operator": "equals",
+      "comparison": true,
+      "failure_effect": "worth_checking",
+      "missing_effect": "info_missing",
+      "external_dependency": false,
+      "source_ids": ["akron-dreams-criteria-2026"],
+      "buyer_reason_fail": "Written mortgage preapproval is required, but this can potentially be completed before applying.",
+      "buyer_reason_missing": "We need to know whether written mortgage preapproval has been obtained."
+    },
+    {
+      "rule_id": "fixed-30-year-mortgage",
+      "fact_keys": ["financing.fixed_rate_30_year"],
+      "operator": "equals",
+      "comparison": true,
+      "failure_effect": "worth_checking",
+      "missing_effect": "info_missing",
+      "external_dependency": false,
+      "source_ids": ["akron-dreams-criteria-2026"],
+      "buyer_reason_fail": "The published criteria require preapproval for a fixed-rate 30-year mortgage.",
+      "buyer_reason_missing": "The planned mortgage term/rate structure is needed to screen this requirement."
+    },
+    {
+      "rule_id": "homebuyer-education",
+      "fact_keys": ["education.hud_homebuyer_8hr_current"],
+      "operator": "equals",
+      "comparison": true,
+      "failure_effect": "worth_checking",
+      "missing_effect": "info_missing",
+      "external_dependency": false,
+      "source_ids": ["eandc-akron-dreams", "akron-dreams-criteria-2026"],
+      "buyer_reason_fail": "Required homebuyer education is not yet complete, but it may be possible to complete it before program approval.",
+      "buyer_reason_missing": "We need to know whether the required HUD-approved homebuyer education has been completed."
+    },
+    {
+      "rule_id": "bankruptcy-foreclosure-lookback",
+      "fact_keys": ["credit.bankruptcy_or_foreclosure_within_2_years"],
+      "operator": "equals",
+      "comparison": false,
+      "failure_effect": "not_match",
+      "missing_effect": "info_missing",
+      "external_dependency": false,
+      "source_ids": ["eandc-akron-dreams", "akron-dreams-criteria-2026"],
+      "buyer_reason_fail": "The published criteria state no bankruptcy or foreclosure during the prior two years.",
+      "buyer_reason_missing": "This program specifically requires confirmation about bankruptcy or foreclosure during the prior two years."
+    },
+    {
+      "rule_id": "liquid-assets",
+      "fact_keys": ["household.liquid_assets"],
+      "operator": "lte",
+      "comparison": 15000,
+      "failure_effect": "worth_checking",
+      "missing_effect": "info_missing",
+      "external_dependency": false,
+      "source_ids": ["akron-dreams-criteria-2026"],
+      "buyer_reason_fail": "Published criteria cap retained liquid assets at $15,000 and require excess funds to be applied to the purchase; this needs administrator review rather than an automatic rejection.",
+      "buyer_reason_missing": "Approximate liquid assets are relevant to this program's published $15,000 retained-asset rule."
+    },
+    {
+      "rule_id": "property-units",
+      "fact_keys": ["property.units"],
+      "operator": "in",
+      "comparison": [1, 2],
+      "failure_effect": "not_match",
+      "missing_effect": "info_missing",
+      "external_dependency": false,
+      "source_ids": ["akron-dreams-criteria-2026"],
+      "buyer_reason_fail": "Published criteria allow a one- or two-unit property.",
+      "buyer_reason_missing": "We need the property's number of dwelling units."
+    },
+    {
+      "rule_id": "funding-availability",
+      "fact_keys": ["program.akron_dreams_funding_confirmed"],
+      "operator": "equals",
+      "comparison": true,
+      "failure_effect": "worth_checking",
+      "missing_effect": "worth_checking",
+      "external_dependency": true,
+      "source_ids": ["eandc-akron-dreams"],
+      "buyer_reason_missing": "Funding is first-come, first-served and must be confirmed with EANDC."
+    },
+    {
+      "rule_id": "current-property-value-limit",
+      "fact_keys": ["property.purchase_price", "program.akron_dreams_current_value_limit"],
+      "operator": "lte_lookup",
+      "comparison": {"table": {}, "key_fact": "program.akron_dreams_current_value_limit", "value_fact": "property.purchase_price"},
+      "failure_effect": "not_match",
+      "missing_effect": "worth_checking",
+      "external_dependency": true,
+      "source_ids": ["akron-dreams-criteria-2026"],
+      "buyer_reason_missing": "The published criteria use a current Akron median-price-based property value limit; HBE should confirm the current dollar threshold with the administrator before relying on it."
+    }
+  ],
+  "authoritative_sources": [
+    {
+      "source_id": "eandc-akron-dreams",
+      "label": "Akron Dreams 2026 program page",
+      "url": "https://www.eandc.org/akrondreams",
+      "publisher": "East Akron Neighborhood Development Corporation",
+      "document_title": "Akron Dreams 2026",
+      "effective_date": null,
+      "retrieved_date": "2026-09-01",
+      "version_note": "Live administrator page reviewed September 1, 2026."
+    },
+    {
+      "source_id": "akron-dreams-criteria-2026",
+      "label": "Akron Dreams 2026 Eligibility Criteria Form",
+      "url": "https://drive.google.com/file/d/1MytuOodh-yGcrGtXf3YUZIHPtbmhYdTx/view?usp=sharing",
+      "publisher": "East Akron Neighborhood Development Corporation / City of Akron",
+      "document_title": "Akron Dreams First Time Homebuyer Down Payment Assistance Program 2026 — Eligibility Criteria",
+      "effective_date": null,
+      "retrieved_date": "2026-09-01",
+      "version_note": "Criteria copy linked from/associated with the current program; HBE should preserve the administrator-hosted source URL when available."
+    }
+  ],
+  "last_verified_date": "2026-09-01",
+  "last_materially_changed_date": "2026-08-25",
+  "human_caveats": [
+    "Program launched in August 2026 and funds are first-come, first-served; availability requires frequent verification.",
+    "The published property-value rule references 95% of Akron's median purchase price rather than giving a durable threshold in the criteria copy reviewed; do not hard-code an inferred dollar limit.",
+    "The liquid-asset rule is not modeled as an automatic exclusion when assets exceed $15,000 because the published language says excess funds must first be applied to the purchase.",
+    "Final eligibility is determined by the program administrator/lender, not HBE."
+  ]
+}
