@@ -97,8 +97,8 @@ try {
   if (-not $health.issue33 -or -not $health.issue33.bimatrix -or -not $health.issue33.buyer_refresh) {
     throw 'Issue 33 health verification failed: expected BIMatrix and buyer refresh support.'
   }
-  if (-not $health.issue36 -or -not $health.issue36.buyer_first_clarity -or -not $health.issue36.pre_submit_review) {
-    throw 'Issue 36 health verification failed: expected buyer-first clarity and pre-submit review support.'
+  if (-not $health.issue36 -or -not $health.issue36.buyer_first_clarity -or -not $health.issue36.pre_submit_review -or -not $health.issue36.attention_architecture -or -not $health.issue36.guided_open_answers) {
+    throw 'Issue 36 health verification failed: expected buyer-first clarity, review-before-send, simplified attention architecture, and guided open answers.'
   }
 
   Write-Host ''
@@ -110,7 +110,7 @@ try {
   Write-Host ''
   Write-Host 'Issue 29 convergence remains enabled: 17-stage journey, household story/compass, What''s Next, per-buyer privacy, and After the Keys.' -ForegroundColor Green
   Write-Host 'Issue 33 BIMatrix enabled: authenticated Possible Assistance, Last updated / Update now freshness check, canonical rules, and D1 household isolation.' -ForegroundColor Green
-  Write-Host 'Issue 36 buyer-first clarity enabled: plain buyer-only positioning and deliberate review-before-send.' -ForegroundColor Green
+  Write-Host 'Issue 36 buyer-first Phase 2 enabled: Now / Why / Best next step / Time default view, full journey as expandable context, review-before-send, and guided open-ended answers with uncertainty allowed.' -ForegroundColor Green
   Write-Host 'Buyer-triggered freshness checks do not silently change canonical rules; unexpected source changes are sent to HBE review state.' -ForegroundColor Yellow
   Write-Host 'MLS adapter remains disconnected/unapproved until MLS Now approves the exact feed and encrypted credentials are configured.' -ForegroundColor Yellow
   Write-Host 'HBE Portal must remain protected by Cloudflare Access.' -ForegroundColor Yellow
