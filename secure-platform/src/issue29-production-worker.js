@@ -35,7 +35,7 @@ const MOBILE_UX_CSS = `<style id="hbe-mobile-ux-pass">
 .i29-guide strong{flex:0 0 auto;color:#1a1a2e}
 .i29-guide span{font-size:.92rem}
 
-@media(max-width:560px){
+@media(max-width:560px), (pointer:coarse){
   .i29-stop{min-height:auto}
   .i29-peek{
     position:relative!important;
@@ -46,16 +46,69 @@ const MOBILE_UX_CSS = `<style id="hbe-mobile-ux-pass">
     margin-top:.7rem;
     transform:none!important;
     box-shadow:0 10px 28px rgba(26,26,46,.24)!important;
-    display:none;
+    display:none!important;
     opacity:1!important;
     visibility:visible!important;
+    pointer-events:auto!important;
   }
-  .i29-stop.open .i29-peek,
-  .i29-stop:focus-within .i29-peek{display:block}
+  /* On touch/coarse-pointer devices, explicit .open is the only visibility state. */
+  .i29-stop:hover .i29-peek,
+  .i29-stop:focus .i29-peek,
+  .i29-stop:focus-visible .i29-peek,
+  .i29-stop:focus-within .i29-peek{display:none!important}
+  .i29-stop.open .i29-peek{display:block!important}
   .i29-guide{display:block;padding:.75rem .8rem}
   .i29-guide strong{display:block;margin-bottom:.15rem}
 }
 </style>`;
+
+const MOBILE_UX_JS = `<script id="hbe-mobile-popup-stability">
+(()=>{
+  const coarse = window.matchMedia('(pointer: coarse)').matches || window.matchMedia('(max-width: 560px)').matches;
+  if(!coarse) return;
+
+  const stops=[...document.querySelectorAll('[data-i29-stop]')];
+  let lastTapAt=0;
+  let lastTapStop=null;
+
+  const sync = () => stops.forEach(s => s.setAttribute('aria-expanded', s.classList.contains('open') ? 'true' : 'false'));
+  const closeOthers = current => stops.forEach(s => { if(s!==current) s.classList.remove('open'); });
+
+  stops.forEach(stop => {
+    stop.addEventListener('click', e => {
+      if(e.target.closest('[data-open-checklist]')) return;
+      if(e.target.closest('.i29-peek')) {
+        e.stopImmediatePropagation();
+        return;
+      }
+
+      const now=Date.now();
+      if(lastTapStop===stop && now-lastTapAt<350){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        return;
+      }
+      lastTapAt=now;
+      lastTapStop=stop;
+
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      const wasOpen=stop.classList.contains('open');
+      closeOthers(stop);
+      stop.classList.toggle('open', !wasOpen);
+      sync();
+    }, true);
+  });
+
+  document.addEventListener('click', e => {
+    if(e.target.closest('[data-i29-stop]')) return;
+    stops.forEach(s=>s.classList.remove('open'));
+    sync();
+  }, true);
+
+  sync();
+})();
+</script>`;
 
 const START_HERE = `<div class="i29-guide" role="note"><strong>Start here.</strong><span>Do the What’s Next item first. Open your current stage when you want the details. Everything else is context, not homework.</span></div>`;
 
@@ -90,6 +143,9 @@ export default {
 
     if (!text.includes('id="hbe-mobile-ux-pass"')) {
       text = text.replace('</head>', `${MOBILE_UX_CSS}</head>`);
+    }
+    if (!text.includes('id="hbe-mobile-popup-stability"')) {
+      text = text.replace('</body>', `${MOBILE_UX_JS}</body>`);
     }
 
     return new Response(text, {
