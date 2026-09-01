@@ -4,7 +4,10 @@ import { mutationCsrfToken } from './household-state.js';
 import { BIMATRIX_CSS, buyerBimatrixPanel, handleBuyerBimatrixRefresh } from './bimatrix/freshness.js';
 
 export const BUYER_FIRST_CSS = `<style id="buyer-first-clarity">
-.buyer-first-core{max-width:900px;margin:1rem auto;padding:1rem 1.1rem;border:1px solid #dfe8e2;border-left:4px solid #2d5a3d;border-radius:10px;background:#f7faf8;color:#2c2c2c;line-height:1.55}.buyer-first-core strong{color:#1a1a2e}.buyer-review-backdrop{position:fixed;inset:0;z-index:1000;background:rgba(26,26,46,.58);display:none;align-items:center;justify-content:center;padding:1rem}.buyer-review-backdrop.open{display:flex}.buyer-review{width:min(760px,100%);max-height:min(88vh,900px);overflow:auto;background:#fff;border-radius:14px;padding:1.35rem;box-shadow:0 24px 70px rgba(0,0,0,.28)}.buyer-review h2{margin:.15rem 0 .4rem;color:#1a1a2e;font-family:Georgia,serif}.buyer-review-intro{color:#555;margin:0 0 1rem}.buyer-review-list{display:grid;gap:.7rem;margin:1rem 0}.buyer-review-item{padding:.8rem .9rem;border:1px solid #e8e5e0;border-radius:9px;background:#faf9f6}.buyer-review-item small{display:block;color:#6b6b6b;font-weight:800;text-transform:uppercase;letter-spacing:.04em}.buyer-review-item div{white-space:pre-wrap}.buyer-review-trust{padding:1rem;border-radius:9px;background:#f7faf8;border:1px solid #dfe8e2;color:#333}.buyer-review-actions{display:flex;gap:.7rem;justify-content:flex-end;flex-wrap:wrap;margin-top:1rem}.buyer-review-actions button{font:inherit;font-weight:800;border-radius:7px;padding:.75rem 1rem;cursor:pointer}.buyer-review-edit{background:#fff;color:#2d5a3d;border:1px solid #2d5a3d}.buyer-review-send{background:#2d5a3d;color:#fff;border:1px solid #2d5a3d}.buyer-review-empty{color:#6b6b6b;font-style:italic}@media(max-width:600px){.buyer-review{padding:1rem}.buyer-review-actions{display:grid;grid-template-columns:1fr}.buyer-review-actions button{width:100%}}
+.buyer-first-core{max-width:900px;margin:1rem auto;padding:1rem 1.1rem;border:1px solid #dfe8e2;border-left:4px solid #2d5a3d;border-radius:10px;background:#f7faf8;color:#2c2c2c;line-height:1.55}.buyer-first-core strong{color:#1a1a2e}.buyer-review-backdrop{position:fixed;inset:0;z-index:1000;background:rgba(26,26,46,.58);display:none;align-items:center;justify-content:center;padding:1rem}.buyer-review-backdrop.open{display:flex}.buyer-review{width:min(760px,100%);max-height:min(88vh,900px);overflow:auto;background:#fff;border-radius:14px;padding:1.35rem;box-shadow:0 24px 70px rgba(0,0,0,.28)}.buyer-review h2{margin:.15rem 0 .4rem;color:#1a1a2e;font-family:Georgia,serif}.buyer-review-intro{color:#555;margin:0 0 1rem}.buyer-review-list{display:grid;gap:.7rem;margin:1rem 0}.buyer-review-item{padding:.8rem .9rem;border:1px solid #e8e5e0;border-radius:9px;background:#faf9f6}.buyer-review-item small{display:block;color:#6b6b6b;font-weight:800;text-transform:uppercase;letter-spacing:.04em}.buyer-review-item div{white-space:pre-wrap}.buyer-review-trust{padding:1rem;border-radius:9px;background:#f7faf8;border:1px solid #dfe8e2;color:#333}.buyer-review-actions{display:flex;gap:.7rem;justify-content:flex-end;flex-wrap:wrap;margin-top:1rem}.buyer-review-actions button{font:inherit;font-weight:800;border-radius:7px;padding:.75rem 1rem;cursor:pointer}.buyer-review-edit{background:#fff;color:#2d5a3d;border:1px solid #2d5a3d}.buyer-review-send{background:#2d5a3d;color:#fff;border:1px solid #2d5a3d}.buyer-review-empty{color:#6b6b6b;font-style:italic}
+.buyer-answer-help{display:block;margin:.4rem 0 .15rem;color:#5f625f;font-size:.86rem;line-height:1.45}.buyer-answer-help strong{color:#2d5a3d}.buyer-suggestions{display:flex;flex-wrap:wrap;gap:.4rem;margin:.45rem 0 .7rem}.buyer-suggestion{appearance:none;border:1px solid #cad8ce;background:#fff;color:#2d5a3d;border-radius:999px;padding:.38rem .62rem;font:inherit;font-size:.8rem;font-weight:700;cursor:pointer}.buyer-suggestion:hover,.buyer-suggestion:focus-visible{background:#edf6f0;outline:2px solid rgba(45,90,61,.24);outline-offset:1px}
+.buyer-focus-card{background:#fff;border:1px solid #dfe8e2;border-radius:14px;padding:1.2rem 1.25rem;margin:1rem 0 1.15rem;box-shadow:0 8px 26px rgba(26,26,46,.05)}.buyer-focus-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.7rem;margin-top:.9rem}.buyer-focus-grid>div{background:#faf9f6;border-radius:10px;padding:.8rem}.buyer-focus-grid small{display:block;color:#6b6b6b;font-size:.68rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.2rem}.buyer-focus-grid strong{color:#1a1a2e;line-height:1.35}.buyer-focus-card h1{font:600 clamp(1.5rem,4vw,2.05rem) Georgia,serif;color:#1a1a2e;margin:.2rem 0}.buyer-focus-card p{margin:.35rem 0;color:#555;line-height:1.5}.buyer-more{background:#fff;border:1px solid #e8e5e0;border-radius:12px;margin:.8rem 0;overflow:hidden}.buyer-more>summary{cursor:pointer;padding:1rem 1.05rem;font-weight:850;color:#1a1a2e;list-style:none}.buyer-more>summary::-webkit-details-marker{display:none}.buyer-more>summary:after{content:'+';float:right;color:#2d5a3d;font-size:1.2rem}.buyer-more[open]>summary:after{content:'–'}.buyer-more-body{padding:0 1rem 1rem}.buyer-focus-card+.i29-next{margin-top:0}.buyer-focus-card+.i29-next h2{font-size:1.05rem}.buyer-focus-card+.i29-next>strong{font-size:1.35rem}.buyer-focus-card+.i29-next .i29-tasks{display:none}
+@media(max-width:760px){.buyer-focus-grid{grid-template-columns:1fr 1fr}}@media(max-width:600px){.buyer-review{padding:1rem}.buyer-review-actions{display:grid;grid-template-columns:1fr}.buyer-review-actions button{width:100%}.buyer-focus-grid{grid-template-columns:1fr}.buyer-focus-card{padding:1rem}}
 </style>`;
 
 export const BUYER_FIRST_JS = `<script id="buyer-first-review-script">
@@ -44,6 +47,60 @@ export const BUYER_FIRST_JS = `<script id="buyer-first-review-script">
 })();
 </script>`;
 
+export const BUYER_GUIDANCE_JS = `<script id="buyer-guided-answer-script">
+(()=>{
+  const form=document.getElementById('buyerExperienceForm'); if(!form)return;
+  const guide={
+    why:{help:'A sentence or two is enough. Think about what is changing, what you want more of, or what is pushing the idea forward.',suggestions:['Need more space','Want a different location','Life or family change','Rent no longer feels right','Just exploring','I’m not sure yet']},
+    timeline:{help:'This can be approximate. There is no penalty for not having a timeline yet.',suggestions:['As soon as it makes sense','Within 3–6 months','Later this year','Next year','No deadline','I’m not sure yet']},
+    location:{help:'You can name a city, commute, school area, neighborhood feel, or simply say you are still open.',suggestions:['Near work','Near family','Akron area','Open to several areas','Commute matters most','I’m not sure yet']},
+    concerns:{help:'Anything that makes you hesitate belongs here. You do not need to know the real-estate vocabulary.',suggestions:['Affordability','Choosing the wrong house','Hidden condition problems','Financing','Timing','I’m not sure what to worry about yet']},
+    notes:{help:'Optional. Use this only if there is something you want a human at HBE to understand before talking with you.',suggestions:['Nothing else right now','I’d rather discuss this live','I’m still figuring things out']}
+  };
+  for(const [name,cfg] of Object.entries(guide)){
+    const field=form.elements.namedItem(name); if(!field||field.dataset.guided==='yes')continue;
+    field.dataset.guided='yes';
+    const help=document.createElement('small'); help.className='buyer-answer-help'; help.innerHTML='<strong>Need a starting point?</strong> '+cfg.help+' It is okay not to know yet.';
+    const chips=document.createElement('div'); chips.className='buyer-suggestions'; chips.setAttribute('aria-label','Answer suggestions');
+    for(const suggestion of cfg.suggestions){
+      const button=document.createElement('button'); button.type='button'; button.className='buyer-suggestion'; button.textContent=suggestion;
+      button.addEventListener('click',()=>{field.value=suggestion; field.dispatchEvent(new Event('input',{bubbles:true})); field.focus();});
+      chips.appendChild(button);
+    }
+    field.insertAdjacentElement('afterend',chips); field.insertAdjacentElement('afterend',help);
+  }
+})();
+</script>`;
+
+export const BUYER_PORTAL_FOCUS_JS = `<script id="buyer-portal-focus-script">
+(()=>{
+  const main=document.querySelector('main'); if(!main||document.querySelector('.buyer-focus-card'))return;
+  const next=document.querySelector('.i29-next'); if(!next)return;
+  const current=document.querySelector('.i29-stop.current strong')?.textContent?.trim()||'Your current step';
+  const nextTitle=next.querySelector(':scope > strong')?.textContent?.trim()||'Review your next step';
+  const reason=next.querySelector(':scope > small')?.textContent?.trim()||'This keeps the decision moving without making you solve the whole process at once.';
+  const card=document.createElement('section'); card.className='buyer-focus-card'; card.setAttribute('aria-label','Your current focus');
+  card.innerHTML='<div class="i29-kicker">YOU ARE HERE</div><h1>'+escapeHtml(current)+'</h1><p>You do not need to manage the whole home-buying process. Focus on the next useful decision; the full journey is here when you want context.</p><div class="buyer-focus-grid"><div><small>Now</small><strong>'+escapeHtml(current)+'</strong></div><div><small>Why this matters</small><strong>'+escapeHtml(reason)+'</strong></div><div><small>Best next step</small><strong>'+escapeHtml(nextTitle)+'</strong></div><div><small>Time</small><strong>Do this when you are ready. HBE will flag anything truly date-critical.</strong></div></div>';
+  next.parentNode.insertBefore(card,next); next.parentNode.insertBefore(next,card.nextSibling);
+  const groups=[
+    {label:'See the full 17-stage journey',nodes:[document.querySelector('.i29-map')]},
+    {label:'Your story and decision compass',nodes:[document.querySelector('.i29-story'),document.querySelector('.i29-compass')]},
+    {label:'Current-step checklist',nodes:[document.querySelector('.i29-checklist')]},
+    {label:'Representation and compensation details',nodes:[document.querySelector('.i29-comp')]}
+  ];
+  for(const group of groups){
+    const nodes=group.nodes.filter(Boolean); if(!nodes.length)continue;
+    const details=document.createElement('details'); details.className='buyer-more';
+    const summary=document.createElement('summary'); summary.textContent=group.label;
+    const body=document.createElement('div'); body.className='buyer-more-body';
+    details.append(summary,body);
+    const anchor=nodes[0]; anchor.parentNode.insertBefore(details,anchor);
+    nodes.forEach(node=>body.appendChild(node));
+  }
+  function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+})();
+</script>`;
+
 export function addBuyerFirstClarity(text, pathname) {
   if (pathname === '/' || pathname === '/questionnaire') {
     const core = `<div class="buyer-first-core" role="note"><strong>HomeBuyer Experts helps people buy homes.</strong> We work only for home buyers — never for the seller. Our job is to help you make the best choice for you, even when the best choice is to walk away.</div>`;
@@ -59,8 +116,14 @@ export function addBuyerFirstClarity(text, pathname) {
     );
     if (!text.includes('id="buyer-review-backdrop"')) {
       const review = `<div class="buyer-review-backdrop" id="buyer-review-backdrop" aria-hidden="true"><section class="buyer-review" role="dialog" aria-modal="true" aria-labelledby="buyer-review-title"><div class="eyebrow">BEFORE YOU SEND THIS</div><h2 id="buyer-review-title">Here is what HBE will receive.</h2><p class="buyer-review-intro">Read it over. You can go back and change anything before sending.</p><div class="buyer-review-list" id="buyer-review-list"></div><div class="buyer-review-trust"><strong>Sending this does not hire HBE, sign an agency agreement, or obligate you to buy a home.</strong><br>It creates your private buyer record so HomeBuyer Experts can review what you chose to share and follow up for a real conversation.</div><div class="buyer-review-actions"><button class="buyer-review-edit" id="buyer-review-edit" type="button">Back and edit</button><button class="buyer-review-send" id="buyer-review-send" type="button">Send to HomeBuyer Experts</button></div></section></div>`;
-      text = text.replace('</body>', `${review}${BUYER_FIRST_JS}</body>`);
+      text = text.replace('</body>', `${review}${BUYER_GUIDANCE_JS}${BUYER_FIRST_JS}</body>`);
+    } else if (!text.includes('id="buyer-guided-answer-script"')) {
+      text = text.replace('</body>', `${BUYER_GUIDANCE_JS}</body>`);
     }
+  }
+
+  if (pathname === '/portal' && !text.includes('id="buyer-portal-focus-script"')) {
+    text = text.replace('</body>', `${BUYER_PORTAL_FOCUS_JS}</body>`);
   }
 
   if (!text.includes('id="buyer-first-clarity"')) text = text.replace('</head>', `${BUYER_FIRST_CSS}</head>`);
@@ -88,7 +151,7 @@ export default {
           persistence: 'd1-household-state'
         };
         body.issue33 = { bimatrix: true, buyer_refresh: true, canonical_review: 'monthly' };
-        body.issue36 = { buyer_first_clarity: true, pre_submit_review: true };
+        body.issue36 = { buyer_first_clarity: true, pre_submit_review: true, attention_architecture: true, guided_open_answers: true };
         headers.set('content-type', 'application/json; charset=utf-8');
         return new Response(JSON.stringify(body), {
           status: response.status,
