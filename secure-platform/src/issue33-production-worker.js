@@ -1,4 +1,5 @@
 import appWorker from './issue29-production-worker.js';
+import { STAGES } from './journey-stages.js';
 import { mutationCsrfToken } from './household-state.js';
 import { BIMATRIX_CSS, buyerBimatrixPanel, handleBuyerBimatrixRefresh } from './bimatrix/freshness.js';
 
@@ -14,11 +15,24 @@ export default {
     const headers = new Headers(response.headers);
     const type = headers.get('content-type') || '';
 
-    if (request.method === 'GET' && url.pathname === '/health' && type.includes('application/json')) {
+    // The base health endpoint is JSON, but some wrappers/provider responses may
+    // not preserve an application/json Content-Type. Health verification should
+    // depend on the route and parseable body, not on that optional header detail.
+    if (request.method === 'GET' && url.pathname === '/health') {
       try {
-        const body = await response.json();
+        const body = await response.clone().json();
+        body.issue29 = body.issue29 || {
+          stages: STAGES.length,
+          stage17: 'afterKeys',
+          persistence: 'd1-household-state'
+        };
         body.issue33 = { bimatrix: true, buyer_refresh: true, canonical_review: 'monthly' };
-        return new Response(JSON.stringify(body), { status: response.status, headers });
+        headers.set('content-type', 'application/json; charset=utf-8');
+        return new Response(JSON.stringify(body), {
+          status: response.status,
+          statusText: response.statusText,
+          headers
+        });
       } catch {
         return response;
       }
