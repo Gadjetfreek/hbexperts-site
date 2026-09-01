@@ -1,0 +1,29 @@
+name: Secure Platform Buyer-First CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'secure-platform/**'
+      - '.github/workflows/secure-platform-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'secure-platform/**'
+      - '.github/workflows/secure-platform-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  buyer-first:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify production wrapper syntax
+        run: node --check secure-platform/src/issue33-production-worker.js
+
+      - name: Test buyer-first clarity and review flow
+        run: node --test secure-platform/tests/issue36.test.mjs

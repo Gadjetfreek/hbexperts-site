@@ -4,13 +4,13 @@ title = "HomeBuyer Experts | Exclusive Buyer Representation"
 theme = "hbe"
 
 [params]
-  description = "Exclusive buyer representation for Northeast Ohio using VALUE — human-centered homebuying decision support built around values, alternatives, learning, uncertainty, and evidence."
-  tagline = "Price tells you what a home costs. VALUE helps you decide what that cost means to you."
+  description = "HomeBuyer Experts works only for home buyers in Northeast Ohio, helping people understand their options, protect their interests, and make better homebuying decisions."
+  tagline = "We work only for home buyers — never for the seller."
   phone = "(330) 328-3170"
   email = "cwhitehead@hbexperts.com"
   location = "Northeast Ohio"
   counties = "Summit, Stark, Medina, Wayne & Cuyahoga Counties"
-  informationLastUpdated = "August 27, 2026"
+  informationLastUpdated = "September 1, 2026"
 
 [menu]
   [[menu.main]]
@@ -26,11 +26,11 @@ theme = "hbe"
     url = "/value/"
     weight = 3
   [[menu.main]]
-    name = "Your Strategy Session"
+    name = "Strategy Session"
     url = "/strategy-session/"
     weight = 4
   [[menu.main]]
-    name = "Buyer Journey"
+    name = "Explore the Journey"
     url = "https://buyer.hbexperts.com/"
     weight = 5
   [[menu.main]]
