@@ -1,5 +1,5 @@
 name = "hbe-buyer-platform"
-main = "src/issue29-production-worker.js"
+main = "src/issue33-production-worker.js"
 compatibility_date = "2026-08-26"
 workers_dev = false
 preview_urls = false
