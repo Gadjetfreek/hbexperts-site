@@ -3,12 +3,12 @@
   "version": 1,
   "name": "Akron Dreams 2026",
   "administrator": "East Akron Neighborhood Development Corporation (EANDC), in partnership with the City of Akron",
-  "summary_plain_english": "Akron Dreams is a City of Akron first-time homebuyer program that can provide a forgivable $7,500 loan toward down payment and closing costs for an eligible owner-occupant purchasing inside Akron city limits.",
+  "summary_plain_english": "Akron Dreams is a City of Akron first-time homebuyer program that can provide up to a $7,500 forgivable loan toward down payment and closing costs for an eligible owner-occupant purchasing inside Akron city limits.",
   "status": "open",
   "benefit": {
     "type": "forgivable_assistance",
-    "summary": "Forgivable down-payment/closing-cost assistance of $7,500, subject to program funding and final administrator approval.",
-    "amount_min": 7500,
+    "summary": "Forgivable down-payment/closing-cost assistance of up to $7,500, subject to program funding and final administrator approval.",
+    "amount_min": null,
     "amount_max": 7500,
     "amount_formula": null
   },
