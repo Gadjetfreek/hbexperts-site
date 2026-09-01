@@ -1,7 +1,5 @@
 -- Issue #33 Buyer Incentive Matrix schema (additive).
 -- Apply AFTER schema.sql and schema-issue29.sql on the target D1.
--- This migration is design scaffolding only until reviewed. Do not apply to
--- production D1 with real Buyer Experience rows from an unreviewed deploy.
 PRAGMA foreign_keys = ON;
 
 CREATE TABLE IF NOT EXISTS bimatrix_screenings (
@@ -59,8 +57,20 @@ CREATE TABLE IF NOT EXISTS bimatrix_hbe_annotations (
   FOREIGN KEY (case_id) REFERENCES buyer_cases(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS bimatrix_freshness_checks (
+  id TEXT PRIMARY KEY,
+  case_id TEXT NOT NULL,
+  requested_by_buyer_id TEXT,
+  checked_at TEXT NOT NULL,
+  result TEXT NOT NULL CHECK (result IN ('current','review_pending','unavailable')),
+  details_json TEXT NOT NULL DEFAULT '[]',
+  FOREIGN KEY (case_id) REFERENCES buyer_cases(id) ON DELETE CASCADE,
+  FOREIGN KEY (requested_by_buyer_id) REFERENCES buyers(id) ON DELETE SET NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_bimatrix_screenings_status ON bimatrix_screenings(status, updated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_bimatrix_facts_case ON bimatrix_facts(case_id, fact_key);
 CREATE INDEX IF NOT EXISTS idx_bimatrix_results_case_class ON bimatrix_results(case_id, classification, evaluated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_bimatrix_results_program ON bimatrix_results(program_id, program_version);
 CREATE INDEX IF NOT EXISTS idx_bimatrix_annotations_case ON bimatrix_hbe_annotations(case_id, updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_bimatrix_freshness_case ON bimatrix_freshness_checks(case_id, checked_at DESC);
