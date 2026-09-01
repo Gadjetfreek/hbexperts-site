@@ -35,9 +35,10 @@ test('review UI does not expose invitation token values', () => {
   assert.match(html, /hidden=new Set\(\['household_invite_token'\]\)/);
 });
 
-test('public journey gets buyer-only explanation without submission UI', () => {
+test('public journey gets buyer-only explanation without submission dialog markup', () => {
   const home = '<!doctype html><html><head></head><body><main><h1>Journey</h1></main></body></html>';
   const html = addBuyerFirstClarity(home, '/');
   assert.match(html, /helps people buy homes/i);
-  assert.doesNotMatch(html, /buyer-review-backdrop/);
+  assert.doesNotMatch(html, /id="buyer-review-backdrop"/);
+  assert.doesNotMatch(html, /id="buyer-first-review-script"/);
 });
