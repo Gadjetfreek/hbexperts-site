@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { evaluateProgram, assistanceAmount } from '../src/bimatrix/evaluator.js';
+import { evaluateSourceText, summarizeFreshness, renderBimatrixPanel } from '../src/bimatrix/freshness.js';
 
 const loadJson = async (path) => JSON.parse(await readFile(new URL(path, import.meta.url), 'utf8'));
 const akron = await loadJson('../bimatrix/catalog/akron-dreams.json');
@@ -111,4 +112,27 @@ test('OHFA DPA cannot become likely while county limits/path/rate remain externa
   });
   assert.equal(result.classification, 'worth_checking');
   assert.ok(result.external_checks.length >= 1);
+});
+
+test('freshness source verifier distinguishes current, changed, and unavailable', () => {
+  const source = { source_id: 'test', label: 'Test Program', markers: ['down payment assistance', '3.5%'] };
+  assert.equal(evaluateSourceText(source, 200, 'Down Payment Assistance is 3.5%').outcome, 'current');
+  assert.equal(evaluateSourceText(source, 200, 'Down Payment Assistance changed').outcome, 'review_pending');
+  assert.equal(evaluateSourceText(source, 503, '').outcome, 'unavailable');
+});
+
+test('freshness summary fails safely toward HBE review', () => {
+  assert.equal(summarizeFreshness([{ outcome: 'current' }, { outcome: 'current' }]), 'current');
+  assert.equal(summarizeFreshness([{ outcome: 'current' }, { outcome: 'review_pending' }]), 'review_pending');
+  assert.equal(summarizeFreshness([{ outcome: 'current' }, { outcome: 'unavailable' }]), 'unavailable');
+});
+
+test('BuyerUI panel uses final Last updated / Update now wording', () => {
+  const html = renderBimatrixPanel({ csrfField: '<input name="csrf" value="safe">' });
+  assert.match(html, /Last updated:/);
+  assert.match(html, />Update now</);
+  assert.match(html, /Possible Assistance/);
+  assert.match(html, /Akron Dreams 2026/);
+  assert.match(html, /OHFA Down Payment Assistance/);
+  assert.doesNotMatch(html, /Likely|Not a Match|Info Missing/);
 });
