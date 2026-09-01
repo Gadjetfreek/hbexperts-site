@@ -34,7 +34,7 @@ export const BUYER_FIRST_JS = `<script id="buyer-first-review-script">
     backdrop.classList.add('open'); backdrop.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden'; send.focus();
   }
   function closeReview(){backdrop.classList.remove('open');backdrop.setAttribute('aria-hidden','true');document.body.style.overflow='';reviewButton.focus();}
-  function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));}
+  function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   reviewButton.addEventListener('click',()=>{if(form.reportValidity())openReview();});
   edit.addEventListener('click',closeReview);
   backdrop.addEventListener('click',e=>{if(e.target===backdrop)closeReview();});
