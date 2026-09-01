@@ -1,13 +1,15 @@
 ---
-title: "A Buyer Advocate for Decisions That Matter"
-description: "HomeBuyer Experts provides exclusive buyer representation designed to increase understanding, protect buyer agency, and help Northeast Ohio home buyers choose wisely."
+title: "We Help Home Buyers Make Better Decisions"
+description: "HomeBuyer Experts works only for home buyers in Northeast Ohio. We help you understand your options, protect your interests, and choose what is best for you."
 ---
 
-## A home purchase is a consequential decision.
+## We work only for home buyers.
 
-It involves money, risk, lifestyle, family, timing, uncertainty, and future possibilities — not just a property.
+We never represent the seller.
 
-**HomeBuyer Experts exists to help protect the quality of that decision.**
+That means our job is to help **you** understand the homes, the risks, the tradeoffs, and your choices before you make a major commitment.
+
+Sometimes the best choice is to move forward. Sometimes it is to negotiate differently, change the search, wait, or walk away.
 
 ---
 
@@ -15,18 +17,16 @@ It involves money, risk, lifestyle, family, timing, uncertainty, and future poss
 
 > **What is best for the buyer?**
 
-We represent buyers exclusively. We do not take listings.
+A home purchase can affect your money, family, time, work, and future for years. Good representation should make the decision clearer — not pressure you into making it faster.
 
-Our job is not to push a transaction toward closing. It is to help you understand your options, see important tradeoffs, protect your leverage, and make a choice you can own.
-
-Sometimes that means moving forward. Sometimes it means negotiating differently, changing the search, waiting, or walking away.
+We help you understand your options, investigate important questions, protect your leverage, and make a choice you can own.
 
 ---
 
-## The HBE Buyer Advantage™
+## What HBE Adds
 
-### Unbiased Guidance
-Education, analysis, and candid advice without pressure to buy.
+### Clear Guidance
+Plain explanations, candid advice, and no pressure to buy.
 
 ### Evidence Before Commitment
 We investigate properties, markets, alternatives, and meaningful unknowns before decisions harden.
@@ -35,10 +35,10 @@ We investigate properties, markets, alternatives, and meaningful unknowns before
 Price matters, but so do terms, timing, risk, protection, lifestyle, opportunity cost, and your future plans.
 
 ### Fiduciary Loyalty
-Your interests come first through loyalty, disclosure, reasonable care, confidentiality, and clear advocacy.
+**Fiduciary** means we are legally required to put your interests first when we represent you.
 
-### Meaningful Agency
-The choice remains yours. Our work should make you more capable of choosing — not more dependent on someone else choosing for you.
+### Your Choice Stays Yours
+Our work should make you more capable of choosing — not more dependent on someone else choosing for you.
 
 ---
 
