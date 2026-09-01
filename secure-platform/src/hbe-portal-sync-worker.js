@@ -64,7 +64,7 @@ function portalPanel(tasks, notes) {
   </div>`;
 }
 
-function stageLabel(id){const map={buyerExperience:'Buyer Experience',consultation:'Consultation',representation:'Hire HBE',search:'Build Your Home Search',market:'Learn the Market',possibilities:'Discover Possibilities',evaluation:'Evaluate Homes',offer:'Ready to Offer?',terms:'Build the Offer',negotiation:'Negotiate Wisely',diligence:'Learn What We Did Not Know',inspection:'Inspection Decision',value:'Value Check',loan:'Final Financing',commitment:'Final Decision',closing:'Get the Keys'};return map[id]||id}
+function stageLabel(id){const map={buyerExperience:'Buyer Experience',consultation:'Consultation',representation:'Hire HBE',search:'Build Your Home Search',market:'Learn the Market',possibilities:'Discover Possibilities',evaluation:'Evaluate Homes',offer:'Ready to Offer?',terms:'Build the Offer',negotiation:'Negotiate Wisely',diligence:'Learn What We Did Not Know',inspection:'Inspection Decision',value:'Value Check',loan:'Final Financing',commitment:'Final Decision',closing:'Get the Keys',afterKeys:'After the Keys'};return map[id]||id}
 function fmtDate(v){try{return new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',year:'numeric'}).format(new Date(v+'T12:00:00'))}catch{return v}}
 function fmtDateTime(v){try{return new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric'}).format(new Date(v))}catch{return v}}
 function getCookie(request,name){const raw=request.headers.get('cookie')||'';for(const part of raw.split(';')){const[k,...rest]=part.trim().split('=');if(k===name)return decodeURIComponent(rest.join('='))}return null}

@@ -105,3 +105,12 @@ Buyer-facing `/`, `/questionnaire`, `/api/intake`, `/login`, `/api/login`, and `
 12. Refresh all three BuyerUIs and confirm they agree.
 13. Confirm the protected-documents link does not expose sensitive content without Cloudflare Access OTP using the buyer's email.
 14. Only after all checks pass should the beta link be sent externally.
+
+
+## Issue 29 convergence (17-stage household)
+
+The Worker `main` is `src/issue29-convergence-worker.js`. It wraps the existing production chain. Journey truth for household story, 17-stage checklists, What’s Next, compass, and audit events lives in D1 via `schema-issue29.sql`. Cookies remain `Path=/; HttpOnly; Secure; SameSite=Lax` and are not source of truth.
+
+Stage 17 is **After the Keys**. Do not create stages 18–21. Apply `schema-issue29.sql` only after `schema.sql` and `schema-stage4.sql`, and do not bind an unreviewed deploy to production D1 with real Buyer Experience rows.
+
+See `docs/ISSUE29_CONVERGENCE.md`. Local tests: `node --test tests/issue29.test.mjs`.

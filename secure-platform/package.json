@@ -1,0 +1,6 @@
+{
+  "name": "hbe-buyer-platform",
+  "private": true,
+  "type": "module",
+  "description": "HomeBuyer Experts buyer platform Worker. Tests for Issue 29 run locally without Cloudflare credentials."
+}

@@ -201,7 +201,7 @@ function buyerRepresentationPanel(data) {
     <div class="rep-principles">
       <div><strong>Clear loyalty</strong><span>HBE represents buyers exclusively. We do not take seller listings.</span></div>
       <div><strong>Fiduciary responsibility</strong><span>The written relationship explains HBE's duties, your responsibilities, confidentiality, and the scope of representation.</span></div>
-      <div><strong>Compensation is negotiable</strong><span>How HBE is paid, possible sources of compensation, and any buyer obligation belong in the written agreement before they can influence the relationship.</span></div>
+      <div><strong>Compensation is negotiable</strong><span>How HBE is paid depends on the written representation arrangement. HBE does not publish percentages, dollar amounts, fee schedules, or preset packages before hire. Seller-paid compensation is not automatic or guaranteed.</span></div>
       <div><strong>Conflicts stay visible</strong><span>HBE does not accept paid referrals or kickbacks for sending buyers to lenders, inspectors, title companies, contractors, or similar providers.</span></div>
       <div><strong>You keep the choice</strong><span>You may ask questions, request changes, take more time, use another brokerage, or decide not to proceed.</span></div>
       <div><strong>The document controls</strong><span>If anything on this page differs from the written agreement, the signed agreement governs.</span></div>

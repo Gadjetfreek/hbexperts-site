@@ -88,6 +88,18 @@ export default {
   }
 };
 
+export function inviteResultHtml(inviteUrl, { days = INVITE_DAYS } = {}) {
+  const subject = encodeURIComponent('Invitation to a shared homebuying journey');
+  const body = encodeURIComponent(
+    `You have been invited to a shared homebuying journey with HomeBuyer Experts.\n\nThis private invitation expires in ${days} days and can be used once. You will identify yourself and choose whether to join. Private reflective answers stay with you.\n\n${inviteUrl}`
+  );
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive"><title>Buyer invitation | HomeBuyer Experts</title>${INVITE_STYLE}</head><body><main class="invite-wrap"><div class="invite-card"><div class="eyebrow">PRIVATE BUYER INVITATION</div><h1>Share this invitation with the other buyer.</h1><p>This link expires in ${days} days and can be used once. The other buyer will enter their own identity, complete their own Buyer Experience, and choose whether to join your shared homebuying journey.</p><p><strong>You will not see their private reflective answers, and they will not see yours.</strong></p><p>HBE does not collect the other buyer’s email. Server-originated email is a later enhancement. Use your own mail app or copy the link.</p><p><a class="btn" href="mailto:?subject=${subject}&body=${body}">Email invitation</a></p><label>Invitation link<input id="invite-url" readonly value="${esc(inviteUrl)}"></label><button type="button" class="btn" id="copy-invite-link">Copy invitation link</button><p class="muted">Do not enter the other buyer’s email here. The invitation is a hashed, single-use, expiring URL.</p><a class="btn" href="/portal">Back to Buyer Portal</a></div></main><script>
+(()=>{const btn=document.getElementById('copy-invite-link');const input=document.getElementById('invite-url');
+if(btn&&input){btn.addEventListener('click',async()=>{try{if(navigator.clipboard)await navigator.clipboard.writeText(input.value);input.select();}catch{input.select();}});}
+})();
+</script></body></html>`;
+}
+
 async function createInvitation(request, env) {
   const buyerId = await sessionBuyerId(request, env);
   if (!buyerId) return redirect('/login');
@@ -105,7 +117,7 @@ async function createInvitation(request, env) {
 
   const base = new URL(request.url);
   const inviteUrl = `${base.origin}/invite/${encodeURIComponent(token)}`;
-  return page(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive"><title>Buyer invitation | HomeBuyer Experts</title>${INVITE_STYLE}</head><body><main class="invite-wrap"><div class="invite-card"><div class="eyebrow">PRIVATE BUYER INVITATION</div><h1>Share this invitation with the other buyer.</h1><p>This link expires in ${INVITE_DAYS} days and can be used once. The other buyer will enter their own identity, complete their own Buyer Experience, and choose whether to join your shared homebuying journey.</p><p><strong>You will not see their private reflective answers, and they will not see yours.</strong></p><label>Invitation link<input readonly value="${esc(inviteUrl)}"></label><p class="muted">HBE does not need the other buyer’s email or phone from you.</p><a class="btn" href="/portal">Back to Buyer Portal</a></div></main></body></html>`);
+  return page(inviteResultHtml(inviteUrl), 200, { allowInlineScript: true });
 }
 
 async function revokeInvitation(request, env) {
@@ -187,7 +199,7 @@ async function invitationPanel(env, buyerId) {
     return `<div class="invite-row"><span><strong>${status}</strong><small>Created ${esc(row.created_at.slice(0,10))} · expires ${esc(row.expires_at.slice(0,10))}</small></span>${revoke}</div>`;
   }).join('');
 
-  return `<section class="buyer-household invite-panel"><div class="pilot-eyebrow">INVITE ANOTHER BUYER</div><h2>They choose whether to join.</h2><p>Create a private, single-use invitation. You do not enter their name, email, phone, or answers. They identify themselves, complete their own Buyer Experience, and explicitly consent before their account joins your case.</p><form method="post" action="/api/household/invite"><button class="invite-primary" type="submit">Create private invitation</button></form>${items ? `<div class="invite-list">${items}</div>` : ''}</section>${INVITE_PANEL_STYLE}`;
+  return `<section class="buyer-household invite-panel"><div class="pilot-eyebrow">INVITE ANOTHER BUYER</div><h2>They choose whether to join.</h2><p>Create a private, single-use invitation. You do not enter their name, email, phone, or answers. They identify themselves, complete their own Buyer Experience, and explicitly consent before their account joins your case.</p><p>Email delivery of this invitation is an architecture blocker until a verified sending domain and the HBE_ALERT Send Email binding are enabled. Until then, share the copyable link. Do not enter the other buyer’s email here.</p><form method="post" action="/api/household/invite"><button class="invite-primary" type="submit">Create private invitation</button></form>${items ? `<div class="invite-list">${items}</div>` : ''}</section>${INVITE_PANEL_STYLE}`;
 }
 
 async function ensureCaseForBuyer(env, buyerId) {
@@ -243,8 +255,11 @@ function clean(value) { return String(value || '').trim().slice(0, 5000); }
 function esc(value = '') { return String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c])); }
 async function sha256(value) { const digest = await crypto.subtle.digest('SHA-256', enc.encode(value)); return Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, '0')).join(''); }
 function redirect(location) { return new Response(null, { status: 303, headers: { ...securityHeaders(), location } }); }
-function page(body, status = 200) { return new Response(body, { status, headers: securityHeaders() }); }
-function securityHeaders(type = 'text/html; charset=utf-8') { return { 'content-type': type, 'Cache-Control':'no-store', 'Referrer-Policy':'no-referrer', 'X-Content-Type-Options':'nosniff', 'X-Frame-Options':'DENY', 'Permissions-Policy':'camera=(), microphone=(), geolocation=()', 'Content-Security-Policy':"default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'none'; img-src 'self' data:; form-action 'self'; frame-ancestors 'none'; base-uri 'none'" }; }
+function page(body, status = 200, options = {}) { return new Response(body, { status, headers: securityHeaders(undefined, options) }); }
+function securityHeaders(type = 'text/html; charset=utf-8', options = {}) {
+  const script = options.allowInlineScript ? "'self' 'unsafe-inline'" : "'none'";
+  return { 'content-type': type || 'text/html; charset=utf-8', 'Cache-Control':'no-store', 'Referrer-Policy':'no-referrer', 'X-Content-Type-Options':'nosniff', 'X-Frame-Options':'DENY', 'Permissions-Policy':'camera=(), microphone=(), geolocation=()', 'Content-Security-Policy':`default-src 'self'; style-src 'self' 'unsafe-inline'; script-src ${script}; img-src 'self' data:; form-action 'self'; frame-ancestors 'none'; base-uri 'none'` };
+}
 
-const INVITE_STYLE = `<style>:root{--navy:#1a1a2e;--green:#2d5a3d;--text:#2c2c2c;--muted:#6b6b6b;--warm:#faf9f6;--border:#e8e5e0}*{box-sizing:border-box}body{margin:0;background:var(--warm);color:var(--text);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.6}.invite-wrap{max-width:760px;margin:0 auto;padding:5rem 1.25rem}.invite-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:clamp(1.4rem,5vw,3rem);box-shadow:0 12px 36px rgba(26,26,46,.06)}.eyebrow{font-size:.76rem;font-weight:800;letter-spacing:.13em;color:var(--green)}h1{font-family:Georgia,serif;color:var(--navy);font-size:clamp(2rem,6vw,3rem);line-height:1.08}.muted{color:var(--muted);font-size:.9rem}.btn{display:inline-block;background:var(--green);color:#fff;text-decoration:none;font-weight:700;border-radius:7px;padding:.8rem 1.1rem;margin-top:1rem}label{display:block;font-weight:700;margin:1rem 0}input{width:100%;padding:.8rem;border:1px solid var(--border);border-radius:7px;margin-top:.35rem}</style>`;
+const INVITE_STYLE = `<style>:root{--navy:#1a1a2e;--green:#2d5a3d;--text:#2c2c2c;--muted:#6b6b6b;--warm:#faf9f6;--border:#e8e5e0}*{box-sizing:border-box}body{margin:0;background:var(--warm);color:var(--text);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.6}.invite-wrap{max-width:760px;margin:0 auto;padding:5rem 1.25rem}.invite-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:clamp(1.4rem,5vw,3rem);box-shadow:0 12px 36px rgba(26,26,46,.06)}.eyebrow{font-size:.76rem;font-weight:800;letter-spacing:.13em;color:var(--green)}h1{font-family:Georgia,serif;color:var(--navy);font-size:clamp(2rem,6vw,3rem);line-height:1.08}.muted{color:var(--muted);font-size:.9rem}.btn{display:inline-block;background:var(--green);color:#fff;text-decoration:none;font-weight:700;border-radius:7px;padding:.8rem 1.1rem;margin-top:1rem}button.btn{border:0;cursor:pointer;font:inherit}label{display:block;font-weight:700;margin:1rem 0}input{width:100%;padding:.8rem;border:1px solid var(--border);border-radius:7px;margin-top:.35rem}</style>`;
 const INVITE_PANEL_STYLE = `<style id="co-buyer-consent-style">.invite-panel{margin-top:1rem}.invite-primary,.invite-small{border:0;border-radius:7px;background:#2d5a3d;color:#fff;font-weight:700;cursor:pointer;padding:.7rem 1rem}.invite-small{font-size:.78rem;padding:.45rem .65rem}.invite-list{margin-top:1rem}.invite-row{display:flex;justify-content:space-between;align-items:center;gap:1rem;border-top:1px solid #e8e5e0;padding:.65rem 0}.invite-row span strong,.invite-row span small{display:block}.invite-row span small{color:#6b6b6b}</style>`;

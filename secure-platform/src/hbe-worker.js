@@ -1,7 +1,7 @@
 import appWorker from './access-code-worker.js';
 
 const STAGES = [
-  ['buyerExperience','Buyer Experience'],['consultation','Consultation'],['representation','Hire HBE'],['search','Build Your Home Search'],['market','Learn the Market'],['possibilities','Discover Possibilities'],['evaluation','Evaluate Homes'],['offer','Ready to Offer?'],['terms','Build the Offer'],['negotiation','Negotiate Wisely'],['diligence','Learn What We Did Not Know'],['inspection','Inspection Decision'],['value','Value Check'],['loan','Final Financing'],['commitment','Final Decision'],['closing','Get the Keys']
+  ['buyerExperience','Buyer Experience'],['consultation','Consultation'],['representation','Hire HBE'],['search','Build Your Home Search'],['market','Learn the Market'],['possibilities','Discover Possibilities'],['evaluation','Evaluate Homes'],['offer','Ready to Offer?'],['terms','Build the Offer'],['negotiation','Negotiate Wisely'],['diligence','Learn What We Did Not Know'],['inspection','Inspection Decision'],['value','Value Check'],['loan','Final Financing'],['commitment','Final Decision'],['closing','Get the Keys'],['afterKeys','After the Keys']
 ];
 
 export default {
@@ -107,12 +107,14 @@ function dashboardHtml(buyers, selected, tasks, notes, notifications) {
   const cards = buyers.map(b => {
     const bt = openTasksByBuyer[b.id] || [];
     const urgent = bt.filter(t => t.priority === 'critical' || isDueSoon(t.due_at)).length;
-    return `<a class="buyer-card ${selected?.id === b.id ? 'selected' : ''}" href="/hbe?buyer=${encodeURIComponent(b.id)}">
-      <div class="card-top"><span class="initials">${esc(initials(b))}</span>${unreadByBuyer[b.id] ? `<span class="badge">${unreadByBuyer[b.id]} new</span>` : ''}</div>
+    return `<article class="i29-split-card ${selected?.id === b.id ? 'selected' : ''}">
+      <header><div class="card-top"><span class="initials">${esc(initials(b))}</span>${unreadByBuyer[b.id] ? `<span class="badge">${unreadByBuyer[b.id]} new</span>` : ''}</div>
       <strong>${esc(b.first_name)} ${esc(b.last_name)}</strong>
       <small>${esc(stageLabel(b.stage))}</small>
-      <div class="card-meta"><span>${bt.length} open task${bt.length === 1 ? '' : 's'}</span>${urgent ? `<span class="urgent">${urgent} date-critical</span>` : ''}</div>
-    </a>`;
+      <div class="card-meta"><span>${bt.length} open task${bt.length === 1 ? '' : 's'}</span>${urgent ? `<span class="urgent">${urgent} date-critical</span>` : ''}</div></header>
+      <a href="/hbe?buyer=${encodeURIComponent(b.id)}">HBE Dashboard<span>Workspace without leaving HBE</span></a>
+      <a href="/hbe/preview?buyer=${encodeURIComponent(b.id)}">Buyer Dashboard<span>Preview buyer-facing UI</span></a>
+    </article>`;
   }).join('');
 
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive"><title>HBE Workspace</title>${CSS}</head><body>
@@ -168,7 +170,7 @@ function experienceDetails(a) {
 function taskPanel(b, tasks) {
   const sorted = [...tasks].sort((a,z) => (a.status === z.status ? sortDue(a,z) : a.status === 'open' ? -1 : 1));
   return `<article class="panel"><div class="panel-head"><div><div class="eyebrow">WORK</div><h3>Tasks & deadlines</h3></div></div>
-    <div class="task-list">${sorted.length ? sorted.map(t => `<div class="task ${t.status === 'done' ? 'done' : ''} ${t.priority === 'critical' ? 'critical' : ''}"><form method="post" action="/api/hbe/task/${encodeURIComponent(t.id)}/toggle"><input type="hidden" name="buyer_id" value="${esc(b.id)}"><button class="checkbtn" title="${t.status === 'open' ? 'Complete' : 'Reopen'}">${t.status === 'done' ? '✓' : '○'}</button></form><div><strong>${esc(t.title)}</strong><small>${t.due_at ? fmtDate(t.due_at) : 'No due date'} · ${esc(t.priority)}${t.visible_to_buyer ? ' · buyer-visible' : ''}</small></div></div>`).join('') : '<p class="muted">No tasks yet.</p>'}</div>
+    <div class="task-list">${sorted.length ? sorted.map(t => `<div class="task ${t.status === 'done' ? 'done' : ''} ${t.priority === 'critical' ? 'critical' : ''}"><form method="post" action="/api/hbe/task/${encodeURIComponent(t.id)}/toggle"><input type="hidden" name="buyer_id" value="${esc(b.id)}"><button class="checkbtn" title="${t.status === 'open' ? 'Complete' : 'Reopen'}">${t.status === 'done' ? '✓' : '○'}</button></form><div><strong>${esc(t.title)}</strong><small>${t.due_at ? fmtDate(t.due_at) : 'No due date'} · ${esc(t.priority)}${t.visible_to_buyer ? ' · buyer-visible' : ''}</small></div></div>`).join('') : '<p class="muted">What’s Next is never empty — review the current-stage checklist or prepare next-stage evidence.</p>'}</div>
     <form class="composer" method="post" action="/api/hbe/task"><input type="hidden" name="buyer_id" value="${esc(b.id)}"><input name="title" placeholder="Add a task" required><div class="composer-row"><input type="date" name="due_at"><select name="priority"><option value="normal">Normal</option><option value="high">High</option><option value="critical">Critical</option></select><select name="stage"><option value="">Any stage</option>${STAGES.map(s=>`<option value="${s[0]}">${esc(s[1])}</option>`).join('')}</select></div><label class="inline-check"><input type="checkbox" name="visible_to_buyer" value="yes"> Buyer can see this</label><button class="btn">Add task</button></form>
   </article>`;
 }
