@@ -41,7 +41,7 @@ try {
   npx --yes wrangler@latest d1 execute $dbName --remote --file=schema-issue29.sql --config $tempConfigPath
   npx --yes wrangler@latest d1 execute $dbName --remote --file=schema-issue33.sql --config $tempConfigPath
 
-  Write-Host '4/6 Running local source, Issue 29, and Issue 33 checks...'
+  Write-Host '4/6 Running local source, Issue 29, Issue 33, and buyer-first checks...'
   node --check src/worker.js
   node --check src/ui-worker.js
   node --check src/portal-worker.js
@@ -67,6 +67,7 @@ try {
   node --check src/issue33-production-worker.js
   node --test tests/issue29.test.mjs
   node --test tests/bimatrix.test.mjs
+  node --test tests/issue36.test.mjs
   if (Select-String -Path src/worker.js -Pattern 'donald-kelley|localStorage|buyer_token_hash' -Quiet) {
     throw 'Security/source check failed: legacy buyer-specific or browser-local journey code detected.'
   }
@@ -96,6 +97,9 @@ try {
   if (-not $health.issue33 -or -not $health.issue33.bimatrix -or -not $health.issue33.buyer_refresh) {
     throw 'Issue 33 health verification failed: expected BIMatrix and buyer refresh support.'
   }
+  if (-not $health.issue36 -or -not $health.issue36.buyer_first_clarity -or -not $health.issue36.pre_submit_review) {
+    throw 'Issue 36 health verification failed: expected buyer-first clarity and pre-submit review support.'
+  }
 
   Write-Host ''
   Write-Host 'LIVE' -ForegroundColor Green
@@ -106,6 +110,7 @@ try {
   Write-Host ''
   Write-Host 'Issue 29 convergence remains enabled: 17-stage journey, household story/compass, What''s Next, per-buyer privacy, and After the Keys.' -ForegroundColor Green
   Write-Host 'Issue 33 BIMatrix enabled: authenticated Possible Assistance, Last updated / Update now freshness check, canonical rules, and D1 household isolation.' -ForegroundColor Green
+  Write-Host 'Issue 36 buyer-first clarity enabled: plain buyer-only positioning and deliberate review-before-send.' -ForegroundColor Green
   Write-Host 'Buyer-triggered freshness checks do not silently change canonical rules; unexpected source changes are sent to HBE review state.' -ForegroundColor Yellow
   Write-Host 'MLS adapter remains disconnected/unapproved until MLS Now approves the exact feed and encrypted credentials are configured.' -ForegroundColor Yellow
   Write-Host 'HBE Portal must remain protected by Cloudflare Access.' -ForegroundColor Yellow
