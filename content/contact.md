@@ -8,11 +8,11 @@ description: "Contact HomeBuyer Experts for buyer-first guidance and exclusive b
 
 **Phone:** [(330) 328-3170](tel:3303283170)
 
-**Email:** [cwhitehead@hbexperts.com](mailto:cwhitehead@hbexperts.com)
+**Email:** [buyers@hbexperts.com](mailto:buyers@hbexperts.com)
 
 **Serving:** Summit, Stark, Medina, Wayne & Cuyahoga Counties
 
-Every message is read personally by Chris or Jen. You can expect a response within **12 business hours**.
+Every buyer message is reviewed by HomeBuyer Experts.
 
 ---
 
@@ -56,6 +56,6 @@ And one practical test:
 
 If the answer is to proceed, we help you proceed well. If the answer is to pause, change direction, or walk away, that is part of good representation too.
 
-**Email:** [cwhitehead@hbexperts.com](mailto:cwhitehead@hbexperts.com)
+**Email:** [buyers@hbexperts.com](mailto:buyers@hbexperts.com)
 
 **Phone:** [(330) 328-3170](tel:3303283170)
