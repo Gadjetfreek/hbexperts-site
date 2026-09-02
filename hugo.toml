@@ -7,10 +7,10 @@ theme = "hbe"
   description = "HomeBuyer Experts works only for home buyers in Northeast Ohio, helping people understand their options, protect their interests, and make better homebuying decisions."
   tagline = "We work only for home buyers — never for the seller."
   phone = "(330) 328-3170"
-  email = "cwhitehead@hbexperts.com"
+  email = "buyers@hbexperts.com"
   location = "Northeast Ohio"
   counties = "Summit, Stark, Medina, Wayne & Cuyahoga Counties"
-  informationLastUpdated = "September 1, 2026"
+  informationLastUpdated = "September 2, 2026"
 
 [menu]
   [[menu.main]]
@@ -34,13 +34,9 @@ theme = "hbe"
     url = "https://buyer.hbexperts.com/"
     weight = 5
   [[menu.main]]
-    name = "Conflict Register"
-    url = "/conflict-register/"
-    weight = 6
-  [[menu.main]]
     name = "Contact"
     url = "/contact/"
-    weight = 7
+    weight = 6
 
 [markup]
   [markup.goldmark]
