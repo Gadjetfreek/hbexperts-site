@@ -1,7 +1,7 @@
 ---
 title: "The Buyer Value Agreement"
 subtitle: "A commitment to your interests — not a contract designed to move a transaction forward."
-description: "Understand HBE's Buyer Value Agreement: representation, the current 2.75% pilot compensation model, conflicts, incentives, and how VALUE keeps the relationship centered on the buyer's decision."
+description: "Understand HBE's Buyer Value Agreement: representation, negotiable compensation, conflicts, incentives, and how VALUE keeps the relationship centered on the buyer's decision."
 ---
 
 ## What Is the Buyer Value Agreement?
@@ -49,15 +49,15 @@ You deserve to understand who is in your corner, what they are paid, and what in
 
 ---
 
-## The Current Compensation Pilot
+## How Compensation Is Handled
 
-HBE is currently piloting a **2.75% buyer-broker compensation structure** while measuring the actual professional time and resources required to serve buyers from strategy through closing.
+Real-estate compensation is negotiable.
 
-The purpose of the pilot is not to declare that percentage compensation is the permanent answer. It gives HBE a stable, professional compensation structure while we collect real evidence about workload, travel, showings, research, decision support, negotiation, diligence, and brokerage support.
+Before you hire HBE, we explain how HBE would be compensated, what sources of compensation may be available in the transaction, and any material incentives that could affect the relationship. The compensation terms that apply to your representation are stated in your written agreement — not published as a one-size-fits-all public rate card.
 
-Internally, HBE is comparing the pilot against alternative models so a future structure can be designed from actual buyer-service data rather than industry habit alone.
+Seller- or builder-paid compensation is not automatic and does not change HBE's duty to put the buyer's interests first.
 
-The amount and sources of compensation applicable to your representation are stated in your signed agreement. Real-estate compensation is negotiable.
+The purpose of discussing compensation early is simple: you should understand the economics of the relationship before those economics can influence a consequential decision.
 
 ---
 
