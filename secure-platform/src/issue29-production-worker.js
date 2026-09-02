@@ -62,6 +62,20 @@ const MOBILE_UX_CSS = `<style id="hbe-mobile-ux-pass">
 }
 </style>`;
 
+const PUBLIC_JOURNEY_CSS = `<style id="hbe-public-journey-refine">
+.value-context.hbe-value-public{
+  justify-content:center;
+  align-items:center;
+  flex-direction:column;
+  gap:.15rem;
+  text-align:center;
+  padding:.85rem 1rem;
+}
+.value-context.hbe-value-public .hbe-value-word{display:block;font-weight:900}
+.value-context.hbe-value-public span{font-size:.9rem}
+.value-context.hbe-value-public span b{font-weight:900;color:#2d5a3d}
+</style>`;
+
 const MOBILE_UX_JS = `<script id="hbe-mobile-popup-stability">
 (()=>{
   const coarse = window.matchMedia('(pointer: coarse)').matches || window.matchMedia('(max-width: 560px)').matches;
@@ -111,9 +125,11 @@ const MOBILE_UX_JS = `<script id="hbe-mobile-popup-stability">
 </script>`;
 
 const START_HERE = `<div class="i29-guide" role="note"><strong>Start here.</strong><span>Do the What’s Next item first. Open your current stage when you want the details. Everything else is context, not homework.</span></div>`;
+const PUBLIC_VALUE = `<div class="value-context hbe-value-public"><strong class="hbe-value-word">VALUE</strong><span><b>V</b>alues · <b>A</b>lternatives · <b>L</b>earning · <b>U</b>ncertainty · <b>E</b>vidence</span></div>`;
 
 export default {
   async fetch(request, env, ctx) {
+    const url = new URL(request.url);
     const response = await appWorker.fetch(request, env, ctx);
     const headers = new Headers(response.headers);
     const type = headers.get('content-type') || '';
@@ -136,6 +152,10 @@ export default {
       .replace('From a checklist item that created this action', 'From your current checklist')
       .replace('Highest-priority open task', 'Highest priority');
 
+    if (request.method === 'GET' && url.pathname === '/') {
+      text = refinePublicJourney(text);
+    }
+
     // Put one clear directional cue immediately before the primary action area.
     if (text.includes('<section class="i29-next" id="whats-next">') && !text.includes('class="i29-guide"')) {
       text = text.replace('<section class="i29-next" id="whats-next">', `${START_HERE}<section class="i29-next" id="whats-next">`);
@@ -143,6 +163,9 @@ export default {
 
     if (!text.includes('id="hbe-mobile-ux-pass"')) {
       text = text.replace('</head>', `${MOBILE_UX_CSS}</head>`);
+    }
+    if (request.method === 'GET' && url.pathname === '/' && !text.includes('id="hbe-public-journey-refine"')) {
+      text = text.replace('</head>', `${PUBLIC_JOURNEY_CSS}</head>`);
     }
     if (!text.includes('id="hbe-mobile-popup-stability"')) {
       text = text.replace('</body>', `${MOBILE_UX_JS}</body>`);
@@ -155,3 +178,42 @@ export default {
     });
   }
 };
+
+function refinePublicJourney(text) {
+  text = text.replace(
+    'Your HomeBuyer journey, from first questions to keys.',
+    'Your HomeBuyer journey, from first questions to keys and beyond.'
+  );
+  text = text.replace(
+    '<div class="value-context"><strong>VALUE</strong><span>Values · Alternatives · Learning · Uncertainty · Evidence</span></div>',
+    PUBLIC_VALUE
+  );
+  return removeDuplicatePublicRoadmap(text);
+}
+
+function removeDuplicatePublicRoadmap(text) {
+  const mapStart = text.indexOf('<div class="i29-map"');
+  if (mapStart < 0) return text;
+
+  const actionsStart = text.indexOf('<div class="actions">', mapStart);
+  if (actionsStart < 0) return text;
+
+  const divTag = /<\/?div\b[^>]*>/g;
+  divTag.lastIndex = mapStart;
+  let depth = 0;
+  let mapEnd = -1;
+  let match;
+
+  while ((match = divTag.exec(text)) && match.index < actionsStart) {
+    if (match[0].startsWith('</div')) depth -= 1;
+    else depth += 1;
+
+    if (depth === 0) {
+      mapEnd = divTag.lastIndex;
+      break;
+    }
+  }
+
+  if (mapEnd < 0 || mapEnd >= actionsStart) return text;
+  return `${text.slice(0, mapEnd)}${text.slice(actionsStart)}`;
+}
