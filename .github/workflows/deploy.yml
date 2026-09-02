@@ -46,14 +46,10 @@ jobs:
         env:
           HUGO_CACHEDIR: ${{ runner.temp }}/hugo_cache
           TZ: America/New_York
-        run: |
-          hugo --gc --minify --baseURL "https://hbexperts.com/"
+        run: hugo --gc --minify --baseURL "https://hbexperts.com/"
 
       - name: Enforce public/private boundary
         run: |
-          # GitHub Pages is public static hosting. Private, legacy, or workshop
-          # surfaces must never be generated. Fail loudly rather than cleaning
-          # them out of the artifact, so a regression cannot pass unnoticed.
           for forbidden in \
             public/advisor \
             public/buyers \
@@ -65,7 +61,8 @@ jobs:
             public/discovery \
             public/home-dna \
             public/next-choice-listening-room \
-            public/future-listening-7c4e9; do
+            public/future-listening-7c4e9 \
+            public/jeebs-gmail-bridge; do
             if [ -e "$forbidden" ]; then
               echo "SECURITY FAILURE: forbidden public surface generated: $forbidden" >&2
               exit 1
@@ -77,7 +74,6 @@ jobs:
           test -f public/js/nav.js
           test -f public/sitemap.xml
           test -f public/robots.txt
-          test -f public/jeebs-gmail-bridge/index.html
 
           python3 - <<'PY'
           from html.parser import HTMLParser
@@ -89,7 +85,6 @@ jobs:
                   super().__init__()
                   self.hrefs = set()
                   self.scripts = set()
-                  self.robots = []
 
               def handle_starttag(self, tag, attrs):
                   values = {key.lower(): value for key, value in attrs if key and value is not None}
@@ -98,43 +93,21 @@ jobs:
                       self.hrefs.add(values['href'])
                   elif tag == 'script' and 'src' in values:
                       self.scripts.add(values['src'])
-                  elif tag == 'meta' and values.get('name', '').lower() == 'robots':
-                      self.robots.append(values.get('content', ''))
 
-          def parse_html(path):
-              parser = PageFacts()
-              parser.feed(Path(path).read_text(encoding='utf-8'))
-              return parser
-
-          homepage = parse_html('public/index.html')
+          homepage = PageFacts()
+          homepage.feed(Path('public/index.html').read_text(encoding='utf-8'))
           if '/css/style.css' not in homepage.hrefs:
               raise SystemExit('VALIDATION FAILURE: homepage does not reference /css/style.css.')
           if '/js/nav.js' not in homepage.scripts:
               raise SystemExit('VALIDATION FAILURE: homepage does not reference /js/nav.js.')
 
-          bridge = parse_html('public/jeebs-gmail-bridge/index.html')
-          if not any(
-              {token.strip().lower() for token in value.split(',')} == {'noindex', 'nofollow'}
-              for value in bridge.robots
-          ):
-              raise SystemExit('VALIDATION FAILURE: Gmail Bridge robots meta is not noindex,nofollow.')
-
-          sitemap = Path('public/sitemap.xml')
-          root = ET.parse(sitemap).getroot()
-          locs = [
-              element.text.strip()
-              for element in root.iter()
-              if element.tag.endswith('loc') and element.text
-          ]
+          root = ET.parse('public/sitemap.xml').getroot()
+          locs = [e.text.strip() for e in root.iter() if e.tag.endswith('loc') and e.text]
           if not locs:
               raise SystemExit('SECURITY FAILURE: sitemap contains no <loc> entries.')
           bad = [loc for loc in locs if not loc.startswith('https://hbexperts.com/')]
           if bad:
-              print('SECURITY FAILURE: sitemap contains non-canonical <loc> values:', flush=True)
-              for loc in bad:
-                  print(f'  {loc}', flush=True)
-              raise SystemExit(1)
-          print(f'Validated {len(locs)} sitemap URLs on https://hbexperts.com/.')
+              raise SystemExit('SECURITY FAILURE: sitemap contains non-canonical URLs.')
           PY
 
           if grep -Eqi 'purchaseplanning|listening-room|future-listening|assessment|discovery|home-dna|jeebs-gmail-bridge' public/sitemap.xml; then
@@ -175,7 +148,7 @@ jobs:
           test ! -e public/home-dna
           test ! -e public/next-choice-listening-room
           test ! -e public/future-listening-7c4e9
-          test -f public/jeebs-gmail-bridge/index.html
+          test ! -e public/jeebs-gmail-bridge
 
       - name: Upload artifact
         if: github.event_name != 'pull_request'
@@ -222,41 +195,13 @@ jobs:
             sleep 10
           done
 
-          for path in advisor advisor/consultation-brief.html buyers/donald-kelley clients hbeui buyer-portal purchaseplanningworkbook assessment discovery home-dna next-choice-listening-room future-listening-7c4e9; do
+          for path in advisor advisor/consultation-brief.html buyers/donald-kelley clients hbeui buyer-portal purchaseplanningworkbook assessment discovery home-dna next-choice-listening-room future-listening-7c4e9 jeebs-gmail-bridge; do
             code="$(curl --silent --output /dev/null --write-out '%{http_code}' --location "${BASE}/${path}/?verify=${RELEASE_ID}" || true)"
             if [ "$code" = "200" ]; then
               echo "SECURITY FAILURE: /${path}/ is still publicly served." >&2
               exit 1
             fi
           done
-
-          curl --fail --silent --show-error --location --max-time 15 \
-            "${BASE}/jeebs-gmail-bridge/?verify=${RELEASE_ID}" \
-            --output /tmp/hbe-jeebs-gmail-bridge.html
-          python3 - <<'PY'
-          from html.parser import HTMLParser
-          from pathlib import Path
-
-          class RobotsParser(HTMLParser):
-              def __init__(self):
-                  super().__init__()
-                  self.values = []
-
-              def handle_starttag(self, tag, attrs):
-                  if tag.lower() != 'meta':
-                      return
-                  values = {key.lower(): value for key, value in attrs if key and value is not None}
-                  if values.get('name', '').lower() == 'robots':
-                      self.values.append(values.get('content', ''))
-
-          parser = RobotsParser()
-          parser.feed(Path('/tmp/hbe-jeebs-gmail-bridge.html').read_text(encoding='utf-8'))
-          if not any(
-              {token.strip().lower() for token in value.split(',')} == {'noindex', 'nofollow'}
-              for value in parser.values
-          ):
-              raise SystemExit('PRODUCTION VERIFICATION FAILURE: Gmail Bridge robots meta is not noindex,nofollow.')
-          PY
 
       - name: Record verified release
         run: |
