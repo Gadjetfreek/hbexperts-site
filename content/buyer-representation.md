@@ -1,7 +1,7 @@
 ---
-title: "A Consequential Purchase Deserves an Advocate Whose Loyalty Is Clear"
-subtitle: "Exclusive buyer representation plus VALUE — human-centered decision support for people who want evidence, honest guidance, strategic negotiation, and room to choose without pressure."
-description: "Learn how HomeBuyer Experts combines exclusive buyer representation with VALUE to protect buyer interests while improving understanding, agency, and decision quality."
+title: "Exclusive Buyer Agent for Northeast Ohio Home Buyers"
+subtitle: "HomeBuyer Experts works only for buyers — never sellers — throughout Summit, Stark, Medina, Wayne, and Cuyahoga Counties."
+description: "Learn how a Northeast Ohio exclusive buyer agent represents only home buyers, avoids seller conflicts, and helps you make an informed purchase decision."
 ---
 
 ## Buying a Home Is More Complicated Than Finding a Property
@@ -30,6 +30,14 @@ HomeBuyer Experts represents buyers exclusively. We do not take listings.
 **When you hire HBE under a buyer-agency agreement, our loyalty is clear: your interests come first.**
 
 That does not mean telling you what to choose. It means giving you better conditions for choosing: clearer information, candid advice, protected confidentiality, strategic advocacy, and the freedom to say yes, no, not yet, or something else.
+
+### Exclusive buyer agent, in plain English
+
+An **exclusive buyer agent** works for a brokerage that represents home buyers and does not take seller listings. A listing agent's job is to protect the seller's interests. HBE's job is to protect the interests of the buyer who hires us.
+
+A **fiduciary** is a professional who has legal duties to the client. In a buyer-agency relationship, those duties include loyalty, following lawful instructions, disclosure, accounting, reasonable care, and confidentiality.
+
+The written buyer-agency agreement defines the relationship. Before you sign, HBE explains what we will do, how compensation works, what conflicts could arise, and how the relationship can end.
 
 ---
 
@@ -125,6 +133,22 @@ Our compensation structure and any seller- or builder-paid incentives are explai
 
 ---
 
+## Where HBE Helps Buyers
+
+HomeBuyer Experts serves buyers throughout Northeast Ohio, with a primary focus on:
+
+- Summit County
+- Stark County
+- Medina County
+- Wayne County
+- Cuyahoga County
+
+If you are considering a neighboring area, ask us whether we can responsibly assist before assuming it is within our service area.
+
+HBE can help first-time buyers, experienced buyers, relocation buyers, people moving up or downsizing, and other buyers who want representation focused only on their side of the purchase.
+
+---
+
 ## The HBE Promise
 
 We believe buyers deserve clear loyalty, advice without pressure, evidence without false certainty, advocacy without competing seller interests, strategy that includes the option to wait or walk away, and a process that leaves the final choice with the buyer.
@@ -157,8 +181,33 @@ If you are moving into Summit, Stark, Medina, Wayne, or Cuyahoga Counties, start
 
 ---
 
+## Common Questions
+
+### Does HomeBuyer Experts represent sellers?
+
+No. HomeBuyer Experts does not take listings or represent sellers. HBE represents home buyers.
+
+### Is an exclusive buyer agent the same as any agent helping a buyer?
+
+No. Many real-estate professionals help both buyers and sellers. An exclusive buyer brokerage does not take seller listings, which keeps the brokerage's business focused on buyer representation.
+
+### Does hiring HBE mean I have to buy a home?
+
+No. Good buyer representation includes room to wait, change direction, choose another property, or walk away when that is the prudent decision.
+
+### When does HBE become my agent?
+
+HBE becomes your agent when you and HBE enter a written buyer-agency agreement. Exploring the Buyer Journey or having an initial conversation does not by itself hire HBE.
+
+### What parts of Northeast Ohio does HBE serve?
+
+HBE primarily serves Summit, Stark, Medina, Wayne, and Cuyahoga Counties. Buyers considering a neighboring area can contact HBE to ask whether we can assist.
+
+---
+
 ## Explore before you decide
 
 You can see the entire Buyer Journey before giving HBE any personal information.
 
 [Explore the Buyer Journey →](https://buyer.hbexperts.com/)
+
