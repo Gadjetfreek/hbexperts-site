@@ -1,6 +1,6 @@
 ---
 title: "Experience Matters When the Decision Matters"
-subtitle: "For more than 20 years, HomeBuyer Experts has focused on one question: what is best for the buyer?"
+subtitle: "Serving buyers since 2004, HomeBuyer Experts has focused on one question: what is best for the buyer?"
 description: "Meet HomeBuyer Experts — an exclusive buyer brokerage using VALUE, a human-centered decision-support system, to help Northeast Ohio buyers understand consequential housing decisions and choose wisely."
 ---
 
@@ -42,7 +42,7 @@ VALUE does not tell buyers what to choose. It helps make the choice easier to un
 
 ### A buyer advocate, not just a real estate professional.
 
-For over two decades, Christopher has dedicated his career to helping buyers navigate complex real estate decisions.
+Christopher has served home buyers since 2004, helping people navigate complex real estate decisions.
 
 His background combines:
 
