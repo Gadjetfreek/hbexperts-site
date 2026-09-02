@@ -64,8 +64,6 @@ We continually evaluate our compensation structure against a harder question:
 
 > **Would we still recommend this if HBE earned exactly the same amount whether the buyer proceeded, renegotiated, waited, chose another home, or walked away?**
 
-During the current pilot, HBE is also tracking actual professional time and comparing alternative compensation structures internally so future compensation can be designed from evidence rather than tradition alone.
-
 ---
 
 ## Seller or Builder Incentives
