@@ -30,4 +30,15 @@ test('public layouts use one Journey host CTA and do not deep-link private surfa
   assert.match(partial, /After you click/);
   assert.match(partial, /before sharing personal information/);
   assert.match(partial, /deliberately review and send/);
+  assert.doesNotMatch(joined, /Submit to HBE/);
+});
+
+test('public privacy and assessment copy use review-and-send verbs', () => {
+  const root = join(themeRoot, '../..');
+  const privacy = readFileSync(join(root, 'content/privacy.md'), 'utf8');
+  const assessment = readFileSync(join(layoutsRoot, '_default/assessment.html'), 'utf8');
+  assert.doesNotMatch(privacy, /Submit to HBE/);
+  assert.match(privacy, /review and send/i);
+  assert.doesNotMatch(assessment, /Submit to HBE/);
+  assert.match(assessment, /review and send/i);
 });
