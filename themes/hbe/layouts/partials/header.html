@@ -10,7 +10,7 @@
       {{ range .Site.Menus.main }}
       <li><a href="{{ .URL | relURL }}"{{ if $.IsMenuCurrent "main" . }} class="active"{{ end }}>{{ .Name }}</a></li>
       {{ end }}
-      <li class="nav-cta"><a href="https://buyer.hbexperts.com/questionnaire" style="white-space: nowrap;">Start Buyer Experience</a></li>
+      <li class="nav-cta"><a href="https://buyer.hbexperts.com/" style="white-space: nowrap;" data-hbe-cta="buyer-journey">Explore the Buyer Journey</a></li>
     </ul>
   </nav>
 </header>

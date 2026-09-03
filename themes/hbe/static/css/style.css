@@ -966,3 +966,14 @@ hr { border: none; border-top: 1px solid var(--color-border); margin: 3rem 0; }
 .footer-links a:hover {
   color: rgba(255,255,255,0.9);
 }
+
+/* Public discovery → Buyer Journey CTA */
+.journey-cta-explain {
+  max-width: 36rem;
+  margin: 0 auto 1rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  opacity: 0.92;
+}
+.cta-section .journey-cta-explain { color: inherit; }
+.journey-cta-actions { margin: 0; }
