@@ -21,12 +21,20 @@ export function safeHbeReturnPath(requestUrl) {
   }
 }
 
-export function hbeAuthFailurePage({ kind, requestUrl, teamDomain = '' }) {
+export function accessLoginHref({ teamDomain, audience, redirectPath }) {
+  const base = String(teamDomain || '').replace(/\/$/, '');
+  const aud = String(audience || '').trim();
+  const ret = redirectPath || '/hbe';
+  if (!base || !aud || aud.includes('REPLACE_')) return ret;
+  // Cloudflare Access login uses kid= for the application audience (AUD).
+  // Do not invent a separate kid — use CF_ACCESS_AUD / POLICY_AUD.
+  const q = new URLSearchParams({ kid: aud, redirect_url: ret });
+  return `${base}/cdn-cgi/access/login/buyer.hbexperts.com?${q.toString()}`;
+}
+
+export function hbeAuthFailurePage({ kind, requestUrl, teamDomain = '', audience = '' }) {
   const ret = safeHbeReturnPath(requestUrl);
-  const encRet = encodeURIComponent(ret);
-  const signInHref = teamDomain
-    ? `${String(teamDomain).replace(/\/$/, '')}/cdn-cgi/access/login/${'buyer.hbexperts.com'}?redirect_url=${encRet}`
-    : ret;
+  const signInHref = accessLoginHref({ teamDomain, audience, redirectPath: ret });
   const logoutHref = teamDomain
     ? `${String(teamDomain).replace(/\/$/, '')}/cdn-cgi/access/logout?returnTo=${encodeURIComponent(`https://buyer.hbexperts.com${ret}`)}`
     : ret;

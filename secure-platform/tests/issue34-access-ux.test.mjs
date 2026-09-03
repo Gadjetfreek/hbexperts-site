@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { generateKeyPairSync, sign as nodeSign } from 'node:crypto';
 import worker from '../src/issue33-production-worker.js';
-import { safeHbeReturnPath, hbeAuthFailurePage } from '../src/hbe-auth-failure.js';
+import { safeHbeReturnPath, hbeAuthFailurePage, accessLoginHref } from '../src/hbe-auth-failure.js';
 
 const TEAM_DOMAIN = 'https://hbexperts.cloudflareaccess.com';
 const ACCESS_AUD = 'smoke-access-aud';
@@ -84,19 +84,34 @@ test('safeHbeReturnPath keeps local /hbe paths and rejects open redirects', () =
   assert.equal(safeHbeReturnPath('https://buyer.hbexperts.com/hbe/..%2f..%2f'), '/hbe');
 });
 
+test('sign-in URL identifies Access application via AUD (kid), not only redirect_url', () => {
+  const href = accessLoginHref({
+    teamDomain: TEAM_DOMAIN,
+    audience: ACCESS_AUD,
+    redirectPath: '/hbe?buyer=alex'
+  });
+  assert.match(href, new RegExp(`^${TEAM_DOMAIN.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/cdn-cgi/access/login/buyer\\.hbexperts\\.com\\?`));
+  assert.match(href, new RegExp(`kid=${ACCESS_AUD}`));
+  assert.match(href, /redirect_url=%2Fhbe%3Fbuyer%3Dalex/);
+  // no invented hardcoded kid when AUD missing
+  assert.equal(accessLoginHref({ teamDomain: TEAM_DOMAIN, audience: '', redirectPath: '/hbe' }), '/hbe');
+});
+
 test('failure pages are 403 HTML no-store noindex without secrets', async () => {
   for (const kind of ['config', 'auth_required', 'unauthorized', 'jwt_invalid']) {
     const res = hbeAuthFailurePage({
       kind,
       requestUrl: 'https://buyer.hbexperts.com/hbe?buyer=alex',
-      teamDomain: TEAM_DOMAIN
+      teamDomain: TEAM_DOMAIN,
+      audience: ACCESS_AUD
     });
     assert.equal(res.status, 403);
     assert.match(res.headers.get('cache-control') || '', /no-store/i);
     const html = await res.text();
     assert.match(html, /noindex/i);
     assert.match(html, /data-hbe-access-state=/);
-    assert.doesNotMatch(html, /CF_ACCESS_AUD|smoke-access-aud|BEGIN PRIVATE|Cf-Access-Jwt/i);
+    assert.doesNotMatch(html, /CF_ACCESS_AUD=|BEGIN PRIVATE|Cf-Access-Jwt-Assertion/i);
+    assert.doesNotMatch(html, /eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}/);
     assert.doesNotMatch(html, /https?:\/\/evil/i);
   }
 });
@@ -119,6 +134,8 @@ test('missing JWT remains denied with Sign in action', async () => {
   assert.match(html, /Sign in to HBE/);
   assert.match(html, /HBE_ACCESS_AUTH/);
   assert.match(html, /redirect_url=%2Fhbe%3Fbuyer%3Dalex/);
+  assert.match(html, new RegExp("kid=" + ACCESS_AUD.replace(/[.*+?^${}()|[\]\\]/g, "\\&")));
+  assert.match(html, /cdn-cgi\/access\/login\/buyer\.hbexperts\.com/);
 });
 
 test('inactive professional remains denied', async () => {
