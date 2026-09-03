@@ -93,4 +93,4 @@ From the repository root:
 node --test themes/hbe/static/js/acquisition.test.mjs
 ```
 
-The deploy workflow also runs these tests and asserts that the homepage references both `/js/nav.js` and `/js/acquisition.js`.
+The current GitHub Pages deploy workflow requires `/js/nav.js` on the homepage and allows additional public scripts, so `acquisition.js` can ship without a workflow change. A follow-up that has `workflow` scope can also run `node --test` in CI and require `/js/acquisition.js`.

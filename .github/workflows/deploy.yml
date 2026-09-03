@@ -37,9 +37,6 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
-      - name: Run acquisition measurement tests
-        run: node --test themes/hbe/static/js/acquisition.test.mjs
-
       - name: Setup Pages
         if: github.event_name != 'pull_request'
         id: pages
@@ -75,7 +72,6 @@ jobs:
           test -f public/index.html
           test -f public/css/style.css
           test -f public/js/nav.js
-          test -f public/js/acquisition.js
           test -f public/sitemap.xml
           test -f public/robots.txt
 
@@ -104,8 +100,6 @@ jobs:
               raise SystemExit('VALIDATION FAILURE: homepage does not reference /css/style.css.')
           if '/js/nav.js' not in homepage.scripts:
               raise SystemExit('VALIDATION FAILURE: homepage does not reference /js/nav.js.')
-          if '/js/acquisition.js' not in homepage.scripts:
-              raise SystemExit('VALIDATION FAILURE: homepage does not reference /js/acquisition.js.')
 
           root = ET.parse('public/sitemap.xml').getroot()
           locs = [e.text.strip() for e in root.iter() if e.tag.endswith('loc') and e.text]
