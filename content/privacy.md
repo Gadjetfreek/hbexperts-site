@@ -45,6 +45,8 @@ Sensitive document features are intentionally separate from ordinary BuyerUI acc
 
 Hosting and infrastructure providers may process technical information needed to deliver and protect the service, such as IP address, browser/device information, request timestamps, requested routes, and security/performance information.
 
+The public informational site includes a first-party instrumentation foundation that may record coarse events in the browser session only (for example, that a page was viewed and which high-level channel the visit appears to have come from). Those events stay in memory and session storage until a later gated collector exists; they are not sent to a network analytics product today. They use the page pathname and sanitized campaign tokens only. They do not include names, email addresses, phone numbers, Buyer Experience answers, household identifiers, or Buyer Journey portal behavior. An optional aggregate Cloudflare Web Analytics beacon may be enabled later; it is a separate pageview product, it does not receive these custom events, and it is off by default. We do not use this public-site instrumentation for advertising or cross-site targeting.
+
 We do not use this information to build advertising profiles or sell behavioral data.
 
 ---
@@ -76,6 +78,8 @@ Information should help us serve the buyer; it should not become a tool for mani
 
 The secure HBE Buyer Journey uses Cloudflare infrastructure, including Cloudflare Workers and D1 database services, to deliver the BuyerUI and store submitted buyer-system data. Cloudflare may process technical request and security information as part of operating those services.
 
+The public informational site may optionally use Cloudflare Web Analytics for aggregate, cookie-free pageviews. That beacon is a separate product from the first-party custom events, does not receive those events, and is off unless a site token is configured.
+
 ### GitHub Pages
 
 The public HBE informational website is hosted on GitHub Pages. GitHub may log standard server access data as part of normal hosting operations.
@@ -84,7 +88,7 @@ The public HBE informational website is hosted on GitHub Pages. GitHub may log s
 
 ## Cookies and Sessions
 
-The public informational site may use standard browser technologies needed for functionality or aggregate analytics if enabled.
+The public informational site may use standard browser technologies needed for functionality. Coarse first-party instrumentation events may be stored in session storage for the visit only, until a later gated collector exists. Optional Cloudflare Web Analytics is a separate pageview product and is off by default; it does not receive those custom events. We do not set advertising cookies on the public site.
 
 The secure Buyer Journey uses a session cookie to keep an authorized buyer signed in. If a buyer deliberately selects a "remember this device" option, that session may persist longer than a normal browser session.
 
