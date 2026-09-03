@@ -149,6 +149,14 @@ Before we begin viewing homes together, we explain the Buyer Value Agreement —
 
 ---
 
+## Relocating to Northeast Ohio?
+
+If you are moving into Summit, Stark, Medina, Wayne, or Cuyahoga Counties, start with the public relocation guide for practical considerations — without neighborhood rankings or unsupported claims.
+
+[Northeast Ohio relocation guide →]({{< relref "relocation" >}})
+
+---
+
 ## Explore before you decide
 
 You can see the entire Buyer Journey before giving HBE any personal information.
