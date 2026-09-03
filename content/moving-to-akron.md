@@ -52,7 +52,7 @@ Property taxes and municipal services can materially affect total monthly housin
 
 Investigate with primary sources and recent documents, then revisit total housing cost:
 
-- **Summit County auditor** (or the relevant county auditor if the property is outside Summit) — valuations, tax history, and property record cards
+- **Summit County Fiscal Office — Property Tax & Appraisal** — valuations, tax history, and property record cards via the official county sites: [fiscaloffice.summitoh.net](https://fiscaloffice.summitoh.net/) and [propertyaccess.summitoh.net](https://propertyaccess.summitoh.net/). Summit County has warned about fraudulent lookalike “auditor” sites; prefer these authoritative links. If the property is outside Summit, use that county’s official fiscal/appraisal authority instead.
 - Recent tax bills for comparable properties you are seriously considering
 - City of Akron vs. other municipalities for services, permitting, utilities, and local rules that would affect *your* use of the home
 - HOA or condo documents, fees, and restrictions when applicable
