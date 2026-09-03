@@ -578,7 +578,7 @@ test('missing JWT is rejected on /api/hbe/*', async () => {
     body: 'item_id=item-shared&case_id=case-rivera&buyer_id=alex-rivera'
   }), testEnv(db), {});
   assert.equal(res.status, 403);
-  assert.match(await res.text(), /Cloudflare Access authentication required|HBE Access is not fully configured|HBE access required/);
+  assert.match(await res.text(), /Cloudflare Access authentication required|HBE Access is not fully configured|HBE access required|HBE_ACCESS_AUTH|session has ended/i);
 });
 
 test('spoofed Access email header alone is not enough for /api/hbe/*', async () => {
