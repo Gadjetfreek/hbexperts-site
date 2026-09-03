@@ -1,0 +1,47 @@
+{{- /* Minimal accurate WebPage / FAQPage JSON-LD when page opts in via params.jsonLd. No ratings/reviews. */ -}}
+{{- $permalink := .Permalink -}}
+{{- $desc := .Description | default .Site.Params.description -}}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": {{ .Title | jsonify }},
+  "description": {{ $desc | jsonify }},
+  "url": {{ $permalink | jsonify }},
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "HomeBuyer Experts",
+    "url": {{ .Site.BaseURL | jsonify }}
+  },
+  "about": {
+    "@type": "Thing",
+    "name": "Northeast Ohio home buyer relocation"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "HomeBuyer Experts",
+    "url": {{ .Site.BaseURL | jsonify }}
+  }
+}
+</script>
+{{- with .Params.faq }}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {{- range $i, $item := . -}}
+    {{- if $i }},{{ end }}
+    {
+      "@type": "Question",
+      "name": {{ $item.question | jsonify }},
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": {{ $item.answer | jsonify }}
+      }
+    }
+    {{- end }}
+  ]
+}
+</script>
+{{- end }}

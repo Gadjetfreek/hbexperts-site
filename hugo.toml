@@ -10,7 +10,7 @@ theme = "hbe"
   email = "buyers@hbexperts.com"
   location = "Northeast Ohio"
   counties = "Summit, Stark, Medina, Wayne & Cuyahoga Counties"
-  informationLastUpdated = "September 2, 2026"
+  informationLastUpdated = "September 3, 2026"
 
   # Optional. Cloudflare Web Analytics site token (free). Separate pageview product; does not receive first-party custom events. Leave empty to keep first-party-only instrumentation.
   cloudflareWebAnalyticsToken = ""
@@ -25,21 +25,25 @@ theme = "hbe"
     url = "/buyer-representation/"
     weight = 2
   [[menu.main]]
+    name = "Relocation"
+    url = "/relocation/"
+    weight = 3
+  [[menu.main]]
     name = "VALUE"
     url = "/value/"
-    weight = 3
+    weight = 4
   [[menu.main]]
     name = "Strategy Session"
     url = "/strategy-session/"
-    weight = 4
+    weight = 5
   [[menu.main]]
     name = "Explore the Journey"
     url = "https://buyer.hbexperts.com/"
-    weight = 5
+    weight = 6
   [[menu.main]]
     name = "Contact"
     url = "/contact/"
-    weight = 6
+    weight = 7
 
 [markup]
   [markup.goldmark]
