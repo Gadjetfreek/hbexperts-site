@@ -6,17 +6,24 @@
   <title>{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }} | HomeBuyer Experts{{ end }}</title>
   <meta name="description" content="{{ with .Description }}{{ . }}{{ else }}{{ .Site.Params.description }}{{ end }}">
   {{ with .Params.robots }}<meta name="robots" content="{{ . }}">{{ end }}
+  {{ with .Site.Params.cloudflareWebAnalyticsToken }}
+  <meta name="hbe-cf-wa-token" content="{{ . }}">
+  {{ end }}
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ "css/style.css" | relURL }}">
+  {{ with .Site.Params.cloudflareWebAnalyticsToken }}
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": {{ . | jsonify }}}'></script>
+  {{ end }}
 </head>
-<body>
+<body data-hbe-page="{{ if .IsHome }}home{{ else if eq .RelPermalink "/strategy-session/" }}strategy{{ else if eq .RelPermalink "/about/" }}about{{ else }}other{{ end }}">
   {{ partial "header.html" . }}
   <main>
     {{ block "main" . }}{{ end }}
   </main>
   {{ partial "footer.html" . }}
   <script src="{{ "js/nav.js" | relURL }}"></script>
+  <script src="{{ "js/acquisition.js" | relURL }}"></script>
 </body>
 </html>

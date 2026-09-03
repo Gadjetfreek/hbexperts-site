@@ -12,6 +12,9 @@ theme = "hbe"
   counties = "Summit, Stark, Medina, Wayne & Cuyahoga Counties"
   informationLastUpdated = "September 2, 2026"
 
+  # Optional. Cloudflare Web Analytics site token (free). Leave empty to keep first-party-only measurement.
+  cloudflareWebAnalyticsToken = ""
+
 [menu]
   [[menu.main]]
     name = "About"

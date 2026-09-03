@@ -45,6 +45,8 @@ Sensitive document features are intentionally separate from ordinary BuyerUI acc
 
 Hosting and infrastructure providers may process technical information needed to deliver and protect the service, such as IP address, browser/device information, request timestamps, requested routes, and security/performance information.
 
+The public informational site may also record coarse, first-party acquisition events in the browser (for example, that a page was viewed and which high-level channel the visit appears to have come from). Those events use the page pathname and sanitized campaign tokens only. They do not include names, email addresses, phone numbers, Buyer Experience answers, household identifiers, or Buyer Journey portal behavior. An optional aggregate Cloudflare Web Analytics beacon may be enabled later; it is off by default. We do not use public-site measurement for advertising or cross-site targeting.
+
 We do not use this information to build advertising profiles or sell behavioral data.
 
 ---
@@ -76,6 +78,8 @@ Information should help us serve the buyer; it should not become a tool for mani
 
 The secure HBE Buyer Journey uses Cloudflare infrastructure, including Cloudflare Workers and D1 database services, to deliver the BuyerUI and store submitted buyer-system data. Cloudflare may process technical request and security information as part of operating those services.
 
+The public informational site may optionally use Cloudflare Web Analytics for aggregate, cookie-free measurement. That beacon is off unless a site token is configured.
+
 ### GitHub Pages
 
 The public HBE informational website is hosted on GitHub Pages. GitHub may log standard server access data as part of normal hosting operations.
@@ -84,7 +88,7 @@ The public HBE informational website is hosted on GitHub Pages. GitHub may log s
 
 ## Cookies and Sessions
 
-The public informational site may use standard browser technologies needed for functionality or aggregate analytics if enabled.
+The public informational site may use standard browser technologies needed for functionality. Coarse first-party acquisition events may be stored in session storage for the visit. Optional aggregate analytics (Cloudflare Web Analytics) may be enabled; they are off by default. We do not set advertising cookies on the public site.
 
 The secure Buyer Journey uses a session cookie to keep an authorized buyer signed in. If a buyer deliberately selects a "remember this device" option, that session may persist longer than a normal browser session.
 
