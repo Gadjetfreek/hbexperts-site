@@ -105,8 +105,8 @@ test('classifyChannel: unknown leftover utm without paid/organic/referral signal
 test('sanitizeUtm drops email-like and phone-like values', () => {
   assert.equal(acq.sanitizeUtm('buyer@example.com'), '');
   assert.equal(acq.sanitizeUtm('Contact me@site.org today'), '');
-  assert.equal(acq.sanitizeUtm('330-328-3170'), '');
-  assert.equal(acq.sanitizeUtm('+1 (330) 328-3170'), '');
+  assert.equal(acq.sanitizeUtm('202-555-0100'), '');
+  assert.equal(acq.sanitizeUtm('+1 (202) 555-0100'), '');
   assert.equal(acq.sanitizeUtm('google'), 'google');
   assert.equal(acq.sanitizeUtm('  cpc  '), 'cpc');
 });
@@ -118,7 +118,7 @@ test('sanitizeUtm drops URL-like values and caps length', () => {
 });
 
 test('readUtms keeps only sanitized known keys', () => {
-  const utms = acq.readUtms('?utm_source=google&utm_medium=cpc&utm_campaign=buyer@x.com&utm_term=3303283170&utm_content=local&extra=nope');
+  const utms = acq.readUtms('?utm_source=google&utm_medium=cpc&utm_campaign=buyer@x.com&utm_term=2025550100&utm_content=local&extra=nope');
   assert.equal(utms.utm_source, 'google');
   assert.equal(utms.utm_medium, 'cpc');
   assert.equal(utms.utm_content, 'local');
@@ -177,7 +177,7 @@ test('shouldAnnotateJourneyLink only for buyer.hbexperts.com http(s)', () => {
   assert.equal(acq.shouldAnnotateJourneyLink('https://buyer.hbexperts.com/questionnaire'), true);
   assert.equal(acq.shouldAnnotateJourneyLink('https://hbexperts.com/strategy-session/'), false);
   assert.equal(acq.shouldAnnotateJourneyLink('mailto:buyers@hbexperts.com'), false);
-  assert.equal(acq.shouldAnnotateJourneyLink('tel:3303283170'), false);
+  assert.equal(acq.shouldAnnotateJourneyLink('tel:2025550100'), false);
 });
 
 test('annotateJourneyUrl leaves non-journey links unchanged', () => {
