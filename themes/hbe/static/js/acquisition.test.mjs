@@ -154,22 +154,23 @@ test('discovery_view payload has no PII keys', () => {
   assert.equal(payload.household_id, undefined);
 });
 
-test('journey link annotation adds only coarse params', () => {
-  const href = acq.annotateJourneyUrl('https://buyer.hbexperts.com/questionnaire', {
+test('annotateJourneyUrl is a no-op and leaves journey URLs clean', () => {
+  const original = 'https://buyer.hbexperts.com/questionnaire';
+  const href = acq.annotateJourneyUrl(original, {
     channel: 'organic',
     first_touch: 'organic',
     landing_path: '/strategy-session/',
     email: 'buyer@example.com'
   });
+  assert.equal(href, original);
   const url = new URL(href);
   assert.equal(url.origin, 'https://buyer.hbexperts.com');
   assert.equal(url.pathname, '/questionnaire');
-  assert.equal(url.searchParams.get('hbe_ch'), 'organic');
-  assert.equal(url.searchParams.get('hbe_ft'), 'organic');
-  assert.equal(url.searchParams.get('hbe_lp'), '/strategy-session/');
+  assert.equal(url.searchParams.get('hbe_ch'), null);
+  assert.equal(url.searchParams.get('hbe_ft'), null);
+  assert.equal(url.searchParams.get('hbe_lp'), null);
   assert.equal(url.searchParams.get('email'), null);
-  assert.equal(url.searchParams.get('utm_term'), null);
-  assert.deepEqual([...url.searchParams.keys()].sort(), ['hbe_ch', 'hbe_ft', 'hbe_lp']);
+  assert.equal([...url.searchParams.keys()].length, 0);
 });
 
 test('shouldAnnotateJourneyLink only for buyer.hbexperts.com http(s)', () => {
@@ -228,7 +229,7 @@ test('client emits discovery_view, CustomEvent, ring buffer, and optional sink',
   assert.equal(stored.landing_path, '/');
 });
 
-test('journey click annotates href and fires journey_entry_click', () => {
+test('journey click fires journey_entry_click without mutating href', () => {
   const storage = memoryStorage();
   storage.setItem(acq.STORAGE_KEY, JSON.stringify({
     v: 1, channel: 'referral', landing_path: '/about/', ts: '2026-09-03T19:00:00.000Z', referrer_host: 'news.example.com'
@@ -244,14 +245,14 @@ test('journey click annotates href and fires journey_entry_click', () => {
     now: () => '2026-09-03T20:00:00.000Z',
     CustomEvent: FakeCustomEvent
   });
+  const originalHref = 'https://buyer.hbexperts.com/questionnaire';
   const anchor = {
-    href: 'https://buyer.hbexperts.com/questionnaire',
-    getAttribute(name) { return name === 'href' ? 'https://buyer.hbexperts.com/questionnaire' : null; }
+    href: originalHref,
+    getAttribute(name) { return name === 'href' ? originalHref : null; }
   };
   client.handleAnchor(anchor);
-  assert.match(anchor.href, /hbe_ch=referral/);
-  assert.match(anchor.href, /hbe_ft=referral/);
-  assert.match(anchor.href, /hbe_lp=%2Fabout%2F/);
+  assert.equal(anchor.href, originalHref);
+  assert.equal(new URL(anchor.href).search, '');
   assert.equal(win.__HBE_ACQ_EVENTS__.length, 1);
   const evt = win.__HBE_ACQ_EVENTS__[0];
   assert.equal(evt.event, 'journey_entry_click');

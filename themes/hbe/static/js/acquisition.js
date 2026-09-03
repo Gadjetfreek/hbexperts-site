@@ -1,9 +1,17 @@
 /**
- * HBE public-site acquisition measurement (first-party, privacy-safe).
+ * HBE public-site acquisition instrumentation foundation (first-party, privacy-safe).
  *
- * Records coarse discovery and CTA events only: pathname, channel, sanitized
- * UTM tokens, and referrer host. No names, emails, phones, questionnaire
- * answers, household IDs, cookies, or localStorage.
+ * This is a client-side instrumentation foundation, not completed acquisition
+ * measurement. Coarse discovery and CTA events (pathname, channel, sanitized
+ * UTM tokens, referrer host) stay session/in-memory only: CustomEvent
+ * `hbe:acquisition`, sessionStorage first-touch, and an in-memory ring buffer.
+ * No network collector ships here; a later gated collector may subscribe.
+ * Optional Cloudflare Web Analytics is a separate pageview product and does
+ * not receive these custom events.
+ *
+ * No names, emails, phones, questionnaire answers, household IDs, cookies,
+ * or localStorage. Journey URLs are left clean (no hbe_ch / hbe_lp / hbe_ft)
+ * until a secure-side consumer exists.
  *
  * Channel heuristics (see docs/ACQUISITION_MEASUREMENT.md):
  *   relocation / local — ONLY when utm_campaign or utm_content contains that
@@ -240,22 +248,10 @@
     return !!CONSULTATION_PATHS[normalizeHrefPath(parsed)];
   }
 
-  function annotateJourneyUrl(href, meta) {
-    meta = meta || {};
-    var url;
-    try {
-      url = new URL(String(href), 'https://' + JOURNEY_HOST);
-    } catch (err) {
-      return href;
-    }
-    if (!shouldAnnotateJourneyLink(url)) return href;
-    var ch = normalizeChannel(meta.channel);
-    var ft = normalizeChannel(meta.first_touch || meta.channel);
-    var lp = sanitizePath(meta.landing_path || meta.page_path || '/');
-    if (ch) url.searchParams.set('hbe_ch', ch);
-    if (lp) url.searchParams.set('hbe_lp', lp);
-    if (ft) url.searchParams.set('hbe_ft', ft);
-    return url.toString();
+  function annotateJourneyUrl(href) {
+    // No-op: leave buyer.hbexperts.com URLs clean until a secure-side
+    // consumer exists. Custom events stay session/in-memory only.
+    return href;
   }
 
   function readFirstTouch(storage) {
@@ -426,13 +422,6 @@
       var eventName = null;
       if (shouldAnnotateJourneyLink(parsed)) {
         eventName = 'journey_entry_click';
-        var annotated = annotateJourneyUrl(parsed.toString(), {
-          channel: ctx.channel,
-          first_touch: ctx.first_touch && ctx.first_touch.channel,
-          landing_path: ctx.first_touch && ctx.first_touch.landing_path,
-          page_path: ctx.page_path
-        });
-        try { anchor.href = annotated; } catch (err) { /* ignore */ }
       } else if (isConsultationCta(parsed, ctx.siteHost)) {
         eventName = 'consultation_cta_click';
       }
