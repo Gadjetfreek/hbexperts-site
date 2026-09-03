@@ -84,13 +84,13 @@ Treat published maps and your own timed trips (or trusted local observation) as 
 
 ### Property taxes as a decision factor
 
-Property tax obligations vary by location and can affect monthly cost as much as mortgage principal and interest. Rates and assessments change; quoting a single number here would be unreliable.
+Property taxes vary by location and can materially affect total monthly housing cost. Rates and assessments change; quoting a single number here would be unreliable.
 
 Investigate with primary sources such as the relevant **county auditor** (or equivalent local tax authority), property record cards, and recent tax bills for comparable properties — then revisit the total housing cost, not price alone.
 
 ### Housing age, style, and inspections
 
-Much of Northeast Ohio’s housing stock is older. Age and construction style are not automatically good or bad — but they raise the importance of disciplined inspection and repair budgeting.
+Many homes a relocating buyer encounters may have older systems or construction, so age and condition should be evaluated property by property. Age and construction style are not automatically good or bad — but they raise the importance of disciplined inspection and repair budgeting.
 
 Before emotional attachment hardens:
 
