@@ -91,6 +91,15 @@ export function addBuyerFirstClarity(text, pathname) {
 
   if (pathname === '/questionnaire' && text.includes('id="buyerExperienceForm"')) {
     text = text.replace(
+      /until you deliberately press <strong>Submit to HBE<\/strong> at the end/g,
+      'until you deliberately review and send it to HomeBuyer Experts'
+    );
+    text = text.replace(
+      /Until you press <strong>Submit to HBE<\/strong>/g,
+      'Until you review and send to HomeBuyer Experts'
+    );
+    text = text.replace(
+
       /<div class="submitbox"><strong>This is the moment HBE receives your information\.<\/strong><p>[\s\S]*?<button class="btn primary" type="submit">Submit to HBE<\/button><\/div>/,
       `<div class="submitbox"><strong>Nothing has been sent yet.</strong><p>Review exactly what HomeBuyer Experts will receive before you choose to send it.</p><button class="btn primary" id="review-before-send" type="button">Review before sending</button></div>`
     );

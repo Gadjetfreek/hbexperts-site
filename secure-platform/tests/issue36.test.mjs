@@ -4,6 +4,16 @@ import { addBuyerFirstClarity } from '../src/issue33-production-worker.js';
 import { readFileSync } from 'node:fs';
 import { BUYER_GUIDANCE, TIMELINE_CHIP_VALUES, CONCERN_CHIP_VALUES, installBuyerGuidance } from '../src/buyer-guidance.js';
 
+const REMAINDER_OPEN_FIELDS = [
+  'success_definition',
+  'non_negotiables',
+  'unknowns',
+  'saturday_morning_vision',
+  'consultation_success',
+  'past_experience_detail'
+];
+const IDENTITY_FIELDS = ['first_name', 'last_name', 'email', 'phone'];
+
 const questionnaire = `<!doctype html><html><head></head><body><main><form id="buyerExperienceForm" method="post" action="/api/intake" novalidate><input name="first_name" required><input name="last_name" required><input type="email" name="email" required><textarea name="why"></textarea><input name="timeline"><input name="location"><textarea name="concerns"></textarea><textarea name="notes"></textarea><div class="submitbox"><strong>This is the moment HBE receives your information.</strong><p>Submitting creates your private buyer record and alerts HBE that your Buyer Experience is ready for review. HBE will store what you actually submitted; unanswered reflective questions remain unanswered.</p><button class="btn primary" type="submit">Submit to HBE</button></div></form></main></body></html>`;
 
 test('questionnaire adds plain-English buyer-only explanation', () => {
@@ -48,8 +58,13 @@ test('open-ended typed answers receive suggestions and explicit uncertainty perm
   assert.match(html, /location:\{help:/);
   assert.match(html, /concerns:\{help:/);
   assert.match(html, /notes:\{help:/);
+  for (const name of REMAINDER_OPEN_FIELDS) {
+    assert.match(html, new RegExp(name + ':\\{help:'));
+  }
   assert.doesNotMatch(html, /first_name:\{help:/);
+  assert.doesNotMatch(html, /last_name:\{help:/);
   assert.doesNotMatch(html, /email:\{help:/);
+  assert.doesNotMatch(html, /phone:\{help:/);
 });
 
 test('public journey gets buyer-only explanation without submission dialog markup', () => {
@@ -196,6 +211,12 @@ function portalLikeForm() {
   const why = createEl('textarea', { name: 'why' });
   const location = createEl('input', { name: 'location', type: 'text' });
   const notes = createEl('textarea', { name: 'notes' });
+  const success_definition = createEl('textarea', { name: 'success_definition' });
+  const non_negotiables = createEl('textarea', { name: 'non_negotiables' });
+  const unknowns = createEl('textarea', { name: 'unknowns' });
+  const saturday_morning_vision = createEl('textarea', { name: 'saturday_morning_vision' });
+  const consultation_success = createEl('textarea', { name: 'consultation_success' });
+  const past_experience_detail = createEl('textarea', { name: 'past_experience_detail' });
   const timeline = createEl('select', { name: 'timeline' });
   timeline.options = [
     { value: '', text: 'Choose one if helpful' },
@@ -216,6 +237,7 @@ function portalLikeForm() {
 
   const fields = {
     first_name, last_name, email, phone, why, location, notes, timeline,
+    success_definition, non_negotiables, unknowns, saturday_morning_vision, consultation_success, past_experience_detail,
     concerns: radioNodeList(boxes)
   };
 
@@ -266,6 +288,9 @@ test('injector does not throw on concerns checkbox group and still chips notes',
   assert.ok(chipsAfter(form.fields.timeline), 'timeline should have chips');
   assert.ok(chipsAfter(form.fields.why), 'why should have chips');
   assert.ok(chipsAfter(form.fields.location), 'location should have chips');
+  for (const name of REMAINDER_OPEN_FIELDS) {
+    assert.ok(chipsAfter(form.fields[name]), name + ' must still receive chips after concerns');
+  }
 });
 
 test('timeline chips match the six option values and set a real selected option', () => {
@@ -307,9 +332,10 @@ test('concern chips toggle the matching checkbox rather than assigning .value on
 test('identity fields still have no I do not know or guided chips', () => {
   const form = portalLikeForm();
   installBuyerGuidance(form, fakeDocument(), BUYER_GUIDANCE);
-  for (const name of ['first_name', 'last_name', 'email', 'phone']) {
+  for (const name of IDENTITY_FIELDS) {
     assert.equal(chipsAfter(form.fields[name]), null);
     assert.equal(form.fields[name].dataset.guided, undefined);
+    assert.equal(name in BUYER_GUIDANCE, false);
   }
   const html = addBuyerFirstClarity(questionnaire, '/questionnaire');
   assert.doesNotMatch(html, /first_name:\{help:/);
@@ -353,4 +379,78 @@ test('live portal questionnaire option strings stay 1:1 with chips', () => {
   }
   const joined = CONCERN_CHIP_VALUES.map(v => `'${v}'`).join(',');
   assert.ok(portal.includes(joined), 'concern checkbox labels must match chips 1:1');
+});
+
+function helpAfter(el) {
+  return (el.nextSiblings || []).find(n => n.className === 'buyer-answer-help') || null;
+}
+
+test('remaining optional textareas each receive help and 4-6 starting-point chips', () => {
+  const form = portalLikeForm();
+  installBuyerGuidance(form, fakeDocument(), BUYER_GUIDANCE);
+  for (const name of REMAINDER_OPEN_FIELDS) {
+    const field = form.fields[name];
+    const help = helpAfter(field);
+    const chips = chipsAfter(field);
+    assert.ok(help, name + ' should have help text');
+    assert.match(help.innerHTML, /Need a starting point\?/);
+    assert.match(help.innerHTML, /It is okay not to know yet/);
+    assert.ok(chips, name + ' should have chips');
+    const count = chips.children.length;
+    assert.ok(count >= 4 && count <= 6, name + ' should have 4-6 chips, got ' + count);
+    assert.deepEqual(chips.children.map(b => b.textContent), BUYER_GUIDANCE[name].suggestions);
+    clickChip(field, BUYER_GUIDANCE[name].suggestions[0]);
+    assert.equal(field.value, BUYER_GUIDANCE[name].suggestions[0]);
+  }
+});
+
+test('BUYER_GUIDANCE does not attach I-do-not-know chips to identity or factual fields', () => {
+  for (const name of IDENTITY_FIELDS.concat(['situation', 'financing', 'has_other_buyer'])) {
+    assert.equal(BUYER_GUIDANCE[name], undefined);
+  }
+  const form = portalLikeForm();
+  installBuyerGuidance(form, fakeDocument(), BUYER_GUIDANCE);
+  for (const name of IDENTITY_FIELDS) {
+    assert.equal(chipsAfter(form.fields[name]), null);
+  }
+  const html = addBuyerFirstClarity(questionnaire, '/questionnaire');
+  for (const name of IDENTITY_FIELDS) {
+    assert.doesNotMatch(html, new RegExp(name + ':\\{help:'));
+  }
+  assert.doesNotMatch(html, /first_name[\s\S]{0,80}I don.t know/i);
+  assert.doesNotMatch(html, /email[\s\S]{0,80}I.m not sure yet/);
+});
+
+test('portal questionnaire privacy and submit copy use review/send verbs', () => {
+  const portal = readFileSync(new URL('../src/portal-worker.js', import.meta.url), 'utf8');
+  const privacy = portal.match(/class="privacy">[\s\S]*?<\/div>/)[0];
+  const submitbox = portal.match(/class="submitbox">[\s\S]*?<\/div>/)[0];
+  assert.match(privacy, /review and send it to HomeBuyer Experts/);
+  assert.doesNotMatch(privacy, /press <strong>Submit to HBE<\/strong>/);
+  assert.doesNotMatch(privacy, /Submit to HBE/);
+  assert.match(submitbox, /Review before sending/);
+  assert.doesNotMatch(submitbox, /Submit to HBE/);
+  assert.match(portal, /id="review-before-send"/);
+
+  const ui = readFileSync(new URL('../src/ui-worker.js', import.meta.url), 'utf8');
+  const explorer = ui.match(/function explorer\(\)\{[\s\S]*?Start the Experience/)[0];
+  assert.match(explorer, /review and send them to HomeBuyer Experts/);
+  assert.doesNotMatch(explorer, /Submit to HBE/);
+
+  const worker = readFileSync(new URL('../src/worker.js', import.meta.url), 'utf8');
+  const workerExplorer = worker.match(/function explorer\(\)\{[\s\S]*?Start the Buyer Experience/)[0];
+  assert.match(workerExplorer, /review and send them to HomeBuyer Experts/);
+  assert.doesNotMatch(workerExplorer, /Submit to HBE/);
+
+  const html = addBuyerFirstClarity(questionnaire, '/questionnaire');
+  assert.match(html, /Review before sending/);
+  assert.match(html, /Send to HomeBuyer Experts/);
+  assert.doesNotMatch(html, />Submit to HBE<\/button>/);
+
+  const live = addBuyerFirstClarity(portal.match(/return `<!doctype html>[\s\S]*?<\/html>`/)[0], '/questionnaire');
+  assert.match(live, /Review before sending/);
+  assert.match(live, /Send to HomeBuyer Experts/);
+  assert.doesNotMatch(live, />Submit to HBE<\/button>/);
+  const livePrivacy = live.match(/class="privacy">[\s\S]*?<\/div>/)[0];
+  assert.doesNotMatch(livePrivacy, /Submit to HBE/);
 });
