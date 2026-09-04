@@ -1,4 +1,5 @@
 import appWorker from './co-buyer-consent-worker.js';
+import { hbeAuthFailurePage } from './hbe-auth-failure.js';
 
 const enc = new TextEncoder();
 const te = new TextDecoder();
@@ -45,23 +46,28 @@ export default {
 export async function authenticateHbeProfessional(request, env) {
   const teamDomain = normalizedTeamDomain(env.CF_ACCESS_TEAM_DOMAIN || env.TEAM_DOMAIN);
   const audience = String(env.CF_ACCESS_AUD || env.POLICY_AUD || '').trim();
+  const requestUrl = request.url;
   if (!teamDomain || !audience || teamDomain.includes('REPLACE_') || audience.includes('REPLACE_')) {
-    return { ok:false, response: forbidden('HBE Access is not fully configured.') };
+    return { ok:false, response: hbeAuthFailurePage({ kind: 'config', requestUrl, teamDomain: teamDomain || '' }) };
   }
 
   const token = request.headers.get('Cf-Access-Jwt-Assertion');
-  if (!token) return { ok:false, response: forbidden('Cloudflare Access authentication required.') };
+  if (!token) {
+    return { ok:false, response: hbeAuthFailurePage({ kind: 'auth_required', requestUrl, teamDomain, audience }) };
+  }
 
   try {
     const payload = await verifyAccessJwt(token, teamDomain, audience);
     const email = String(payload.email || '').trim().toLowerCase();
-    if (!email) return { ok:false, response: forbidden('Verified Access identity has no email address.') };
+    if (!email) {
+      return { ok:false, response: hbeAuthFailurePage({ kind: 'unauthorized', requestUrl, teamDomain, audience }) };
+    }
 
     const professional = await env.BUYER_DB.prepare(`SELECT id,email,display_name,role,status,workspace_status,workspace_user_id
       FROM hbe_professionals WHERE lower(email)=? LIMIT 1`).bind(email).first();
 
     if (!professional || professional.status !== 'active') {
-      return { ok:false, response: forbidden('This verified identity is not an active HBE professional.') };
+      return { ok:false, response: hbeAuthFailurePage({ kind: 'unauthorized', requestUrl, teamDomain, audience }) };
     }
 
     return {
@@ -77,7 +83,7 @@ export async function authenticateHbeProfessional(request, env) {
     };
   } catch (err) {
     console.error('Cloudflare Access JWT verification failed', err);
-    return { ok:false, response: forbidden('Cloudflare Access token verification failed.') };
+    return { ok:false, response: hbeAuthFailurePage({ kind: 'jwt_invalid', requestUrl, teamDomain, audience }) };
   }
 }
 
