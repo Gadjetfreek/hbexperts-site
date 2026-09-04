@@ -39,6 +39,30 @@ export const BUYER_GUIDANCE = {
   notes: {
     help: 'Optional. Use this only if there is something you want a human at HBE to understand before talking with you.',
     suggestions: ['Nothing else right now', 'I’d rather discuss this live', 'I’m still figuring things out']
+  },
+  success_definition: {
+    help: 'A year from now, what would make this feel like a good choice? A feeling, a change in daily life, or “I’m still figuring that out” all count.',
+    suggestions: ['We felt settled', 'The house still fits our life', 'Less stress about the next move', 'Room for how we actually live', 'I’m not sure yet what “right” looks like', 'We would choose it again']
+  },
+  non_negotiables: {
+    help: 'Name the few things that would make a home or plan wrong for you. “None yet” is a real answer.',
+    suggestions: ['None yet', 'Commute must work', 'Budget ceiling is real', 'Enough bedrooms for us', 'Quiet enough to rest', 'I’m still naming these']
+  },
+  unknowns: {
+    help: 'Name the gaps. You do not need the real-estate vocabulary — “I don’t know what I don’t know” is useful.',
+    suggestions: ['I don’t know what I don’t know', 'Financing details', 'Which areas fit', 'What I can really afford monthly', 'How offers actually work', 'What I should ask first']
+  },
+  saturday_morning_vision: {
+    help: 'A sensory snapshot is enough: who is there, what you hear, how the morning feels. Skip it if nothing comes yet.',
+    suggestions: ['Coffee, quiet, sunlight', 'Kids nearby, unhurried', 'Slow start, no commute rush', 'Walk to Saturday errands', 'Windows open to the yard', 'I’m still picturing it']
+  },
+  consultation_success: {
+    help: 'One useful outcome is enough. Answering this does not hire HBE or start a search.',
+    suggestions: ['Leave with a clear next step', 'Understand the process', 'Know if HBE is a fit', 'Get my questions named', 'See what I might be missing', 'I’m not sure what I need yet']
+  },
+  past_experience_detail: {
+    help: 'Optional. Share only what would help HBE treat this time differently — or say this is your first time.',
+    suggestions: ['First-time buyer', 'Want less pressure this time', 'Nothing specific', 'Felt rushed before', 'Want more teaching, less selling', 'Prefer to discuss live']
   }
 };
 
