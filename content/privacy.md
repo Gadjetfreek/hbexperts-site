@@ -20,7 +20,7 @@ The public HBE website can be browsed without completing the Buyer Experience.
 
 Inside the HBE Buyer Journey, you can explore the process before submitting personal information. A Buyer Experience draft may remain temporarily in your browser session so normal Back or Refresh actions do not erase your work. HBE does not intentionally create a buyer record from that draft until you deliberately submit it.
 
-When you choose **Submit to HBE**, you may provide information such as:
+When you deliberately **review and send** your Buyer Experience to HomeBuyer Experts, you may provide information such as:
 
 - Your name
 - Your email address

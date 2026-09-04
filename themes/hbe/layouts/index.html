@@ -6,7 +6,7 @@
     <p class="hero-tagline">{{ .Site.Params.tagline }}</p>
     <div class="hero-cta">
       <a href="{{ "value/" | relURL }}" class="btn btn-secondary">See How VALUE Works</a>
-      <a href="https://buyer.hbexperts.com/" class="btn btn-primary">Explore the Buyer Journey</a>
+      <a href="https://buyer.hbexperts.com/" class="btn btn-primary" data-hbe-cta="buyer-journey">Explore the Buyer Journey</a>
     </div>
   </div>
 </section>
@@ -153,8 +153,7 @@
 
 <section class="cta-section">
   <h2>Start by Understanding the Decision</h2>
-  <p>Explore the full Buyer Journey first. You can see the process before sharing anything with HBE.</p>
-  <a href="https://buyer.hbexperts.com/" class="btn btn-primary btn-large">Explore the Buyer Journey</a>
+  {{ partial "journey-cta.html" (dict "class" "btn btn-primary btn-large") }}
   <p style="margin-top: 1.5rem; font-size: 0.95rem;">Or start a conversation: <a href="tel:{{ .Site.Params.phone }}" style="font-weight: 600;">{{ .Site.Params.phone }}</a></p>
 </section>
 {{ end }}

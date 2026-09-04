@@ -1,0 +1,14 @@
+{{/*
+  Consistent public CTA into the secure Buyer Journey.
+  Primary destination is always buyer.hbexperts.com/ (explore first).
+  Do not deep-link public discovery CTAs into /questionnaire, /portal, or /hbe.
+*/}}
+{{- $label := .label | default "Explore the Buyer Journey" -}}
+{{- $class := .class | default "btn btn-primary" -}}
+{{- $showExplain := ne .explain false -}}
+<div class="journey-cta">
+  {{- if $showExplain }}
+  <p class="journey-cta-explain">After you click, you leave this public site and open HBE’s secure Buyer Journey. You can explore every stage before sharing personal information. Nothing is submitted to HBE until you deliberately review and send a Buyer Experience from that Journey.</p>
+  {{- end }}
+  <p class="journey-cta-actions"><a href="https://buyer.hbexperts.com/" class="{{ $class }}" data-hbe-cta="buyer-journey">{{ $label }}</a></p>
+</div>
