@@ -157,6 +157,7 @@ See the full process before sharing personal information with HBE.
 ### Secondary paths
 
 - [Schedule context: Buyer Strategy Session]({{< relref "strategy-session" >}}) — complimentary, no obligation, about one hour; Zoom available
+- [Moving to Akron buyer guide]({{< relref "moving-to-akron" >}}) — Akron / Summit County questions without rankings
 - [Exclusive buyer representation]({{< relref "buyer-representation" >}}) — how loyalty and advocacy work
 - [VALUE]({{< relref "value" >}}) — the decision-support framework used throughout the journey
 - [Contact]({{< relref "contact" >}}) — phone and email if you prefer a direct conversation
