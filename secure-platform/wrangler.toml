@@ -48,3 +48,13 @@ namespace_id = "82626002"
 # [[send_email]]
 # name = "HBE_ALERT"
 # destination_address = "cwhitehead@hbexperts.com"
+
+
+# Private showing-card photo storage (HBE-auth only; no public bucket/URL).
+# Create bucket then replace bucket_name / ensure account binding before deploy:
+#   npx wrangler r2 bucket create hbe-showing-photos
+# Binding is declared so code can fail-closed when object store is absent.
+[[r2_buckets]]
+binding = "SHOWING_PHOTOS"
+bucket_name = "hbe-showing-photos"
+# preview_bucket_name = "hbe-showing-photos-preview"
