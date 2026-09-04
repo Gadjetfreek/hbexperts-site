@@ -10,6 +10,7 @@ import {
   whatsNextPanel, checklistPanel, previewBanner, thankYouHtml,
   compensationPublicHtml, compensationPostHireHtml, dashboardShell, buyerDashboardBody, previewMemberNav, esc
 } from './issue29-ui.js';
+import { handleShowingCardRoutes, enhanceHbeWithProperties } from './showing-card/index.js';
 
 assertSeventeenStages();
 
@@ -18,6 +19,9 @@ const enc = new TextEncoder();
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+
+    const showing = await handleShowingCardRoutes(request, env, ctx);
+    if (showing) return showing;
 
     if (request.method === 'POST' && url.pathname === '/api/hbe/checklist/toggle') {
       return handleChecklistToggle(request, env, ctx, 'hbe');
@@ -44,6 +48,7 @@ export default {
       try {
         const body = await response.json();
         body.issue29 = { stages: STAGES.length, stage17: 'afterKeys', persistence: 'd1-household-state' };
+        body.showingCard = { enabled: true, dossier: 'brigham-v1', r2: Boolean(env.SHOWING_PHOTOS) };
         return json(body);
       } catch {
         return response;
@@ -57,6 +62,7 @@ export default {
     try {
       if (request.method === 'GET' && url.pathname === '/hbe' && response.status === 200) {
         text = await enhanceHbeDashboard(request, env, url, text);
+        text = await enhanceHbeWithProperties(request, env, url, text);
       }
       if (request.method === 'GET' && url.pathname === '/portal' && response.status === 200) {
         text = await enhanceBuyerPortal(request, env, url, text);

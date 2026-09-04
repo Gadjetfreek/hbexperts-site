@@ -141,6 +141,7 @@ export default {
         };
         body.issue33 = { bimatrix: true, buyer_refresh: true, canonical_review: 'monthly' };
         body.issue36 = { buyer_first_clarity: true, pre_submit_review: true, attention_architecture: true, guided_open_answers: true };
+        body.showingCard = body.showingCard || { enabled: true, dossier: 'brigham-v1', r2: Boolean(env.SHOWING_PHOTOS) };
         headers.set('content-type', 'application/json; charset=utf-8');
         return new Response(JSON.stringify(body), {
           status: response.status,
