@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hbexperts.com/schemas/value-orbit-service-area.json",
+  "title": "VALUE orbit service-area tenant config",
+  "type": "object",
+  "required": [
+    "brokerage_id",
+    "display_name",
+    "center",
+    "service_area_mode",
+    "service_area",
+    "public_label",
+    "fallback_region"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "brokerage_id": {
+      "type": "string",
+      "minLength": 2,
+      "description": "Stable tenant id (e.g. hbe). Never a client/buyer id."
+    },
+    "display_name": {
+      "type": "string",
+      "minLength": 2
+    },
+    "center": {
+      "type": "object",
+      "required": ["lat", "lng"],
+      "additionalProperties": false,
+      "properties": {
+        "lat": { "type": "number", "minimum": -90, "maximum": 90 },
+        "lng": { "type": "number", "minimum": -180, "maximum": 180 }
+      }
+    },
+    "service_area_mode": {
+      "type": "string",
+      "enum": ["drive_time", "counties", "radius", "custom_polygon"]
+    },
+    "service_area": {
+      "description": "Mode-specific value. drive_time: { minutes, hub_label }. counties: string[]. radius: { miles }. custom_polygon: GeoJSON Polygon coordinates.",
+      "type": ["object", "array"]
+    },
+    "public_label": {
+      "type": "string",
+      "description": "Buyer-facing short label for the resolved area"
+    },
+    "fallback_region": {
+      "type": "string",
+      "description": "Shown if detailed area cannot render"
+    },
+    "approx_disclaimer": {
+      "type": "string",
+      "description": "Required when geography is approximate (e.g. drive-time sketch)"
+    },
+    "stages": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "orbit_label": { "type": "string" },
+        "region_label": { "type": "string" },
+        "local_label": { "type": "string" }
+      }
+    }
+  }
+}
