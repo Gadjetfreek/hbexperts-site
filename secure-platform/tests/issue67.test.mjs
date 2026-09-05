@@ -72,10 +72,12 @@ test('Home, VALUE, Strategy Session keep Explore the Buyer Journey CTA', () => {
 
 test('public journey landing keeps Start My Buyer Experience and Open my Buyer Portal', () => {
   const ui = readSp('src/ui-worker.js');
-  assert.match(ui, /Start My Buyer Experience/);
-  assert.match(ui, /Open my Buyer Portal/);
-  assert.match(ui, /Review &amp; Send to HomeBuyer Experts/);
-  assert.match(ui, /See all 17 stages/);
+  const explorer = ui.slice(ui.indexOf('function explorer()'), ui.indexOf('function page(body)'));
+  assert.match(explorer, /Start My Buyer Experience/);
+  assert.match(explorer, /Open my Buyer Portal/);
+  assert.match(explorer, /Nothing is sent until you review and send it/);
+  assert.match(explorer, /See all 17 stages/);
+  assert.doesNotMatch(explorer, /START HERE|buyer-focus-card/);
 });
 
 test('VALUE page is compressed to one illustrative example with CTA', () => {

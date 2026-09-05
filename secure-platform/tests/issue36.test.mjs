@@ -434,12 +434,13 @@ test('portal questionnaire privacy and submit copy use review/send verbs', () =>
 
   const ui = readFileSync(new URL('../src/ui-worker.js', import.meta.url), 'utf8');
   assert.match(ui, /Start My Buyer Experience/);
-  assert.match(ui, /Review &amp; Send to HomeBuyer Experts/);
+  assert.match(ui, /Nothing is sent until you review and send it/);
   assert.match(ui, /Open my Buyer Portal/);
   assert.match(ui, /See all 17 stages/);
   assert.doesNotMatch(ui, /Submit to HBE/);
   assert.doesNotMatch(ui, /Begin the Buyer Experience/);
   assert.doesNotMatch(ui, /Start the Experience(?!\.)/);
+  assert.doesNotMatch(ui, /START HERE|buyer-focus-card/);
 
   const worker = readFileSync(new URL('../src/worker.js', import.meta.url), 'utf8');
   const workerExplorer = worker.match(/function explorer\(\)\{[\s\S]*?Start My Buyer Experience/)[0];

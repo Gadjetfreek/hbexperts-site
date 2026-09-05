@@ -14,19 +14,21 @@ function read(rel) {
   return readFileSync(join(root, rel), 'utf8');
 }
 
-test('public journey first view emphasizes now / next / why / resume', () => {
+test('public journey first view is lean: title, one line, two CTAs, trust line, stages', () => {
   const ui = read('src/ui-worker.js');
-  assert.match(ui, /What happens next/i);
-  assert.match(ui, /Start My Buyer Experience/);
-  assert.match(ui, /Review &amp; Send to HomeBuyer Experts/);
-  assert.match(ui, /Open my Buyer Portal/);
-  assert.match(ui, /<details[\s\S]*See all 17 stages/);
-  assert.match(ui, /Pause anytime|Come back later|Open my Buyer Portal/i);
-  assert.doesNotMatch(ui, /Begin the Buyer Experience/);
-  assert.doesNotMatch(ui, /Start the Experience(?!\.)/);
-  assert.doesNotMatch(ui, /Open my BuyerUI/);
-  assert.doesNotMatch(ui, /does not have to dominate/i);
-  assert.doesNotMatch(ui, /YOU ARE HERE|You are here/i);
+  const explorer = ui.slice(ui.indexOf('function explorer()'), ui.indexOf('function page(body)'));
+  assert.match(explorer, /<h1>Buyer Journey<\/h1>/);
+  assert.match(explorer, /See how HBE works\. Start when you/);
+  assert.match(explorer, /href="\/questionnaire">Start My Buyer Experience</);
+  assert.match(explorer, /href="\/login">Open my Buyer Portal</);
+  assert.match(explorer, /Nothing is sent until you review and send it/);
+  assert.match(explorer, /<details[\s\S]*See all 17 stages/);
+  assert.doesNotMatch(explorer, /START HERE|What this is|buyer-focus-card|buyer-focus-grid/);
+  assert.doesNotMatch(explorer, /What happens next|Pause anytime|Come back later/i);
+  assert.doesNotMatch(explorer, /Begin the Buyer Experience/);
+  assert.doesNotMatch(explorer, /Open my BuyerUI/);
+  assert.doesNotMatch(explorer, /does not have to dominate/i);
+  assert.doesNotMatch(explorer, /YOU ARE HERE|You are here/i);
 });
 
 test('refinePublicJourney wraps 17-stage map in details instead of deleting it', () => {
