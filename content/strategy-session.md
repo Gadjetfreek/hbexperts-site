@@ -12,6 +12,8 @@ It runs approximately **one hour** and is held **in person** whenever possible. 
 
 This is not a sales appointment. It is a working conversation about a consequential decision.
 
+Sending a Buyer Experience does not hire HomeBuyer Experts, sign an agency agreement, or obligate you to buy a home.
+
 ---
 
 ## Why Start With Strategy?
@@ -73,15 +75,17 @@ You do not need to know the right questions in advance. Part of our job is helpi
 
 ## What Happens Next
 
-**Step 1 — Explore the Buyer Journey.** See the full process before sharing anything with HBE.
+**Step 1 — Explore the Buyer Journey.** See the process before sharing anything with HBE.
 
-**Step 2 — Complete your Buyer Experience when you are ready.** Each buyer answers individually so we can preserve the voices of the people actually making the decision.
+**Step 2 — Start My Buyer Experience when you are ready.** Draft privately on your device. Reflective answers are optional. When you are ready, **Review & Send to HomeBuyer Experts**. Each buyer answers individually so we can preserve the voices of the people actually making the decision.
 
 **Step 3 — We review before we meet.** We should not spend your time asking questions you have already answered.
 
 **Step 4 — We have a real conversation.** Together we clarify VALUE: what matters, what alternatives remain, what has already been learned, where uncertainty remains, and what evidence would help.
 
 The next useful step may be to search. It may also be to prepare, learn, change the plan, or wait.
+
+You can pause the draft anytime and resume later through login / Open my Buyer Portal.
 
 ---
 
@@ -98,6 +102,12 @@ After showings and meaningful journey stages, VALUE returns:
 - What evidence changed the picture?
 
 The Buyer Decision Profile and Decision Record are meant to evolve as you do.
+
+---
+
+## Fair Housing and No Steering
+
+HomeBuyer Experts works for buyers and follows Fair Housing law. We do not steer buyers toward or away from neighborhoods based on protected characteristics. Representation is about helping you choose wisely — not deciding for you.
 
 ---
 
