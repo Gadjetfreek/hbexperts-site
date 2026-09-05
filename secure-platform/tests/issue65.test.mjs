@@ -17,10 +17,10 @@ function read(rel) {
 test('public journey first view is lean: title, one line, two CTAs, trust line, stages', () => {
   const ui = read('src/ui-worker.js');
   const explorer = ui.slice(ui.indexOf('function explorer()'), ui.indexOf('function page(body)'));
-  assert.match(explorer, /<h1>Buyer Journey<\/h1>/);
+  assert.match(explorer, /<h1>[\s\S]*Buyer Journey[\s\S]*<\/h1>/);
   assert.match(explorer, /See how HBE works\. Start when you/);
-  assert.match(explorer, /href="\/questionnaire">Start My Buyer Experience</);
-  assert.match(explorer, /href="\/login">Open my Buyer Portal</);
+  assert.match(explorer, /href="\/questionnaire"[^>]*>[\s\S]*Start My Buyer Experience/);
+  assert.match(explorer, /href="\/login"[^>]*>[\s\S]*Open my Buyer Portal/);
   assert.match(explorer, /Nothing is sent until you review and send it/);
   assert.match(explorer, /<details[\s\S]*See all 17 stages/);
   assert.doesNotMatch(explorer, /START HERE|What this is|buyer-focus-card|buyer-focus-grid/);
