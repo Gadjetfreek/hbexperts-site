@@ -196,8 +196,6 @@ ${message ? `<div class="error">${esc(message)}</div>` : ''}
 <div class="group"><label><span class="label">What has you thinking about buying a home now? <span class="hint">Optional — share only what feels useful.</span></span><textarea name="why"></textarea></label></div>
 <div class="group"><label><span class="label">Which best describes where you are starting?</span><select name="situation"><option value="">Choose one if helpful</option><option>First-time buyer</option><option>Moving up</option><option>Downsizing</option><option>Relocating</option><option>Investment purchase</option><option>Second home</option><option>Exploring possibilities</option><option>Something else</option></select></label></div>
 <div class="navrow"><a class="btn secondary" href="/">Back to Journey</a><button class="btn primary next" type="button">Continue</button></div>
-<p class="footer-note skip-deeper-note">Parts about decision style, pressure, and disagreement are optional reflection. Skipping them does not reduce the quality of HBE representation or service. You can still answer them later with Continue.</p>
-<div class="navrow skip-row"><button class="btn secondary skip-deeper" type="button" data-skip-to="5">Skip deeper optional questions</button><span class="footer-note" style="flex:1;margin:0">Or continue through optional reflection pages.</span></div>
 </section>
 
 <section class="step" data-title="What matters">
@@ -206,8 +204,6 @@ ${message ? `<div class="error">${esc(message)}</div>` : ''}
 <div class="group"><span class="label">Choose up to three priorities that matter most right now. <span class="hint">Optional — fewer is completely fine.</span></span><div class="choices" id="priorityChoices">${checkChoices('priorities',['Location','Price / monthly cost','Schools','Commute','Privacy','Yard / outdoor space','Investment potential','Walkability','Character','Low maintenance','Space for family','Future resale'])}</div><div class="priority-count" id="priorityCount">0 selected · choose up to 3 if helpful</div></div>
 <div class="group"><label><span class="label">What are your non-negotiables? <span class="hint">Optional — “none yet” is perfectly useful too.</span></span><textarea name="non_negotiables"></textarea></label></div>
 <div class="navrow"><button class="btn secondary back" type="button">Back</button><button class="btn primary next" type="button">Continue</button></div>
-<p class="footer-note skip-deeper-note">Parts about decision style, pressure, and disagreement are optional reflection. Skipping them does not reduce the quality of HBE representation or service. You can still answer them later with Continue.</p>
-<div class="navrow skip-row"><button class="btn secondary skip-deeper" type="button" data-skip-to="5">Skip deeper optional questions</button></div>
 </section>
 
 <section class="step" data-title="How you decide">
@@ -217,7 +213,7 @@ ${message ? `<div class="error">${esc(message)}</div>` : ''}
 <div class="group"><span class="label">How do you prefer important information? <span class="hint">Optional</span></span><div class="choices">${radioChoices('info_preference',['Give me the data and let me analyze it','Give me the big picture first, details later','Walk me through it step by step','Tell me what you recommend and why',prefer],false)}</div></div>
 <div class="group"><span class="label">When important information is incomplete, what feels most natural? <span class="hint">Optional</span></span><div class="choices">${radioChoices('uncertainty_style',['Keep gathering information until the uncertainty is smaller','Identify the biggest unknowns, then decide if the remaining risk is acceptable','Talk it through until I understand how the uncertainty changes the choice','If the downside is survivable and it feels right, I can act without knowing everything',prefer],false)}</div></div>
 <div class="navrow"><button class="btn secondary back" type="button">Back</button><button class="btn primary next" type="button">Continue</button></div>
-<p class="footer-note skip-deeper-note">Parts about decision style, pressure, and disagreement are optional reflection. Skipping them does not reduce the quality of HBE representation or service. You can still answer them later with Continue.</p>
+<p class="footer-note skip-deeper-note">These decision-style, pressure, and disagreement pages are optional reflection. Skip jumps ahead to Part 6 (life behind the home). Skipping does not reduce the quality of HBE representation or service.</p>
 <div class="navrow skip-row"><button class="btn secondary skip-deeper" type="button" data-skip-to="5">Skip deeper optional questions</button></div>
 </section>
 
@@ -226,7 +222,7 @@ ${message ? `<div class="error">${esc(message)}</div>` : ''}
 <div class="group"><span class="label">You find a home you really like. There are three other offers and you have about 90 minutes to decide. What sounds most like you? <span class="hint">Optional</span></span><div class="choices">${radioChoices('offer_pressure',['I want every fact we can reasonably get before deciding','Give me the major risks and I can make the call','I need to talk it through with my partner or advisor first','If it feels right and the downside is survivable, I’m comfortable acting',prefer],false)}</div></div>
 <div class="group"><span class="label">Two homes cost about the same. One checks 90% of your boxes but feels ordinary. The other checks 70%, but you immediately love being there. Where do you naturally lean? <span class="hint">Optional</span></span><div class="choices">${radioChoices('head_heart',['Toward the 90% fit — the evidence matters more','Toward the 70% fit — how it feels matters more','I would want to understand exactly what the missing 30% means before choosing','I honestly would not know until I experienced both more fully',prefer],false)}</div></div>
 <div class="navrow"><button class="btn secondary back" type="button">Back</button><button class="btn primary next" type="button">Continue</button></div>
-<p class="footer-note skip-deeper-note">Parts about decision style, pressure, and disagreement are optional reflection. Skipping them does not reduce the quality of HBE representation or service. You can still answer them later with Continue.</p>
+<p class="footer-note skip-deeper-note">These decision-style, pressure, and disagreement pages are optional reflection. Skip jumps ahead to Part 6 (life behind the home). Skipping does not reduce the quality of HBE representation or service.</p>
 <div class="navrow skip-row"><button class="btn secondary skip-deeper" type="button" data-skip-to="5">Skip deeper optional questions</button></div>
 </section>
 
@@ -237,7 +233,7 @@ ${message ? `<div class="error">${esc(message)}</div>` : ''}
 <div class="group"><span class="label">Have you worked with a real estate professional before? <span class="hint">Optional</span></span><div class="choices">${radioChoices('past_experience',['Yes — great experience','Yes — mixed experience','Yes — negative experience','No — this is my first time',prefer],false)}</div></div>
 <div class="group"><label><span class="label">If there’s something from a past experience you want done differently this time, tell us. <span class="hint">Optional</span></span><textarea name="past_experience_detail"></textarea></label></div>
 <div class="navrow"><button class="btn secondary back" type="button">Back</button><button class="btn primary next" type="button">Continue</button></div>
-<p class="footer-note skip-deeper-note">Parts about decision style, pressure, and disagreement are optional reflection. Skipping them does not reduce the quality of HBE representation or service. You can still answer them later with Continue.</p>
+<p class="footer-note skip-deeper-note">These decision-style, pressure, and disagreement pages are optional reflection. Skip jumps ahead to Part 6 (life behind the home). Skipping does not reduce the quality of HBE representation or service.</p>
 <div class="navrow skip-row"><button class="btn secondary skip-deeper" type="button" data-skip-to="5">Skip deeper optional questions</button></div>
 </section>
 

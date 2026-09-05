@@ -58,14 +58,58 @@ test('refinePublicJourney wraps 17-stage map in progressive disclosure instead o
   assert.equal((twice.match(/id="public-journey-stages"/g) || []).length, 1);
 });
 
-test('questionnaire offers skip deeper optional path past personality blocks', () => {
+test('questionnaire skip deeper is only offered inside Parts 3–5 and jumps to Part 6', () => {
   const portal = read('src/portal-worker.js');
-  assert.match(portal, /skip-deeper/);
-  assert.match(portal, /Skip deeper optional questions/);
-  assert.match(portal, /data-skip-to="5"/);
-  assert.match(portal, /Skipping them does not reduce the quality/);
-  assert.match(portal, /Review &amp; Send to HomeBuyer Experts/);
-  assert.match(portal, /querySelectorAll\('\.skip-deeper'\)\.forEach/);
+  const steps = [...portal.matchAll(/<section class="step[^"]*"[^>]*>([\s\S]*?)<\/section>/g)].map(m => m[1]);
+  assert.equal(steps.length, 8, 'expected 8 questionnaire steps');
+  assert.match(steps[0], /Part 1/);
+  assert.match(steps[1], /Part 2/);
+  assert.match(steps[2], /Part 3/);
+  assert.match(steps[5], /Part 6/);
+
+  // Parts 1–2 stay on the normal Continue path (What matters is not skipped)
+  assert.doesNotMatch(steps[0], /skip-deeper|data-skip-to=/);
+  assert.doesNotMatch(steps[1], /skip-deeper|data-skip-to=/);
+
+  // Skip only once the buyer reaches the deeper reflection block
+  for (const i of [2, 3, 4]) {
+    assert.match(steps[i], /class="btn secondary skip-deeper"/);
+    assert.match(steps[i], /data-skip-to="5"/);
+    assert.equal((steps[i].match(/data-skip-to="5"/g) || []).length, 1);
+  }
+  // Part 6+ have no skip control
+  for (const i of [5, 6, 7]) {
+    assert.doesNotMatch(steps[i], /skip-deeper|data-skip-to=/);
+  }
+
+  assert.match(portal, /const target=Number\(b\.dataset\.skipTo\|\|5\);show\(target\)/);
+  assert.match(portal, /id="review-before-send"[^>]*type="button"[^>]*>Review &amp; Send to HomeBuyer Experts/);
+});
+
+test('every buyer-visible Review & Send control requires review before POST', () => {
+  const portal = read('src/portal-worker.js');
+  const issue33 = read('src/issue33-production-worker.js');
+  const ui = read('src/ui-worker.js');
+  const worker = read('src/worker.js');
+
+  // Live gated control
+  assert.match(
+    portal,
+    /<button class="btn primary" id="review-before-send" type="button">Review &amp; Send to HomeBuyer Experts<\/button>/
+  );
+  assert.doesNotMatch(portal, /type="submit"[^>]*>Review &amp; Send to HomeBuyer Experts</);
+
+  // Middleware rewrite target must also be gated (type=button + review-before-send)
+  assert.match(
+    issue33,
+    /id="review-before-send" type="button">Review &amp; Send to HomeBuyer Experts<\/button>/
+  );
+
+  // Dual-build direct-submit paths keep Send label (not Review & Send)
+  for (const [name, src] of [['ui-worker', ui], ['worker', worker]]) {
+    assert.doesNotMatch(src, /type="submit">Review &amp; Send to HomeBuyer Experts</, name);
+    assert.match(src, /type="submit">Send to HomeBuyer Experts</, name);
+  }
 });
 
 test('buyer-facing naming smoke: no stale Submit to HBE / Buyer Discovery Experience in touched surfaces', () => {
