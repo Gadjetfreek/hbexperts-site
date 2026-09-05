@@ -214,11 +214,11 @@ export function refinePublicJourney(text) {
 
   text = text.replace(
     'Your HomeBuyer journey, from first questions to keys.',
-    'You are here: Buyer Experience.'
+    'Buyer Experience'
   );
   text = text.replace(
     'Your HomeBuyer journey, from first questions to keys and beyond.',
-    'You are here: Buyer Experience.'
+    'Buyer Experience'
   );
   text = text.replace(
     '<div class="value-context"><strong>VALUE</strong><span>Values · Alternatives · Learning · Uncertainty · Evidence</span></div>',
@@ -227,7 +227,7 @@ export function refinePublicJourney(text) {
   return wrapPublicRoadmapInDisclosure(text);
 }
 
-/** Keep the 17-stage map via progressive disclosure instead of deleting it. */
+/** Keep the 17-stage map available in a details element instead of deleting it. */
 export function wrapPublicRoadmapInDisclosure(text) {
   const mapStart = text.indexOf('<div class="i29-map"');
   if (mapStart < 0) return text;

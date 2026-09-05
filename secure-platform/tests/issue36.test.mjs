@@ -79,7 +79,7 @@ test('buyer portal gets a focused Now Next Why Time layer while preserving expan
   const portal = '<!doctype html><html><head></head><body><main><div class="i29-map"><div class="i29-stop current"><strong>Consultation</strong></div></div><section class="i29-next"><div>What’s Next</div><h2>Highest priority right now</h2><strong>Schedule the strategy session</strong><small>Turn answers into understanding</small></section><section class="i29-story"></section><section class="i29-compass"></section><section class="i29-checklist"></section><section class="i29-comp"></section></main></body></html>';
   const html = addBuyerFirstClarity(portal, '/portal');
   assert.match(html, /buyer-portal-focus-script/);
-  assert.match(html, /YOU ARE HERE/);
+  assert.match(html, />NOW</);
   assert.match(html, /Best next step/);
   assert.match(html, /Why this matters/);
   assert.match(html, /Time/);
@@ -425,7 +425,7 @@ test('portal questionnaire privacy and submit copy use review/send verbs', () =>
   const portal = readFileSync(new URL('../src/portal-worker.js', import.meta.url), 'utf8');
   const privacy = portal.match(/class="privacy">[\s\S]*?<\/div>/)[0];
   const submitbox = portal.match(/class="submitbox">[\s\S]*?<\/div>/)[0];
-  assert.match(privacy, /review and send it to HomeBuyer Experts/);
+  assert.match(privacy, /Review &amp; Send to HomeBuyer Experts|review and send/i);
   assert.doesNotMatch(privacy, /press <strong>Submit to HBE<\/strong>/);
   assert.doesNotMatch(privacy, /Submit to HBE/);
   assert.match(submitbox, /Review &amp; Send to HomeBuyer Experts/);

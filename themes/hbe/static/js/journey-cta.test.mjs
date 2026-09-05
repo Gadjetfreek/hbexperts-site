@@ -27,7 +27,7 @@ test('public layouts use one Journey host CTA and do not deep-link private surfa
   assert.match(header, /Explore the Buyer Journey/);
   assert.match(header, /https:\/\/buyer\.hbexperts\.com\/"/);
   const partial = readFileSync(join(layoutsRoot, 'partials/journey-cta.html'), 'utf8');
-  assert.match(partial, /After you click/);
+  assert.match(partial, /Next you open HBE/);
   assert.match(partial, /before sharing personal information/);
   assert.match(partial, /deliberately review and send/);
   assert.doesNotMatch(joined, /Submit to HBE/);

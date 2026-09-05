@@ -11,20 +11,16 @@ faq:
   - question: "Can relocating buyers work with HBE from out of town?"
     answer: "Yes. Strategy conversations can happen by Zoom when in-person is not practical, and you can learn the process remotely before deciding whether representation fits."
   - question: "What is a Buyer Strategy Session?"
-    answer: "It is a complimentary, no-obligation conversation of about one hour that uses VALUE to clarify goals, alternatives, tradeoffs, uncertainty, and evidence before urgency takes over."
+    answer: "It is a complimentary, no-obligation conversation of about one hour that clarifies goals, options, tradeoffs, unknowns, and evidence before you rush."
 ---
 
 ## Relocating Is a Decision, Not Only a Search
 
-Moving to a new region adds distance, unfamiliar local rules, and more unknowns than a local purchase. Homes, municipalities, taxes, utilities, and daily logistics can differ across Northeast Ohio — and those differences matter more when you cannot casually drive neighborhoods every evening.
+Moving to a new region adds distance, unfamiliar local rules, and more unknowns than a local purchase. Homes, taxes, utilities, and daily logistics can differ across Northeast Ohio — and those differences matter more when you cannot drive neighborhoods every evening.
 
-HomeBuyer Experts (HBE) helps relocating buyers understand the decision they are making. We work **only for home buyers**, never for the seller, and we do not take listings. Our North Star is simple:
+HomeBuyer Experts (HBE) works **only for home buyers**, never for the seller, and does not take listings. We help you understand the choice you are making. That may mean buying — or changing the search, waiting, or not buying at all.
 
-> **What is best for the buyer?**
-
-That may mean buying. It may also mean changing the search, waiting, or not buying at all.
-
-You can [explore the Buyer Journey](https://buyer.hbexperts.com/) before sharing personal information with HBE.
+You can [Explore the Buyer Journey](https://buyer.hbexperts.com/) before sharing personal information with HBE.
 
 ---
 
@@ -38,15 +34,11 @@ When you hire HBE under a buyer-agency agreement, our fiduciary loyalty is to yo
 
 ### Remote-capable process
 
-Distance does not have to mean rushing into a transaction. You can:
+Distance does not mean you must rush. You can:
 
 - Explore the Buyer Journey online before sharing personal details
 - Use a complimentary [Buyer Strategy Session]({{< relref "strategy-session" >}}) by Zoom when in-person is not practical
-- Learn with VALUE — Values, Alternatives, Learning, Uncertainty, Evidence — so new facts can change the plan
-
-### Explore before you commit
-
-You do not need to register or share personal information to understand how HBE works. Start with the public Buyer Journey, then decide whether a Strategy Session or representation conversation is useful.
+- Keep options open as new facts appear — including waiting or walking away
 
 [Explore the Buyer Journey →](https://buyer.hbexperts.com/)
 
@@ -111,26 +103,13 @@ Cities, villages, and townships can differ on services, permitting, utilities, a
 
 ### Learning from afar without pressure
 
-Remote buyers often feel pressure to decide quickly because travel is expensive and inventory moves. A better pattern:
-
-1. Clarify what the move must accomplish (values and constraints)
-2. Learn the process and your alternatives before urgency peaks
-3. Use structured remote conversations and documented findings
-4. Keep the option to wait, renegotiate, or walk away visible
-
-HBE’s role is to improve decision quality — not to manufacture urgency.
+Travel is expensive and homes move. Still, you do not have to decide under manufactured urgency. Clarify what the move must accomplish, learn the process and your options, use remote conversations and documented findings, and keep waiting, renegotiating, or walking away visible.
 
 ---
 
 ## Clear Buyer-Only Distinction
 
-| Many market experiences | HomeBuyer Experts |
-| --- | --- |
-| Brokerage may list homes or serve sellers | HBE works only for home buyers; no listings |
-| Access to properties can be mistaken for advocacy | Advocacy means loyalty, evidence, and protected decision quality |
-| Momentum can push toward closing | North Star: what is best for the buyer? |
-
-Finding homes is not the same as representation. Representation means understanding what matters to you, researching alternatives, surfacing risk and uncertainty, negotiating strategically, and protecting your leverage and confidentiality under a buyer-agency relationship.
+Finding homes is not the same as representation. HBE works only for home buyers, does not take listings, and does not represent sellers. Representation means understanding what matters to you, researching alternatives, surfacing risk, negotiating carefully, and protecting your leverage under a buyer-agency relationship.
 
 [Buyer representation overview →]({{< relref "buyer-representation" >}})
 
@@ -159,7 +138,7 @@ See the full process before sharing personal information with HBE.
 - [Schedule context: Buyer Strategy Session]({{< relref "strategy-session" >}}) — complimentary, no obligation, about one hour; Zoom available
 - [Moving to Akron buyer guide]({{< relref "moving-to-akron" >}}) — Akron / Summit County questions without rankings
 - [Exclusive buyer representation]({{< relref "buyer-representation" >}}) — how loyalty and advocacy work
-- [VALUE]({{< relref "value" >}}) — the decision-support framework used throughout the journey
+- [VALUE]({{< relref "value" >}}) — the plain checklist we use throughout the journey
 - [Contact]({{< relref "contact" >}}) — phone and email if you prefer a direct conversation
 
 ---
@@ -182,7 +161,7 @@ Yes. Strategy conversations can happen by Zoom when in-person is not practical, 
 
 ### What is a Buyer Strategy Session?
 
-It is a complimentary, no-obligation conversation of about one hour that uses VALUE to clarify goals, alternatives, tradeoffs, uncertainty, and evidence before urgency takes over.
+It is a complimentary, no-obligation conversation of about one hour that clarifies goals, options, tradeoffs, unknowns, and evidence before you rush.
 
 [Learn about the Strategy Session →]({{< relref "strategy-session" >}})
 
