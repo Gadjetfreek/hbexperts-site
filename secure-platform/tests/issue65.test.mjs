@@ -14,21 +14,24 @@ function read(rel) {
   return readFileSync(join(root, rel), 'utf8');
 }
 
-test('public journey first view emphasizes You are here / next / why / time / resume', () => {
+test('public journey first view is lean: title, one line, two CTAs, trust line, stages', () => {
   const ui = read('src/ui-worker.js');
-  assert.match(ui, /YOU ARE HERE|You are here/i);
-  assert.match(ui, /What happens next/i);
-  assert.match(ui, /Start My Buyer Experience/);
-  assert.match(ui, /Review &amp; Send to HomeBuyer Experts/);
-  assert.match(ui, /Open my Buyer Portal/);
-  assert.match(ui, /<details[\s\S]*See all 17 stages/);
-  assert.match(ui, /pause anytime|come back/i);
-  assert.doesNotMatch(ui, /Begin the Buyer Experience/);
-  assert.doesNotMatch(ui, /Start the Experience(?!\.)/);
-  assert.doesNotMatch(ui, /Open my BuyerUI/);
+  const explorer = ui.slice(ui.indexOf('function explorer()'), ui.indexOf('function page(body)'));
+  assert.match(explorer, /<h1>Buyer Journey<\/h1>/);
+  assert.match(explorer, /See how HBE works\. Start when you/);
+  assert.match(explorer, /href="\/questionnaire">Start My Buyer Experience</);
+  assert.match(explorer, /href="\/login">Open my Buyer Portal</);
+  assert.match(explorer, /Nothing is sent until you review and send it/);
+  assert.match(explorer, /<details[\s\S]*See all 17 stages/);
+  assert.doesNotMatch(explorer, /START HERE|What this is|buyer-focus-card|buyer-focus-grid/);
+  assert.doesNotMatch(explorer, /What happens next|Pause anytime|Come back later/i);
+  assert.doesNotMatch(explorer, /Begin the Buyer Experience/);
+  assert.doesNotMatch(explorer, /Open my BuyerUI/);
+  assert.doesNotMatch(explorer, /does not have to dominate/i);
+  assert.doesNotMatch(explorer, /YOU ARE HERE|You are here/i);
 });
 
-test('refinePublicJourney wraps 17-stage map in progressive disclosure instead of deleting it', () => {
+test('refinePublicJourney wraps 17-stage map in details instead of deleting it', () => {
   const map = stageMapHtml({
     currentStage: 'buyerExperience',
     completed: [],
@@ -50,8 +53,10 @@ test('refinePublicJourney wraps 17-stage map in progressive disclosure instead o
   assert.equal((refined.match(/class="i29-stop /g) || []).length, 17);
   assert.match(refined, /Start My Buyer Experience/);
   assert.match(refined, /Open my Buyer Portal/);
+  assert.match(refined, /Buyer Experience/);
   assert.doesNotMatch(refined, /Begin the Buyer Experience/);
   assert.doesNotMatch(refined, /Open my BuyerUI/);
+  assert.doesNotMatch(refined, /You are here/i);
 
   // Idempotent wrap
   const twice = wrapPublicRoadmapInDisclosure(refined);
@@ -143,14 +148,15 @@ test('buyer-facing naming smoke: no stale Submit to HBE / Buyer Discovery Experi
   assert.match(strategy, /Review & Send to HomeBuyer Experts/);
 });
 
-test('VALUE page includes anonymized demonstration section', () => {
+test('VALUE page includes one anonymized illustrative example', () => {
   const value = readFileSync(join(repoRoot, 'content/value.md'), 'utf8');
-  assert.match(value, /VALUE in Practice/);
-  assert.match(value, /Illustrative/);
-  assert.match(value, /Scenario A/);
-  assert.match(value, /Scenario B/);
-  assert.match(value, /not.*testimonials|not client stories/i);
+  assert.match(value, /Illustrative|illustrative/);
+  assert.match(value, /One Example|example/i);
+  assert.match(value, /not.*testimonials|not.*client story/i);
   assert.doesNotMatch(value, /finishes in \d+ minutes/i);
+  assert.doesNotMatch(value, /Scenario B/);
+  assert.doesNotMatch(value, /What VALUE Is Not/);
+  assert.doesNotMatch(value, /decision-support practice/i);
 });
 
 test('homepage keeps one clear primary Journey CTA ahead of secondary VALUE link', () => {
@@ -162,6 +168,9 @@ test('homepage keeps one clear primary Journey CTA ahead of secondary VALUE link
   assert.ok(primaryAt < secondaryAt, 'primary Journey CTA should appear before secondary VALUE link');
   assert.match(hero, /Explore the Buyer Journey/);
   assert.doesNotMatch(hero, /questionnaire/);
+  assert.doesNotMatch(index, /Agency Before Urgency/);
+  assert.doesNotMatch(index, /Buyer Advantage/);
+  assert.doesNotMatch(index, /consequential decision/i);
 });
 
 test('portal focus script still discloses full roadmap after current/next', () => {
@@ -169,6 +178,7 @@ test('portal focus script still discloses full roadmap after current/next', () =
     '<!doctype html><html><head></head><body><main><div class="i29-map"><div class="i29-stop current"><strong>Consultation</strong></div></div><section class="i29-next"><strong>Schedule the strategy session</strong><small>Turn answers into understanding</small></section></main></body></html>',
     '/portal'
   );
-  assert.match(html, /YOU ARE HERE/);
+  assert.match(html, />NOW</);
   assert.match(html, /See the full 17-stage journey/);
+  assert.doesNotMatch(html, /full journey is here when you want context/i);
 });
