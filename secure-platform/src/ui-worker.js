@@ -26,33 +26,34 @@ const THEME = `<style>
 @media(max-width:760px){.wrap{padding:2rem 1.25rem 4rem}.grid2,.choices,.actions{grid-template-columns:1fr}.map{grid-template-columns:repeat(2,minmax(0,1fr))}.site-header-inner{padding:1rem 1.25rem}.stagepeek{left:0;transform:translate(0,8px)}.mapstop:hover .stagepeek,.mapstop:focus .stagepeek,.mapstop:focus-visible .stagepeek,.mapstop:focus-within .stagepeek,.mapstop.open .stagepeek{transform:translate(0,0)}}
 @media(max-width:480px){.map{grid-template-columns:1fr}}
 
-.journey-hero{padding:2.25rem 1.5rem 1rem}
-.journey-hero .hero-inner{max-width:36rem}
+.journey-hero{padding:2.25rem 1.5rem 1rem;text-align:center}
+.journey-hero .hero-inner{max-width:36rem;margin-inline:auto}
 .journey-hero h1{display:flex;align-items:center;justify-content:center;gap:.55rem;margin:.35rem 0 .5rem}
-.journey-hero .lede{margin:.5rem auto 0;max-width:28rem}
+.journey-hero .lede{margin:.5rem auto 0;max-width:28rem;text-align:center}
 .journey-icon{flex:0 0 auto;width:1.35rem;height:1.35rem;color:var(--accent)}
-.journey-landing{max-width:40rem;margin:auto;padding:1.25rem 1.5rem 4rem;display:flex;flex-direction:column;align-items:center;gap:1.35rem}
-.journey-landing>.buyer-first-core,
-.journey-landing>.value-context,
-.journey-landing>.i29-comp,
-.journey-landing>.journey-action,
-.journey-landing>.public-journey-stages{width:100%;max-width:22rem;margin-left:auto;margin-right:auto;box-sizing:border-box}
-.journey-landing>.value-context{justify-content:center;text-align:center;margin-top:0}
-.journey-landing>.buyer-first-core{max-width:36rem;text-align:center}
-.journey-landing>.i29-comp{max-width:36rem}
-.journey-landing>.public-journey-stages{max-width:40rem}
-.journey-action{display:flex;flex-direction:column;align-items:center;gap:.85rem;text-align:center}
-.journey-action .btn{width:100%;max-width:22rem;min-height:48px;gap:.45rem}
+main.wrap.journey-landing{max-width:40rem;margin-inline:auto;padding:1.25rem 1.5rem 4rem;display:flex;flex-direction:column;align-items:center;gap:1.35rem;text-align:center}
+main.wrap.journey-landing>.buyer-first-core,
+main.wrap.journey-landing>.value-context,
+main.wrap.journey-landing>.value-context.hbe-value-public,
+main.wrap.journey-landing>.i29-comp,
+main.wrap.journey-landing>.journey-action,
+main.wrap.journey-landing>.public-journey-stages{width:min(36rem,100%);max-width:36rem;margin-inline:auto;box-sizing:border-box}
+main.wrap.journey-landing>.journey-action{width:min(22rem,100%);max-width:22rem}
+main.wrap.journey-landing>.value-context,
+main.wrap.journey-landing>.value-context.hbe-value-public{display:flex;justify-content:center;align-items:baseline;flex-wrap:wrap;text-align:center;margin-top:0}
+main.wrap.journey-landing>.buyer-first-core{text-align:center;margin-top:0}
+main.wrap.journey-landing>.public-journey-stages{width:min(40rem,100%);max-width:40rem;text-align:left}
+.journey-action{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.85rem;text-align:center;margin-inline:auto}
+.journey-action .btn{display:inline-flex;justify-content:center;align-items:center;width:100%;min-height:48px;gap:.45rem;margin-inline:auto;box-sizing:border-box}
 .journey-action .btn svg{width:1.05rem;height:1.05rem;flex:0 0 auto}
-.journey-trust{margin:0;color:var(--muted);font-size:.92rem;line-height:1.45;max-width:22rem}
-.journey-stages-summary{display:flex;align-items:center;justify-content:center;gap:.45rem;cursor:pointer;list-style:none;font-weight:700;color:var(--navy,#1a1a2e);padding:.65rem 0}
+.journey-trust{margin:0;color:var(--muted);font-size:.92rem;line-height:1.45;max-width:22rem;text-align:center}
+.journey-stages-summary{display:flex;align-items:center;justify-content:center;gap:.45rem;cursor:pointer;list-style:none;font-weight:700;color:var(--navy,#1a1a2e);padding:.65rem 0;text-align:center}
 .journey-stages-summary::-webkit-details-marker{display:none}
-.public-journey-stages.buyer-more{border:1px solid var(--border);border-radius:12px;background:#fff;overflow:hidden;width:100%}
+.public-journey-stages.buyer-more{border:1px solid var(--border);border-radius:12px;background:#fff;overflow:hidden}
 .public-journey-stages .buyer-more-body{padding:0 1rem 1rem}
 @media(max-width:600px){
   .journey-hero{padding:1.75rem 1.15rem .75rem}
-  .journey-landing{padding:1rem 1.15rem 3.5rem;gap:1.15rem}
-  .journey-landing>.buyer-first-core{max-width:100%;text-align:left}
+  main.wrap.journey-landing{padding:1rem 1.15rem 3.5rem;gap:1.15rem}
 }
 </style>`;
 

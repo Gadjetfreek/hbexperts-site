@@ -37,3 +37,16 @@ test('THEME includes journey layout CSS for centered hierarchy', () => {
   assert.match(theme, /align-items:center/);
   assert.match(theme, /min-height:48px/);
 });
+
+test('desktop centering uses margin-inline auto and late layout CSS', () => {
+  const theme = ui.slice(ui.indexOf('const THEME'), ui.indexOf('const HEADER'));
+  assert.match(theme, /main\.wrap\.journey-landing/);
+  assert.match(theme, /margin-inline:auto/);
+  assert.match(theme, /width:min\(22rem,100%\)/);
+  assert.doesNotMatch(theme, /journey-landing>\.journey-action\{width:100%/);
+
+  const i33 = readFileSync(join(root, 'src/issue33-production-worker.js'), 'utf8');
+  assert.match(i33, /id="journey-landing-layout"/);
+  assert.match(i33, /align-items:center!important/);
+  assert.match(i33, /pathname === '\/'/);
+});

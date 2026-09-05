@@ -168,6 +168,16 @@ function ensureQxOrientClass(html) {
   return html.replace(/\bclass="([^"]*)"/i, 'class="$1 qx-page1-orient"');
 }
 
+export const JOURNEY_LANDING_LAYOUT_CSS = `<style id="journey-landing-layout">
+main.wrap.journey-landing{display:flex!important;flex-direction:column!important;align-items:center!important;text-align:center;max-width:40rem;margin-left:auto!important;margin-right:auto!important}
+main.wrap.journey-landing>.journey-action{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center;width:min(22rem,100%)!important;max-width:22rem!important;margin-left:auto!important;margin-right:auto!important;text-align:center}
+main.wrap.journey-landing>.journey-action .btn{width:100%!important;max-width:22rem;margin-left:auto;margin-right:auto;justify-content:center}
+main.wrap.journey-landing>.buyer-first-core,
+main.wrap.journey-landing>.value-context,
+main.wrap.journey-landing>.value-context.hbe-value-public{margin-left:auto!important;margin-right:auto!important;max-width:36rem;text-align:center;justify-content:center}
+main.wrap.journey-landing>.public-journey-stages{width:min(40rem,100%);max-width:40rem;margin-left:auto!important;margin-right:auto!important}
+</style>`;
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -217,6 +227,9 @@ export default {
 
     if (request.method === 'GET' && response.status === 200) {
       text = addBuyerFirstClarity(text, url.pathname);
+      if (url.pathname === '/' && !text.includes('id="journey-landing-layout"')) {
+        text = text.includes('</head>') ? text.replace('</head>', `${JOURNEY_LANDING_LAYOUT_CSS}</head>`) : text;
+      }
       if (url.pathname === '/questionnaire') {
         text = confineOrientationCardsToPage1(text);
       }
