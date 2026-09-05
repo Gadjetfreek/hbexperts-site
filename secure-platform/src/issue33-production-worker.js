@@ -9,6 +9,7 @@ export const BUYER_FIRST_CSS = `<style id="buyer-first-clarity">
 .buyer-answer-help{display:block;margin:.4rem 0 .15rem;color:#5f625f;font-size:.86rem;line-height:1.45}.buyer-answer-help strong{color:#2d5a3d}.buyer-suggestions{display:flex;flex-wrap:wrap;gap:.4rem;margin:.45rem 0 .7rem}.buyer-suggestion{appearance:none;border:1px solid #cad8ce;background:#fff;color:#2d5a3d;border-radius:999px;padding:.38rem .62rem;font:inherit;font-size:.8rem;font-weight:700;cursor:pointer}.buyer-suggestion:hover,.buyer-suggestion:focus-visible{background:#edf6f0;outline:2px solid rgba(45,90,61,.24);outline-offset:1px}
 .buyer-focus-card{background:#fff;border:1px solid #dfe8e2;border-radius:14px;padding:1.2rem 1.25rem;margin:1rem 0 1.15rem;box-shadow:0 8px 26px rgba(26,26,46,.05)}.buyer-focus-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.7rem;margin-top:.9rem}.buyer-focus-grid>div{background:#faf9f6;border-radius:10px;padding:.8rem}.buyer-focus-grid small{display:block;color:#6b6b6b;font-size:.68rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.2rem}.buyer-focus-grid strong{color:#1a1a2e;line-height:1.35}.buyer-focus-card h1{font:600 clamp(1.5rem,4vw,2.05rem) Georgia,serif;color:#1a1a2e;margin:.2rem 0}.buyer-focus-card p{margin:.35rem 0;color:#555;line-height:1.5}.buyer-more{background:#fff;border:1px solid #e8e5e0;border-radius:12px;margin:.8rem 0;overflow:hidden}.buyer-more>summary{cursor:pointer;padding:1rem 1.05rem;font-weight:850;color:#1a1a2e;list-style:none}.buyer-more>summary::-webkit-details-marker{display:none}.buyer-more>summary:after{content:'+';float:right;color:#2d5a3d;font-size:1.2rem}.buyer-more[open]>summary:after{content:'–'}.buyer-more-body{padding:0 1rem 1rem}.buyer-focus-card+.i29-next{margin-top:0}.buyer-focus-card+.i29-next h2{font-size:1.05rem}.buyer-focus-card+.i29-next>strong{font-size:1.35rem}.buyer-focus-card+.i29-next .i29-tasks{display:none}
 @media(max-width:760px){.buyer-focus-grid{grid-template-columns:1fr 1fr}}@media(max-width:600px){.buyer-review{padding:1rem}.buyer-review-actions{display:grid;grid-template-columns:1fr}.buyer-review-actions button{width:100%}.buyer-focus-grid{grid-template-columns:1fr}.buyer-focus-card{padding:1rem}}
+.qx-page1-orient{margin:0 0 1rem}.step .buyer-first-core.qx-page1-orient{max-width:none;margin:0 0 1rem}.step .value-context.qx-page1-orient{max-width:none;margin:0 0 .85rem}.step .i29-comp.qx-page1-orient{margin:0 0 1.15rem}
 </style>`;
 
 export const BUYER_FIRST_JS = `<script id="buyer-first-review-script">
@@ -119,6 +120,54 @@ export function addBuyerFirstClarity(text, pathname) {
   return text;
 }
 
+
+/**
+ * Move orientation education cards into questionnaire page 1 only.
+ * Cards currently injected after <main> / before </main> stay visible on every
+ * multi-step Continue; confining them to the first .step hides them on pages 2–8.
+ * Idempotent: safe if already confined or if form/steps are missing.
+ */
+export function confineOrientationCardsToPage1(text) {
+  if (!text || typeof text !== 'string') return text;
+
+  const extracted = [];
+
+  const take = (re) => {
+    const match = text.match(re);
+    if (!match) return null;
+    text = text.replace(match[0], '');
+    return match[0];
+  };
+
+  // Public VALUE line only (not portal/HBE panels).
+  const value = take(/<div\b(?=[^>]*\bclass="[^"]*\bvalue-context\b)(?![^>]*\bvalue-portal-panel\b)[^>]*>[\s\S]*?<\/div>/i);
+  const buyer = take(/<div\b(?=[^>]*\bclass="[^"]*\bbuyer-first-core\b)[^>]*>[\s\S]*?<\/div>/i);
+  const comp = take(/<section\b(?=[^>]*\bid="compensation-note")[^>]*>[\s\S]*?<\/section>/i);
+
+  // Preferred keep order: buyer-first → VALUE → compensation
+  if (buyer) extracted.push(ensureQxOrientClass(buyer));
+  if (value) extracted.push(ensureQxOrientClass(value));
+  if (comp) extracted.push(ensureQxOrientClass(comp));
+
+  if (!extracted.length) return text;
+
+  const block = extracted.join('');
+  const stepOpen = text.match(/<section\b[^>]*\bclass="[^"]*\bstep\b[^"]*"[^>]*>/i);
+  if (!stepOpen) {
+    // Graceful fallback: restore near <main> so cards are not deleted.
+    if (text.includes('<main')) return text.replace(/(<main[^>]*>)/i, `$1${block}`);
+    return text.replace(/<body([^>]*)>/i, `<body$1>${block}`);
+  }
+
+  // Extract-then-reinject is idempotent even when cards were already inside page 1.
+  return text.replace(stepOpen[0], `${stepOpen[0]}${block}`);
+}
+
+function ensureQxOrientClass(html) {
+  if (/\bqx-page1-orient\b/.test(html)) return html;
+  return html.replace(/\bclass="([^"]*)"/i, 'class="$1 qx-page1-orient"');
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -168,6 +217,9 @@ export default {
 
     if (request.method === 'GET' && response.status === 200) {
       text = addBuyerFirstClarity(text, url.pathname);
+      if (url.pathname === '/questionnaire') {
+        text = confineOrientationCardsToPage1(text);
+      }
     }
 
     if (!text.includes('id="issue33-bimatrix-css"')) {
