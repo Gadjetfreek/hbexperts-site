@@ -157,6 +157,41 @@ Technology can organize the evidence and keep the reasoning visible. HBE can pro
 
 ---
 
+---
+
+## VALUE in Practice (Illustrative)
+
+These are anonymized, illustrative scenarios of how the VALUE questions are used in a decision process. They are **not** client stories, testimonials, reviews, or claimed outcomes.
+
+### Scenario A — Values vs alternatives when two homes trade off
+
+Two options look similar in price. Home A scores higher on a written checklist. Home B feels better in person but asks you to give up something you said mattered.
+
+VALUE keeps both sides visible:
+
+- **Values** — which priorities are still fundamental after seeing both?
+- **Alternatives** — is there a third path (another property, different terms, waiting)?
+- **Learning** — what did walking through each home teach that the listing did not?
+- **Uncertainty** — what still unknown could change the ranking?
+- **Evidence** — what facts support each tradeoff without pretending feeling is irrelevant?
+
+The point is not to declare a winner in advance. It is to make the tradeoff explicit before momentum chooses for you.
+
+### Scenario B — Evidence changing a plan
+
+A draft plan assumes a certain neighborhood, timeline, or property type. New information appears — a comparable sale, an inspection theme, financing detail, or something noticed on a second visit.
+
+VALUE returns to the same questions:
+
+- Did any **value** become more or less important because of what you learned?
+- Which **alternatives** remain open now that were easy to ignore before?
+- What does this **learning** change about the next useful step?
+- Which **uncertainty** still matters enough to investigate?
+- What **evidence** should change the recommendation — including the option to pause or walk away?
+
+Again, no invented result: the framework is how the conversation stays honest when facts change.
+
+
 ## The Standard Behind VALUE
 
 HomeBuyer Experts' North Star remains:

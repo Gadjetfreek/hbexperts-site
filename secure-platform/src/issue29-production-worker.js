@@ -74,6 +74,32 @@ const PUBLIC_JOURNEY_CSS = `<style id="hbe-public-journey-refine">
 .value-context.hbe-value-public .hbe-value-word{display:block;font-weight:900}
 .value-context.hbe-value-public span{font-size:.9rem}
 .value-context.hbe-value-public span b{font-weight:900;color:#2d5a3d}
+.public-journey-stages{margin:1.25rem 0 0}
+.public-journey-stages>summary{
+  cursor:pointer;
+  list-style:none;
+  font-weight:850;
+  color:#1a1a2e;
+  padding:1rem 1.05rem;
+  border:1px solid #e8e5e0;
+  border-radius:12px;
+  background:#fff;
+}
+.public-journey-stages>summary::-webkit-details-marker{display:none}
+.public-journey-stages>summary:focus-visible{outline:3px solid rgba(45,90,61,.28);outline-offset:2px}
+.public-journey-stages>summary:after{content:'+';float:right;color:#2d5a3d;font-size:1.2rem}
+.public-journey-stages[open]>summary{border-radius:12px 12px 0 0;border-bottom-color:transparent}
+.public-journey-stages[open]>summary:after{content:'–'}
+.public-journey-stages .buyer-more-body{
+  border:1px solid #e8e5e0;
+  border-top:0;
+  border-radius:0 0 12px 12px;
+  padding:.25rem 1rem 1rem;
+  background:#faf9f6;
+}
+@media(max-width:560px){
+  .public-journey-stages>summary{padding:.9rem .85rem}
+}
 </style>`;
 
 const MOBILE_UX_JS = `<script id="hbe-mobile-popup-stability">
@@ -179,24 +205,41 @@ export default {
   }
 };
 
-function refinePublicJourney(text) {
+export function refinePublicJourney(text) {
+  text = text
+    .replaceAll('Begin the Buyer Experience', 'Start My Buyer Experience')
+    .replaceAll('Start the Buyer Experience', 'Start My Buyer Experience')
+    .replaceAll('Start the Experience', 'Start My Buyer Experience')
+    .replaceAll('Open my BuyerUI', 'Open my Buyer Portal');
+
   text = text.replace(
     'Your HomeBuyer journey, from first questions to keys.',
-    'Your HomeBuyer journey, from first questions to keys and beyond.'
+    'You are here: Buyer Experience.'
+  );
+  text = text.replace(
+    'Your HomeBuyer journey, from first questions to keys and beyond.',
+    'You are here: Buyer Experience.'
   );
   text = text.replace(
     '<div class="value-context"><strong>VALUE</strong><span>Values · Alternatives · Learning · Uncertainty · Evidence</span></div>',
     PUBLIC_VALUE
   );
-  return removeDuplicatePublicRoadmap(text);
+  return wrapPublicRoadmapInDisclosure(text);
 }
 
-function removeDuplicatePublicRoadmap(text) {
+/** Keep the 17-stage map via progressive disclosure instead of deleting it. */
+export function wrapPublicRoadmapInDisclosure(text) {
   const mapStart = text.indexOf('<div class="i29-map"');
   if (mapStart < 0) return text;
 
+  // Already wrapped (idempotent).
+  const before = text.slice(Math.max(0, mapStart - 280), mapStart);
+  if (/public-journey-stages|See all 17 stages/i.test(before)) {
+    return text;
+  }
+
   const actionsStart = text.indexOf('<div class="actions">', mapStart);
-  if (actionsStart < 0) return text;
+  const searchLimit = actionsStart > 0 ? actionsStart : text.length;
 
   const divTag = /<\/?div\b[^>]*>/g;
   divTag.lastIndex = mapStart;
@@ -204,16 +247,22 @@ function removeDuplicatePublicRoadmap(text) {
   let mapEnd = -1;
   let match;
 
-  while ((match = divTag.exec(text)) && match.index < actionsStart) {
+  while ((match = divTag.exec(text)) && match.index < searchLimit) {
     if (match[0].startsWith('</div')) depth -= 1;
     else depth += 1;
-
     if (depth === 0) {
       mapEnd = divTag.lastIndex;
       break;
     }
   }
 
-  if (mapEnd < 0 || mapEnd >= actionsStart) return text;
-  return `${text.slice(0, mapEnd)}${text.slice(actionsStart)}`;
+  if (mapEnd < 0) return text;
+
+  const mapHtml = text.slice(mapStart, mapEnd);
+  const wrapped = `<details class="buyer-more public-journey-stages" id="public-journey-stages"><summary>See all 17 stages</summary><div class="buyer-more-body">${mapHtml}</div></details>`;
+
+  // Drop leftover legacy map fragments between i29-map and actions (or insert in place).
+  const insertAt = actionsStart > 0 ? actionsStart : mapEnd;
+  return `${text.slice(0, mapStart)}${wrapped}${text.slice(insertAt)}`;
 }
+

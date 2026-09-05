@@ -26,7 +26,7 @@ test('questionnaire adds plain-English buyer-only explanation', () => {
 
 test('questionnaire requires review before final submission', () => {
   const html = addBuyerFirstClarity(questionnaire, '/questionnaire');
-  assert.match(html, /Review before sending/);
+  assert.match(html, /Review &amp; Send to HomeBuyer Experts/);
   assert.match(html, /Here is what HBE will receive/);
   assert.match(html, /Back and edit/);
   assert.match(html, /Send to HomeBuyer Experts/);
@@ -428,27 +428,31 @@ test('portal questionnaire privacy and submit copy use review/send verbs', () =>
   assert.match(privacy, /review and send it to HomeBuyer Experts/);
   assert.doesNotMatch(privacy, /press <strong>Submit to HBE<\/strong>/);
   assert.doesNotMatch(privacy, /Submit to HBE/);
-  assert.match(submitbox, /Review before sending/);
+  assert.match(submitbox, /Review &amp; Send to HomeBuyer Experts/);
   assert.doesNotMatch(submitbox, /Submit to HBE/);
   assert.match(portal, /id="review-before-send"/);
 
   const ui = readFileSync(new URL('../src/ui-worker.js', import.meta.url), 'utf8');
-  const explorer = ui.match(/function explorer\(\)\{[\s\S]*?Start the Experience/)[0];
-  assert.match(explorer, /review and send them to HomeBuyer Experts/);
-  assert.doesNotMatch(explorer, /Submit to HBE/);
+  assert.match(ui, /Start My Buyer Experience/);
+  assert.match(ui, /Review &amp; Send to HomeBuyer Experts/);
+  assert.match(ui, /Open my Buyer Portal/);
+  assert.match(ui, /See all 17 stages/);
+  assert.doesNotMatch(ui, /Submit to HBE/);
+  assert.doesNotMatch(ui, /Begin the Buyer Experience/);
+  assert.doesNotMatch(ui, /Start the Experience(?!\.)/);
 
   const worker = readFileSync(new URL('../src/worker.js', import.meta.url), 'utf8');
-  const workerExplorer = worker.match(/function explorer\(\)\{[\s\S]*?Start the Buyer Experience/)[0];
+  const workerExplorer = worker.match(/function explorer\(\)\{[\s\S]*?Start My Buyer Experience/)[0];
   assert.match(workerExplorer, /review and send them to HomeBuyer Experts/);
   assert.doesNotMatch(workerExplorer, /Submit to HBE/);
 
   const html = addBuyerFirstClarity(questionnaire, '/questionnaire');
-  assert.match(html, /Review before sending/);
+  assert.match(html, /Review &amp; Send to HomeBuyer Experts|Review before sending/);
   assert.match(html, /Send to HomeBuyer Experts/);
   assert.doesNotMatch(html, />Submit to HBE<\/button>/);
 
   const live = addBuyerFirstClarity(portal.match(/return `<!doctype html>[\s\S]*?<\/html>`/)[0], '/questionnaire');
-  assert.match(live, /Review before sending/);
+  assert.match(live, /Review &amp; Send to HomeBuyer Experts/);
   assert.match(live, /Send to HomeBuyer Experts/);
   assert.doesNotMatch(live, />Submit to HBE<\/button>/);
   const livePrivacy = live.match(/class="privacy">[\s\S]*?<\/div>/)[0];

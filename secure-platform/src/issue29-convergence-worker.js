@@ -407,13 +407,35 @@ async function enhanceBuyerPortal(request, env, url, text) {
 function enhancePublic(text, pathname) {
   if (pathname === '/') {
     const map = stageMapHtml({ currentStage: 'buyerExperience', completed: [], actor: { kind: 'buyer' }, hrefFor: id => `/#stage-${id}` });
-    if (text.includes('class="map"')) text = text.replace(/<div class="map"[\s\S]*?<\/div>/, map);
+    text = replaceFirstMapDiv(text, map);
     text = injectBeforeMainEnd(text, compensationPublicHtml() + ISSUE29_JS);
   }
   if (pathname === '/questionnaire' || pathname === '/login') {
     text = injectBeforeMainEnd(text, compensationPublicHtml());
   }
   return text;
+}
+
+/** Replace the first nested <div class="map">…</div> using tag-depth counting. */
+function replaceFirstMapDiv(text, replacement) {
+  const needle = '<div class="map"';
+  const mapStart = text.indexOf(needle);
+  if (mapStart < 0) return text;
+  const divTag = /<\/?div\b[^>]*>/gi;
+  divTag.lastIndex = mapStart;
+  let depth = 0;
+  let mapEnd = -1;
+  let match;
+  while ((match = divTag.exec(text))) {
+    if (match[0].startsWith('</')) depth -= 1;
+    else depth += 1;
+    if (depth === 0) {
+      mapEnd = divTag.lastIndex;
+      break;
+    }
+  }
+  if (mapEnd < 0) return text;
+  return `${text.slice(0, mapStart)}${replacement}${text.slice(mapEnd)}`;
 }
 
 function isThankYouPage(text) {
