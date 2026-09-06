@@ -59,12 +59,37 @@ test('buyer / and /questionnaire return 200 with no-store / noindex', async () =
   const html = await q.text();
   assert.match(html, /id="buyerExperienceForm"/);
   assert.match(html, /Review before sending|Send to HomeBuyer Experts/);
+  assert.match(html, /only for home buyers/);
+  assert.match(html, /class="value-context/);
+  assert.match(html, /id="compensation-note"/);
 });
 
 test('unauthenticated /portal redirects to login', async () => {
   const res = await get('/portal');
   assert.equal(res.status, 303);
   assert.equal(res.headers.get('location'), '/login');
+});
+
+test('production entrypoint keeps the root lean after every response wrapper', async () => {
+  const res = await get('/');
+  const html = await res.text();
+  assert.equal(res.status, 200);
+  assert.match(html, /<main class="wrap journey-landing"><div class="journey-action">/);
+  assert.match(html, /See how HBE works\. Start when you/);
+  assert.match(html, /Nothing is sent until you review and send it\./);
+  assert.equal((html.match(/Start My Buyer Experience/g) || []).length, 1);
+  assert.equal((html.match(/Open my Buyer Portal/g) || []).length, 1);
+  assert.doesNotMatch(html, /class="buyer-first-core|class="value-context/);
+  const disclosure = html.match(/<details\b[^>]*id="public-journey-stages"[^>]*>[\s\S]*?<\/details>/)?.[0];
+  assert.ok(disclosure, 'roadmap remains in one collapsed disclosure');
+  assert.doesNotMatch(disclosure.split('>')[0], /\bopen\b/);
+  assert.equal((html.match(/id="public-journey-stages"/g) || []).length, 1);
+  assert.equal((disclosure.match(/data-i29-stop data-stage=/g) || []).length, 17);
+  assert.match(disclosure, /id="compensation-note"/);
+  assert.match(disclosure, /Compensation is negotiable\./);
+  assert.match(disclosure, /Seller-paid compensation is not automatic or guaranteed\./);
+  assert.equal((html.match(/id="compensation-note"/g) || []).length, 1);
+  assert.match(html, /id="journey-landing-layout"/);
 });
 
 test('/hbe without Access JWT fails closed', async () => {
