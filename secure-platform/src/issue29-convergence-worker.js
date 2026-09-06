@@ -406,9 +406,10 @@ async function enhanceBuyerPortal(request, env, url, text) {
 
 function enhancePublic(text, pathname) {
   if (pathname === '/') {
-    const map = stageMapHtml({ currentStage: 'buyerExperience', completed: [], actor: { kind: 'buyer' }, hrefFor: id => `/#stage-${id}` });
+    // Keep the pre-hire disclosure with the roadmap inside the lean landing's details.
+    const map = stageMapHtml({ currentStage: 'buyerExperience', completed: [], actor: { kind: 'buyer' }, hrefFor: id => `/#stage-${id}` }) + compensationPublicHtml();
     text = replaceFirstMapDiv(text, map);
-    text = injectBeforeMainEnd(text, compensationPublicHtml() + ISSUE29_JS);
+    text = injectBeforeMainEnd(text, ISSUE29_JS);
   }
   if (pathname === '/questionnaire' || pathname === '/login') {
     text = injectBeforeMainEnd(text, compensationPublicHtml());

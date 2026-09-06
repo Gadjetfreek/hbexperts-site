@@ -67,10 +67,10 @@ test('open-ended typed answers receive suggestions and explicit uncertainty perm
   assert.doesNotMatch(html, /phone:\{help:/);
 });
 
-test('public journey gets buyer-only explanation without submission dialog markup', () => {
+test('public journey stays lean without orientation or submission dialog markup', () => {
   const home = '<!doctype html><html><head></head><body><main><h1>Journey</h1></main></body></html>';
   const html = addBuyerFirstClarity(home, '/');
-  assert.match(html, /helps people buy homes/i);
+  assert.doesNotMatch(html, /class="buyer-first-core"/);
   assert.doesNotMatch(html, /id="buyer-review-backdrop"/);
   assert.doesNotMatch(html, /id="buyer-first-review-script"/);
 });

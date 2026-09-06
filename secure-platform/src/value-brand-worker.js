@@ -10,7 +10,7 @@ export default {
 
     let text = await response.text();
 
-    if (request.method === 'GET' && (url.pathname === '/' || url.pathname === '/questionnaire' || url.pathname === '/login')) {
+    if (request.method === 'GET' && (url.pathname === '/questionnaire' || url.pathname === '/login')) {
       text = addValueContext(text);
     }
 

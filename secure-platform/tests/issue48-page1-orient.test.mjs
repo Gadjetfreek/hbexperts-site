@@ -127,14 +127,11 @@ test('confine is idempotent when already page-1 confined', () => {
   assert.equal(twice, once);
 });
 
-test('addBuyerFirstClarity keeps homepage buyer-first at main level (not page1-confined)', () => {
+test('addBuyerFirstClarity leaves the lean homepage content unchanged', () => {
   const home = '<!doctype html><html><head></head><body><main><h1>Journey</h1></main></body></html>';
   const html = addBuyerFirstClarity(home, '/');
-  assert.match(html, /buyer-first-core/);
-  assert.match(html, /<main[^>]*>\s*<div class="buyer-first-core"/);
-  // Orient class may appear in shared CSS; the card itself must stay unconfined on /.
-  assert.doesNotMatch(html, /class="buyer-first-core[^"]*qx-page1-orient/);
-  assert.doesNotMatch(html, /class="[^"]*step[^"]*"/);
+  assert.match(html, /<main><h1>Journey<\/h1><\/main>/);
+  assert.doesNotMatch(html, /class="buyer-first-core/);
 });
 
 test('full questionnaire path: addBuyerFirstClarity then confine', () => {

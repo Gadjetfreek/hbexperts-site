@@ -83,7 +83,7 @@ export const BUYER_PORTAL_FOCUS_JS = `<script id="buyer-portal-focus-script">
 </script>`;
 
 export function addBuyerFirstClarity(text, pathname) {
-  if (pathname === '/' || pathname === '/questionnaire') {
+  if (pathname === '/questionnaire') {
     const core = `<div class="buyer-first-core" role="note"><strong>HomeBuyer Experts helps people buy homes.</strong> We work only for home buyers — never for the seller. Our job is to help you make the best choice for you, even when the best choice is to walk away.</div>`;
     if (!text.includes('class="buyer-first-core"')) {
       text = text.includes('<main') ? text.replace(/(<main[^>]*>)/, `$1${core}`) : text.replace('<body>', `<body>${core}`);
