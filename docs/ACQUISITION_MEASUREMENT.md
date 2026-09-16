@@ -27,9 +27,13 @@ First-touch coarse attribution is stored in `sessionStorage` key `hbe_acq_v1` fo
 | `journey_start` | GET `/` on `buyer.hbexperts.com` | channel / entry page / campaign from `hbe_ch` / `hbe_lp` / `hbe_ft` (else direct) |
 | `experience_complete` | Successful `POST /api/intake` | same coarse dims from short-lived `hbe_acq` cookie set at journey start |
 
+**`journey_start` dedup rule:** First attributed entry (no `hbe_acq` cookie) increments once and sets the cookie. A refresh or repeat landing that already carries the acquisition cookie does **not** increment again. A genuinely new explicit attributed entry — URL includes at least one of `hbe_ch` / `hbe_lp` / `hbe_ft` and the sanitized dims differ from the cookie — may establish a new start (+1 and cookie refresh).
+
+**Day bucketing:** Public collector aggregates use the **server receipt UTC day**, not any client-supplied `ts`. Adversarial old or future client timestamps are ignored for the day key.
+
 ### Protected report
 
-HBE-authorized aggregate view at `/hbe/acquisition` (HTML) and `/api/hbe/acquisition` (JSON). Requires existing Access / `isHbe` boundary. No buyer or household rows.
+HBE-authorized aggregate view at `/hbe/acquisition` (HTML) and `/hbe/api/acquisition` (JSON). Both live under the protected `/hbe/` namespace and require the existing Access / `isHbe` boundary. No buyer or household rows.
 
 ## Channel classification
 
@@ -101,7 +105,7 @@ If the token is empty, no CF beacon is loaded. Public-site custom events remain 
 ## Deploy notes (CONFIG REQUIRED)
 
 1. Apply D1 migration: `secure-platform/migrations/acquisition-aggregate.sql` to `BUYER_DB` / `hbe-buyer-journey-v2` (remote before production traffic).
-2. Deploy the Worker (`secure-platform` / `hbe-buyer-platform`) so `/api/acquisition/collect`, `/hbe/acquisition`, and milestones are live.
+2. Deploy the Worker (`secure-platform` / `hbe-buyer-platform`) so `/api/acquisition/collect`, `/hbe/acquisition`, `/hbe/api/acquisition`, and milestones are live.
 3. CORS allowlist is fixed in code: `https://hbexperts.com`, `https://www.hbexperts.com`, and same-origin buyer host. No extra env var required for origins.
 4. Redeploy/publish the public Hugo site so `acquisition.js` posts to the collector and annotates journey URLs.
 

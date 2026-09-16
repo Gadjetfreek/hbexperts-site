@@ -12,6 +12,7 @@ import {
   handleReport,
   handleAcquisitionRoutes,
   afterAcquisitionSideEffects,
+  recordJourneyStart,
   readAttributionParams,
   parseAcqCookie,
   isHbe,
@@ -20,7 +21,8 @@ import {
   MAX_BODY_BYTES,
   COLLECT_PATH,
   REPORT_PATH,
-  REPORT_JSON_PATH
+  REPORT_JSON_PATH,
+  ACQ_COOKIE
 } from '../src/acquisition-collector.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -361,6 +363,100 @@ test('journey_start side effect sets aggregate cookie without identity', async (
   assert.doesNotMatch(cookie, /@|buyer_id|household/i);
   const rows = await listAggregates(db, { days: 1 });
   assert.equal(rows.some(r => r.event === 'journey_start' && r.channel === 'paid'), true);
+});
+
+test('protected JSON report route lives under /hbe/', () => {
+  assert.equal(REPORT_JSON_PATH.startsWith('/hbe/'), true);
+  assert.equal(REPORT_JSON_PATH, '/hbe/api/acquisition');
+  assert.equal(REPORT_PATH.startsWith('/hbe/'), true);
+});
+
+test('journey_start: first GET = +1; refresh with cookie still +1', async () => {
+  const db = createMemoryD1();
+  const env = envWith({ db });
+  const url = 'https://buyer.hbexperts.com/?hbe_ch=paid&hbe_lp=/&hbe_ft=spring-cpc';
+  const base = () => new Response('<html></html>', {
+    status: 200,
+    headers: { 'content-type': 'text/html; charset=utf-8' }
+  });
+
+  const first = await afterAcquisitionSideEffects(new Request(url), env, base(), {});
+  const setCookie = first.headers.get('Set-Cookie') || '';
+  assert.match(setCookie, new RegExp(ACQ_COOKIE + '='));
+  let rows = await listAggregates(db, { days: 1 });
+  const starts = rows.filter(r => r.event === 'journey_start');
+  assert.equal(starts.length, 1);
+  assert.equal(starts[0].count, 1);
+
+  // Refresh with existing acquisition cookie — must NOT increment again.
+  const cookiePair = setCookie.split(';')[0];
+  const refresh = await afterAcquisitionSideEffects(
+    new Request(url, { headers: { cookie: cookiePair } }),
+    env,
+    base(),
+    {}
+  );
+  assert.equal(refresh.headers.get('Set-Cookie'), null);
+  rows = await listAggregates(db, { days: 1 });
+  const afterRefresh = rows.filter(r => r.event === 'journey_start');
+  assert.equal(afterRefresh.length, 1);
+  assert.equal(afterRefresh[0].count, 1, 'refresh must not increment journey_start');
+});
+
+test('journey_start: explicit new attributed entry may establish a new start', async () => {
+  const db = createMemoryD1();
+  const env = envWith({ db });
+  const firstUrl = new URL('https://buyer.hbexperts.com/?hbe_ch=paid&hbe_lp=/&hbe_ft=spring-cpc');
+  const first = await recordJourneyStart(env, firstUrl, new Request(firstUrl));
+  assert.equal(first.counted, true);
+  assert.ok(first.cookie);
+
+  const cookiePair = first.cookie.split(';')[0];
+  const newUrl = new URL('https://buyer.hbexperts.com/?hbe_ch=organic&hbe_lp=/relocation/&hbe_ft=partner-ref');
+  const second = await recordJourneyStart(
+    env,
+    newUrl,
+    new Request(newUrl, { headers: { cookie: cookiePair } })
+  );
+  assert.equal(second.counted, true);
+  const rows = await listAggregates(db, { days: 1 });
+  const total = rows.filter(r => r.event === 'journey_start').reduce((n, r) => n + r.count, 0);
+  assert.equal(total, 2);
+});
+
+test('public collector day bucket uses server receipt UTC day; ignores client ts', async () => {
+  const today = new Date().toISOString().slice(0, 10);
+  const dbOld = createMemoryD1();
+  const resOld = await handleCollectPost(
+    collectRequest({
+      event: 'discovery_view',
+      page_path: '/',
+      channel: 'direct',
+      ts: '1999-01-01T00:00:00.000Z'
+    }),
+    envWith({ db: dbOld })
+  );
+  assert.equal(resOld.status, 204);
+  const rowsOld = await listAggregates(dbOld, { days: 30 });
+  assert.equal(rowsOld.length, 1);
+  assert.equal(rowsOld[0].day, today);
+  assert.notEqual(rowsOld[0].day, '1999-01-01');
+
+  const dbFuture = createMemoryD1();
+  const resFuture = await handleCollectPost(
+    collectRequest({
+      event: 'discovery_view',
+      page_path: '/',
+      channel: 'direct',
+      ts: '2099-12-31T23:59:59.000Z'
+    }),
+    envWith({ db: dbFuture })
+  );
+  assert.equal(resFuture.status, 204);
+  const rowsFuture = await listAggregates(dbFuture, { days: 30 });
+  assert.equal(rowsFuture.length, 1);
+  assert.equal(rowsFuture[0].day, today);
+  assert.notEqual(rowsFuture[0].day, '2099-12-31');
 });
 
 test('experience_complete increments from coarse cookie only', async () => {

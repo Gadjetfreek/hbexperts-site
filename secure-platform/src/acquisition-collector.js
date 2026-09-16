@@ -47,7 +47,7 @@ export const MAX_HOST_LEN = 253;
 export const ACQ_COOKIE = 'hbe_acq';
 export const COLLECT_PATH = '/api/acquisition/collect';
 export const REPORT_PATH = '/hbe/acquisition';
-export const REPORT_JSON_PATH = '/api/hbe/acquisition';
+export const REPORT_JSON_PATH = '/hbe/api/acquisition';
 
 const SENSITIVE_KEY_RE = /^(email|phone|name|first_name|last_name|full_name|household|household_id|questionnaire|answers|ssn|address|buyer_id|ip|ua|user_agent|user-agent|cookie|authorization|cf-connecting-ip)$/i;
 
@@ -191,9 +191,13 @@ export function dayKey(isoOrDate = new Date()) {
   return d.toISOString().slice(0, 10);
 }
 
-export function aggregateDims(record) {
+/**
+ * Build aggregate dimensions. Day bucket is always the server receipt UTC day.
+ * Client-supplied `ts` is never used for bucketing (adversarial old/future ts ignored).
+ */
+export function aggregateDims(record, receiptDate = new Date()) {
   return {
-    day: dayKey(record.ts || new Date()),
+    day: dayKey(receiptDate),
     event: record.event,
     channel: normalizeChannel(record.channel),
     campaign: sanitizeUtm(record.utm_campaign || record.campaign || '') || '',
@@ -396,17 +400,49 @@ export async function handleCollectPost(request, env) {
 
 /**
  * Secure-side journey_start milestone: aggregate only from approved query tokens.
- * Returns Set-Cookie header value when attribution present.
+ *
+ * Dedup rule (documented):
+ * - First attributed entry (no `hbe_acq` cookie) → count +1 and set cookie.
+ * - Refresh / repeat landing with an existing acquisition cookie → do NOT increment.
+ * - Genuinely new explicit attributed entry: URL carries at least one of
+ *   `hbe_ch` / `hbe_lp` / `hbe_ft` AND those sanitized dims differ from the cookie
+ *   → count +1 and refresh cookie to the new attribution.
+ *
+ * Returns { cookie, counted }. `cookie` is a Set-Cookie header value when the
+ * cookie should be (re)written; null when unchanged on a non-counting refresh.
  */
-export async function recordJourneyStart(env, url) {
-  if (!env?.BUYER_DB) return { cookie: null };
-  const attrs = readAttributionParams(url);
+export async function recordJourneyStart(env, url, request = null) {
+  if (!env?.BUYER_DB) return { cookie: null, counted: false };
+  const u = url instanceof URL ? url : new URL(String(url));
+  const attrs = readAttributionParams(u);
+  const cookieHeader = request && typeof request.headers?.get === 'function'
+    ? (request.headers.get('Cookie') || '')
+    : '';
+  const existing = parseAcqCookie(cookieHeader);
+
+  const hasExplicit =
+    u.searchParams.has('hbe_ch') ||
+    u.searchParams.has('hbe_lp') ||
+    u.searchParams.has('hbe_ft');
+
+  const differs = !!(existing && (
+    attrs.channel !== existing.channel ||
+    attrs.entry_page !== existing.entry_page ||
+    (attrs.campaign || '') !== (existing.campaign || '')
+  ));
+
+  // Refresh with existing cookie must NOT increment again.
+  const shouldCount = !existing || (hasExplicit && differs);
+
+  if (!shouldCount) {
+    return { cookie: null, counted: false };
+  }
+
   const record = {
     event: 'journey_start',
     channel: attrs.channel,
     page_path: attrs.entry_page || '/',
-    utm_campaign: attrs.campaign || '',
-    ts: new Date().toISOString()
+    utm_campaign: attrs.campaign || ''
   };
   try {
     await incrementAggregate(env.BUYER_DB, record);
@@ -418,7 +454,8 @@ export async function recordJourneyStart(env, url) {
       channel: attrs.channel,
       entry_page: attrs.entry_page,
       campaign: attrs.campaign
-    })
+    }),
+    counted: true
   };
 }
 
@@ -569,7 +606,7 @@ export async function afterAcquisitionSideEffects(request, env, response, ctx) {
   let out = response;
 
   if (request.method === 'GET' && url.pathname === '/' && response.status === 200) {
-    const { cookie } = await recordJourneyStart(env, url);
+    const { cookie } = await recordJourneyStart(env, url, request);
     if (cookie) {
       const headers = new Headers(response.headers);
       headers.append('Set-Cookie', cookie);
