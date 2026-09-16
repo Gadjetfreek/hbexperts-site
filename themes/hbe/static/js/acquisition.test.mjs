@@ -154,23 +154,34 @@ test('discovery_view payload has no PII keys', () => {
   assert.equal(payload.household_id, undefined);
 });
 
-test('annotateJourneyUrl is a no-op and leaves journey URLs clean', () => {
+test('annotateJourneyUrl appends only approved sanitized tokens', () => {
   const original = 'https://buyer.hbexperts.com/questionnaire';
   const href = acq.annotateJourneyUrl(original, {
     channel: 'organic',
-    first_touch: 'organic',
     landing_path: '/strategy-session/',
+    utm_campaign: 'local-awareness',
     email: 'buyer@example.com'
   });
-  assert.equal(href, original);
   const url = new URL(href);
   assert.equal(url.origin, 'https://buyer.hbexperts.com');
   assert.equal(url.pathname, '/questionnaire');
-  assert.equal(url.searchParams.get('hbe_ch'), null);
-  assert.equal(url.searchParams.get('hbe_ft'), null);
-  assert.equal(url.searchParams.get('hbe_lp'), null);
+  assert.equal(url.searchParams.get('hbe_ch'), 'organic');
+  assert.equal(url.searchParams.get('hbe_lp'), '/strategy-session/');
+  assert.equal(url.searchParams.get('hbe_ft'), 'local-awareness');
   assert.equal(url.searchParams.get('email'), null);
-  assert.equal([...url.searchParams.keys()].length, 0);
+  assert.equal([...url.searchParams.keys()].sort().join(','), 'hbe_ch,hbe_ft,hbe_lp');
+});
+
+test('annotateJourneyUrl drops PII-like campaign tokens', () => {
+  const href = acq.annotateJourneyUrl('https://buyer.hbexperts.com/', {
+    channel: 'paid',
+    landing_path: '/',
+    utm_campaign: 'buyer@example.com'
+  });
+  const url = new URL(href);
+  assert.equal(url.searchParams.get('hbe_ch'), 'paid');
+  assert.equal(url.searchParams.get('hbe_lp'), '/');
+  assert.equal(url.searchParams.get('hbe_ft'), null);
 });
 
 test('shouldAnnotateJourneyLink only for buyer.hbexperts.com http(s)', () => {
@@ -229,10 +240,10 @@ test('client emits discovery_view, CustomEvent, ring buffer, and optional sink',
   assert.equal(stored.landing_path, '/');
 });
 
-test('journey click fires journey_entry_click without mutating href', () => {
+test('journey click fires journey_entry_click and annotates href with coarse tokens', () => {
   const storage = memoryStorage();
   storage.setItem(acq.STORAGE_KEY, JSON.stringify({
-    v: 1, channel: 'referral', landing_path: '/about/', ts: '2026-09-03T19:00:00.000Z', referrer_host: 'news.example.com'
+    v: 1, channel: 'referral', landing_path: '/about/', ts: '2026-09-03T19:00:00.000Z', referrer_host: 'news.example.com', utm_campaign: 'partner-ref'
   }));
   const doc = fakeDocument();
   const win = { __HBE_ACQ_EVENTS__: [] };
@@ -245,14 +256,20 @@ test('journey click fires journey_entry_click without mutating href', () => {
     now: () => '2026-09-03T20:00:00.000Z',
     CustomEvent: FakeCustomEvent
   });
-  const originalHref = 'https://buyer.hbexperts.com/questionnaire';
+  let hrefValue = 'https://buyer.hbexperts.com/questionnaire';
   const anchor = {
-    href: originalHref,
-    getAttribute(name) { return name === 'href' ? originalHref : null; }
+    get href() { return hrefValue; },
+    set href(v) { hrefValue = v; },
+    getAttribute(name) { return name === 'href' ? hrefValue : null; },
+    setAttribute(name, v) { if (name === 'href') hrefValue = v; }
   };
   client.handleAnchor(anchor);
-  assert.equal(anchor.href, originalHref);
-  assert.equal(new URL(anchor.href).search, '');
+  const annotated = new URL(anchor.href);
+  assert.equal(annotated.origin, 'https://buyer.hbexperts.com');
+  assert.equal(annotated.pathname, '/questionnaire');
+  assert.equal(annotated.searchParams.get('hbe_ch'), 'referral');
+  assert.equal(annotated.searchParams.get('hbe_lp'), '/about/');
+  assert.equal(annotated.searchParams.get('hbe_ft'), 'partner-ref');
   assert.equal(win.__HBE_ACQ_EVENTS__.length, 1);
   const evt = win.__HBE_ACQ_EVENTS__[0];
   assert.equal(evt.event, 'journey_entry_click');
@@ -330,4 +347,34 @@ test('CF beacon stays off without a token', () => {
   });
   client.boot();
   assert.equal(doc._headChildren.length, 0);
+});
+
+test('boot wires __HBE_ACQ__.send to first-party collector', async () => {
+  const storage = memoryStorage();
+  const doc = fakeDocument();
+  const posts = [];
+  const win = { __HBE_ACQ_EVENTS__: [] };
+  const client = acq.createClient({
+    window: win,
+    document: doc,
+    location: { href: 'https://hbexperts.com/', pathname: '/', search: '', hostname: 'hbexperts.com' },
+    sessionStorage: storage,
+    referrer: '',
+    now: () => '2026-09-03T20:00:00.000Z',
+    CustomEvent: FakeCustomEvent,
+    fetch: async (url, init) => {
+      posts.push({ url, init });
+      return { ok: true, status: 204 };
+    }
+  });
+  client.boot();
+  assert.equal(typeof win.__HBE_ACQ__.send, 'function');
+  assert.equal(posts.length, 1);
+  assert.equal(posts[0].url, 'https://buyer.hbexperts.com/api/acquisition/collect');
+  assert.equal(posts[0].init.method, 'POST');
+  assert.equal(posts[0].init.credentials, 'omit');
+  const body = JSON.parse(posts[0].init.body);
+  assert.equal(body.event, 'discovery_view');
+  assert.equal(body.email, undefined);
+  assert.equal(body.household_id, undefined);
 });

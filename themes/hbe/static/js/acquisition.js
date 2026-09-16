@@ -1,17 +1,16 @@
 /**
  * HBE public-site acquisition instrumentation foundation (first-party, privacy-safe).
  *
- * This is a client-side instrumentation foundation, not completed acquisition
- * measurement. Coarse discovery and CTA events (pathname, channel, sanitized
- * UTM tokens, referrer host) stay session/in-memory only: CustomEvent
- * `hbe:acquisition`, sessionStorage first-touch, and an in-memory ring buffer.
- * No network collector ships here; a later gated collector may subscribe.
- * Optional Cloudflare Web Analytics is a separate pageview product and does
- * not receive these custom events.
+ * Privacy-safe first-party acquisition instrumentation (Issue #74).
+ * Coarse discovery and CTA events (pathname, channel, sanitized UTM tokens,
+ * referrer host) emit via CustomEvent `hbe:acquisition`, sessionStorage
+ * first-touch, an in-memory ring buffer, and a first-party collector POST
+ * (allowlisted fields only). Optional Cloudflare Web Analytics is a separate
+ * pageview product and does not receive these custom events.
  *
- * No names, emails, phones, questionnaire answers, household IDs, cookies,
- * or localStorage. Journey URLs are left clean (no hbe_ch / hbe_lp / hbe_ft)
- * until a secure-side consumer exists.
+ * No names, emails, phones, questionnaire answers, household IDs, or
+ * localStorage. Buyer Journey links may receive short non-PII tokens
+ * hbe_ch / hbe_lp / hbe_ft for aggregate secure-side milestones.
  *
  * Channel heuristics (see docs/ACQUISITION_MEASUREMENT.md):
  *   relocation / local — ONLY when utm_campaign or utm_content contains that
@@ -248,10 +247,35 @@
     return !!CONSULTATION_PATHS[normalizeHrefPath(parsed)];
   }
 
-  function annotateJourneyUrl(href) {
-    // No-op: leave buyer.hbexperts.com URLs clean until a secure-side
-    // consumer exists. Custom events stay session/in-memory only.
-    return href;
+  function annotateJourneyUrl(href, ctx) {
+    if (!href || !shouldAnnotateJourneyLink(href)) return href;
+    ctx = ctx || {};
+    var parsed;
+    try {
+      parsed = typeof href === 'string' ? new URL(href, 'https://' + JOURNEY_HOST) : href;
+    } catch (err) {
+      return href;
+    }
+    var channel = normalizeChannel(ctx.channel || (ctx.first_touch && ctx.first_touch.channel) || 'unknown');
+    var landing = sanitizePath(
+      ctx.landing_path ||
+      (ctx.first_touch && ctx.first_touch.landing_path) ||
+      ctx.page_path ||
+      '/'
+    ) || '/';
+    var campaign = sanitizeUtm(
+      ctx.utm_campaign ||
+      (ctx.first_touch && ctx.first_touch.utm_campaign) ||
+      ctx.first_touch_token ||
+      ''
+    );
+    // Only approved short tokens; drop anything else already on the URL that
+    // looks like acquisition noise we do not own (leave unrelated params).
+    parsed.searchParams.set('hbe_ch', channel);
+    parsed.searchParams.set('hbe_lp', landing);
+    if (campaign) parsed.searchParams.set('hbe_ft', campaign);
+    else parsed.searchParams.delete('hbe_ft');
+    return parsed.toString();
   }
 
   function readFirstTouch(storage) {
@@ -422,6 +446,19 @@
       var eventName = null;
       if (shouldAnnotateJourneyLink(parsed)) {
         eventName = 'journey_entry_click';
+        var annotated = annotateJourneyUrl(href, {
+          channel: (ctx.first_touch && ctx.first_touch.channel) || ctx.channel,
+          landing_path: (ctx.first_touch && ctx.first_touch.landing_path) || ctx.page_path,
+          page_path: ctx.page_path,
+          utm_campaign: (ctx.first_touch && ctx.first_touch.utm_campaign) || ctx.utm_campaign,
+          first_touch: ctx.first_touch
+        });
+        if (annotated && annotated !== href) {
+          try {
+            anchor.setAttribute('href', annotated);
+            if ('href' in anchor) anchor.href = annotated;
+          } catch (err) { /* ignore */ }
+        }
       } else if (isConsultationCta(parsed, ctx.siteHost)) {
         eventName = 'consultation_cta_click';
       }
@@ -445,8 +482,38 @@
       if (a) handleAnchor(a);
     }
 
+    function ensureCollectorSink() {
+      if (!win) return;
+      if (!win.__HBE_ACQ__) win.__HBE_ACQ__ = {};
+      if (typeof win.__HBE_ACQ__.send === 'function') return;
+      var endpoint = env.collectUrl || 'https://buyer.hbexperts.com/api/acquisition/collect';
+      win.__HBE_ACQ__.send = function (payload) {
+        try {
+          if (!payload || typeof payload !== 'object') return;
+          var body = JSON.stringify(payload);
+          if (body.length > 2048) return;
+          var fetchFn = env.fetch || (typeof fetch !== 'undefined' ? fetch : null);
+          if (fetchFn) {
+            fetchFn(endpoint, {
+              method: 'POST',
+              mode: 'cors',
+              credentials: 'omit',
+              keepalive: true,
+              headers: { 'content-type': 'application/json' },
+              body: body
+            }).catch(function () { /* ignore network errors */ });
+            return;
+          }
+          if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+            navigator.sendBeacon(endpoint, new Blob([body], { type: 'application/json' }));
+          }
+        } catch (err) { /* never break the page */ }
+      };
+    }
+
     function boot() {
       if (win && !Array.isArray(win.__HBE_ACQ_EVENTS__)) win.__HBE_ACQ_EVENTS__ = [];
+      ensureCollectorSink();
       maybeLoadCfBeacon(doc, readCfToken(doc));
       recordDiscoveryView();
       if (doc && typeof doc.addEventListener === 'function') {
