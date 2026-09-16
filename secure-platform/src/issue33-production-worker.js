@@ -1,4 +1,9 @@
 import appWorker from './issue29-production-worker.js';
+import {
+  handleAcquisitionRoutes,
+  afterAcquisitionSideEffects,
+  REPORT_PATH
+} from './acquisition-collector.js';
 import { STAGES } from './journey-stages.js';
 import { mutationCsrfToken } from './household-state.js';
 import { BIMATRIX_CSS, buyerBimatrixPanel, handleBuyerBimatrixRefresh } from './bimatrix/freshness.js';
@@ -182,6 +187,9 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
+    const acq = await handleAcquisitionRoutes(request, env, ctx);
+    if (acq) return acq;
+
     if (request.method === 'POST' && url.pathname === '/api/portal/bimatrix-refresh') {
       return handleBuyerBimatrixRefresh(request, env);
     }
@@ -201,6 +209,7 @@ export default {
         body.issue33 = { bimatrix: true, buyer_refresh: true, canonical_review: 'monthly' };
         body.issue36 = { buyer_first_clarity: true, pre_submit_review: true, attention_architecture: true, guided_open_answers: true };
         body.showingCard = body.showingCard || { enabled: true, dossier: 'brigham-v1', r2: Boolean(env.SHOWING_PHOTOS) };
+        body.issue74 = { acquisition_collector: true, report: REPORT_PATH };
         headers.set('content-type', 'application/json; charset=utf-8');
         return new Response(JSON.stringify(body), {
           status: response.status,
@@ -212,7 +221,9 @@ export default {
       }
     }
 
-    if (!type.includes('text/html')) return response;
+    if (!type.includes('text/html')) {
+      return afterAcquisitionSideEffects(request, env, response, ctx);
+    }
     let text = await response.text();
 
     if (request.method === 'GET' && url.pathname === '/portal' && response.status === 200) {
@@ -239,11 +250,12 @@ export default {
       text = text.replace('</head>', `${BIMATRIX_CSS}</head>`);
     }
 
-    return new Response(text, {
+    const htmlResponse = new Response(text, {
       status: response.status,
       statusText: response.statusText,
       headers
     });
+    return afterAcquisitionSideEffects(request, env, htmlResponse, ctx);
   }
 };
 
