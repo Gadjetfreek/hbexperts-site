@@ -11,6 +11,7 @@ import {
   compensationPublicHtml, compensationPostHireHtml, dashboardShell, buyerDashboardBody, previewMemberNav, esc
 } from './issue29-ui.js';
 import { handleShowingCardRoutes, enhanceHbeWithProperties } from './showing-card/index.js';
+import { injectHbeOps } from './hbeui-lanes.js';
 
 assertSeventeenStages();
 
@@ -335,7 +336,8 @@ async function enhanceHbeDashboard(request, env, url, text) {
     ${ISSUE29_JS}`;
 
   text = text.replace('No tasks yet.', 'What’s Next is never empty — see the dedicated panel.');
-  text = injectBeforeMainEnd(text, panel);
+  // Issue #79: HBE ops panels belong in the HBE lane slot (BuyerUI untouched).
+  text = injectHbeOps(text, panel);
   return text;
 }
 
