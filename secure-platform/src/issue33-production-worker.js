@@ -79,7 +79,7 @@ export const BUYER_PORTAL_FOCUS_JS = `<script id="buyer-portal-focus-script">
     if(stepTitles.some(x=>x===s || x.includes(s) || s.includes(x))) return;
     stepTitles.push(s);
   };
-  pushStep(nextTitle);
+  // Do not seed roadmap with nextTitle — What's Next already shows it (Issue #65 acceptance).
   next.querySelectorAll('.i29-task strong').forEach(el=>pushStep(el.textContent));
   document.querySelectorAll('.i29-check-row strong').forEach(el=>{
     const row=el.closest('.i29-check-row');
