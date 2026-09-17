@@ -75,19 +75,19 @@ test('public journey stays lean without orientation or submission dialog markup'
   assert.doesNotMatch(html, /id="buyer-first-review-script"/);
 });
 
-test('buyer portal gets a focused Now Why Answer Next layer while preserving expandable detail', () => {
-  const portal = '<!doctype html><html><head></head><body><main><div class="i29-map"><div class="i29-stop current"><strong>Consultation</strong></div></div><section class="i29-next"><div>What’s Next</div><h2>Highest priority right now</h2><strong>Schedule the strategy session</strong><small>Turn answers into understanding</small></section><section class="i29-story"></section><section class="i29-compass"></section><section class="i29-checklist"></section><section class="i29-comp"></section></main></body></html>';
+test('buyer portal gets a simple stage card with one See more disclosure (Issue #77)', () => {
+  const portal = '<!doctype html><html><head></head><body><main><div class="i29-map"><div class="i29-stop current" data-stage="consultation"><strong>Consultation</strong></div></div><section class="i29-next"><div>What’s Next</div><h2>Highest priority right now</h2><strong>Schedule the strategy session</strong><small>Turn answers into understanding</small></section><section class="i29-story"></section><section class="i29-compass"></section><section class="i29-checklist"></section><section class="i29-comp"></section></main></body></html>';
   const html = addBuyerFirstClarity(portal, '/portal');
   assert.match(html, /buyer-portal-focus-script/);
-  assert.match(html, />NOW</);
-  assert.match(html, /Answer \/ act/);
-  assert.match(html, /Why this matters/);
-  assert.match(html, /Time/);
-  assert.match(html, /What happens next/);
-  assert.match(html, /buyer-roadmap-next/);
-  assert.match(html, /Journey map/);
+  assert.match(html, /You.\u2019re here|You're here|You.re here/);
+  assert.match(html, /Have your consultation with HBE/);
+  assert.match(html, /Nothing else you need to do right now/);
+  assert.match(html, /See more/);
+  assert.doesNotMatch(html, /buyer-focus-grid/);
+  assert.doesNotMatch(html, /Answer \/ act/);
+  assert.doesNotMatch(html, /Why this matters/);
+  assert.doesNotMatch(html, /className=['"]buyer-roadmap-next['"]/);
   assert.doesNotMatch(html, /See the full 17-stage journey/);
-  assert.match(html, /Current-step checklist/);
 });
 function matches(el, selector) {
   if (!el) return false;

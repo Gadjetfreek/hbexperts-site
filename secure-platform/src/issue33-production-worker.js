@@ -12,9 +12,8 @@ import { buyerGuidanceRuntimeScript } from './buyer-guidance.js';
 export const BUYER_FIRST_CSS = `<style id="buyer-first-clarity">
 .buyer-first-core{max-width:900px;margin:1rem auto;padding:1rem 1.1rem;border:1px solid #dfe8e2;border-left:4px solid #2d5a3d;border-radius:10px;background:#f7faf8;color:#2c2c2c;line-height:1.55}.buyer-first-core strong{color:#1a1a2e}.buyer-review-backdrop{position:fixed;inset:0;z-index:1000;background:rgba(26,26,46,.58);display:none;align-items:center;justify-content:center;padding:1rem}.buyer-review-backdrop.open{display:flex}.buyer-review{width:min(760px,100%);max-height:min(88vh,900px);overflow:auto;background:#fff;border-radius:14px;padding:1.35rem;box-shadow:0 24px 70px rgba(0,0,0,.28)}.buyer-review h2{margin:.15rem 0 .4rem;color:#1a1a2e;font-family:Georgia,serif}.buyer-review-intro{color:#555;margin:0 0 1rem}.buyer-review-list{display:grid;gap:.7rem;margin:1rem 0}.buyer-review-item{padding:.8rem .9rem;border:1px solid #e8e5e0;border-radius:9px;background:#faf9f6}.buyer-review-item small{display:block;color:#6b6b6b;font-weight:800;text-transform:uppercase;letter-spacing:.04em}.buyer-review-item div{white-space:pre-wrap}.buyer-review-trust{padding:1rem;border-radius:9px;background:#f7faf8;border:1px solid #dfe8e2;color:#333}.buyer-review-actions{display:flex;gap:.7rem;justify-content:flex-end;flex-wrap:wrap;margin-top:1rem}.buyer-review-actions button{font:inherit;font-weight:800;border-radius:7px;padding:.75rem 1rem;cursor:pointer}.buyer-review-edit{background:#fff;color:#2d5a3d;border:1px solid #2d5a3d}.buyer-review-send{background:#2d5a3d;color:#fff;border:1px solid #2d5a3d}.buyer-review-empty{color:#6b6b6b;font-style:italic}
 .buyer-answer-help{display:block;margin:.4rem 0 .15rem;color:#5f625f;font-size:.86rem;line-height:1.45}.buyer-answer-help strong{color:#2d5a3d}.buyer-suggestions{display:flex;flex-wrap:wrap;gap:.4rem;margin:.45rem 0 .7rem}.buyer-suggestion{appearance:none;border:1px solid #cad8ce;background:#fff;color:#2d5a3d;border-radius:999px;padding:.38rem .62rem;font:inherit;font-size:.8rem;font-weight:700;cursor:pointer}.buyer-suggestion:hover,.buyer-suggestion:focus-visible{background:#edf6f0;outline:2px solid rgba(45,90,61,.24);outline-offset:1px}
-.buyer-focus-card{background:#fff;border:1px solid #dfe8e2;border-radius:14px;padding:1.2rem 1.25rem;margin:1rem 0 1.15rem;box-shadow:0 8px 26px rgba(26,26,46,.05)}.buyer-focus-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.7rem;margin-top:.9rem}.buyer-focus-grid>div{background:#faf9f6;border-radius:10px;padding:.8rem}.buyer-focus-grid small{display:block;color:#6b6b6b;font-size:.68rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.2rem}.buyer-focus-grid strong{color:#1a1a2e;line-height:1.35}.buyer-focus-card h1{font:600 clamp(1.5rem,4vw,2.05rem) Georgia,serif;color:#1a1a2e;margin:.2rem 0}.buyer-focus-card p{margin:.35rem 0;color:#555;line-height:1.5}.buyer-more{background:#fff;border:1px solid #e8e5e0;border-radius:12px;margin:.8rem 0;overflow:hidden}.buyer-more>summary{cursor:pointer;padding:1rem 1.05rem;font-weight:850;color:#1a1a2e;list-style:none}.buyer-more>summary::-webkit-details-marker{display:none}.buyer-more>summary:after{content:'+';float:right;color:#2d5a3d;font-size:1.2rem}.buyer-more[open]>summary:after{content:'–'}.buyer-more-body{padding:0 1rem 1rem}.buyer-focus-card+.i29-next{margin-top:0}.buyer-focus-card+.i29-next h2{font-size:1.05rem}.buyer-focus-card+.i29-next>strong{font-size:1.35rem}.buyer-focus-card+.i29-next .i29-tasks{display:none}
-@media(max-width:760px){.buyer-focus-grid{grid-template-columns:1fr 1fr}}@media(max-width:600px){.buyer-review{padding:1rem}.buyer-review-actions{display:grid;grid-template-columns:1fr}.buyer-review-actions button{width:100%}.buyer-focus-grid{grid-template-columns:1fr}.buyer-focus-card{padding:1rem}.buyer-roadmap-next{padding:1rem}}
-.buyer-roadmap-next{background:#fff;border:1px solid #dfe8e2;border-left:4px solid #c4a35a;border-radius:14px;padding:1.15rem 1.25rem;margin:1rem 0 1.15rem;box-shadow:0 8px 26px rgba(26,26,46,.05)}.buyer-roadmap-next h2{font:600 1.15rem Georgia,serif;color:#1a1a2e;margin:.2rem 0 .55rem}.buyer-roadmap-next ol{margin:.35rem 0 0;padding-left:1.15rem;color:#2c2c2c;line-height:1.5}.buyer-roadmap-next li{margin:.35rem 0}.buyer-roadmap-next li strong{color:#1a1a2e}
+.buyer-focus-card{background:#fff;border:1px solid #dfe8e2;border-radius:14px;padding:1.25rem 1.3rem;margin:1rem 0 1.15rem;box-shadow:0 8px 26px rgba(26,26,46,.05)}.buyer-focus-card h1{font:600 clamp(1.55rem,4vw,2.1rem) Georgia,serif;color:#1a1a2e;margin:.1rem 0 .35rem}.buyer-focus-card p{margin:.4rem 0;color:#555;line-height:1.55;font-size:1.02rem}.buyer-focus-card .buyer-here{color:#1a1a2e;font-size:1.08rem;margin:.15rem 0 .55rem}.buyer-focus-card .buyer-next-line{color:#1a1a2e;font-size:1.05rem;margin:.75rem 0 .35rem}.buyer-focus-card .buyer-reassure{color:#2d5a3d;font-weight:650}.buyer-more{background:#fff;border:1px solid #e8e5e0;border-radius:12px;margin:.8rem 0;overflow:hidden}.buyer-more>summary{cursor:pointer;padding:1rem 1.05rem;font-weight:850;color:#1a1a2e;list-style:none}.buyer-more>summary::-webkit-details-marker{display:none}.buyer-more>summary:after{content:'+';float:right;color:#2d5a3d;font-size:1.2rem}.buyer-more[open]>summary:after{content:'–'}.buyer-more-body{padding:0 1rem 1rem}.buyer-portal-simplified .i29-next,.buyer-portal-simplified .i29-guide,.buyer-portal-simplified .buyer-roadmap-next{display:none!important}
+@media(max-width:600px){.buyer-review{padding:1rem}.buyer-review-actions{display:grid;grid-template-columns:1fr}.buyer-review-actions button{width:100%}.buyer-focus-card{padding:1rem}}
 .qx-page1-orient{margin:0 0 1rem}.step .buyer-first-core.qx-page1-orient{max-width:none;margin:0 0 1rem}.step .value-context.qx-page1-orient{max-width:none;margin:0 0 .85rem}.step .i29-comp.qx-page1-orient{margin:0 0 1.15rem}
 </style>`;
 
@@ -63,55 +62,73 @@ export const BUYER_PORTAL_FOCUS_JS = `<script id="buyer-portal-focus-script">
 (()=>{
   const main=document.querySelector('main'); if(!main||document.querySelector('.buyer-focus-card'))return;
   const next=document.querySelector('.i29-next'); if(!next)return;
-  const current=document.querySelector('.i29-stop.current strong')?.textContent?.trim()||'Your current step';
-  const nextTitle=next.querySelector(':scope > strong')?.textContent?.trim()||'Review your next step';
-  const reason=next.querySelector(':scope > small')?.textContent?.trim()||'This keeps the decision moving without making you solve the whole process at once.';
-  const card=document.createElement('section'); card.className='buyer-focus-card'; card.setAttribute('aria-label','Your current focus');
-  card.innerHTML='<div class="i29-kicker">NOW</div><h1>'+escapeHtml(current)+'</h1><p>Focus on the next useful decision. You do not need to solve the whole process at once.</p><div class="buyer-focus-grid"><div><small>Now</small><strong>'+escapeHtml(current)+'</strong></div><div><small>Why this matters</small><strong>'+escapeHtml(reason)+'</strong></div><div><small>Answer / act</small><strong>'+escapeHtml(nextTitle)+'</strong></div><div><small>Time</small><strong>Do this when you are ready. HBE will flag anything truly date-critical.</strong></div></div>';
-  // Governing UX order: Now → Why/Answer → Next, then optional journey map.
-  main.insertBefore(card, main.firstChild);
-  card.parentNode.insertBefore(next, card.nextSibling);
-
-  // Issue #65: replace blank/redundant roadmap treatment with immediate next 2–3 steps.
-  const stepTitles=[];
-  const pushStep=t=>{
-    const s=String(t||'').trim(); if(!s) return;
-    if(stepTitles.some(x=>x===s || x.includes(s) || s.includes(x))) return;
-    stepTitles.push(s);
+  document.documentElement.classList.add('buyer-portal-simplified');
+  const stop=document.querySelector('.i29-stop.current');
+  const stageId=stop?.getAttribute('data-stage')||'';
+  const current=stop?.querySelector('strong')?.textContent?.trim()
+    ||document.querySelector('.i29-stop.current strong')?.textContent?.trim()
+    ||'Your current step';
+  const stageBlurb=stop?.querySelector(':scope > div > small')?.textContent?.trim()
+    ||stop?.querySelector('small')?.textContent?.trim()
+    ||'';
+  const nextTitleRaw=next.querySelector(':scope > strong')?.textContent?.trim()||'';
+  const STAGE_COPY={
+    buyerExperience:{explain:'Share what matters to you so HBE can help without guessing.',next:'Finish and send your Buyer Experience when you are ready.',reassure:'You can pause anytime. Your place stays saved.'},
+    consultation:{explain:"We'll talk about what matters to you, answer your questions, and figure out the best next step.",next:'Have your consultation with HBE.',reassure:'Nothing else you need to do right now.'},
+    representation:{explain:'Decide whether HBE should represent you. No pressure.',next:'Review representation and choose yes or no when you are ready.',reassure:'Nothing is signed until you choose to hire.'},
+    market:{explain:'Learn what homes like yours actually cost and look like right now.',next:'Look at the market with HBE before chasing individual homes.',reassure:'Nothing else you need to do right now.'},
+    search:{explain:'Turn what matters to you into a clear home search.',next:'Confirm your search criteria with HBE.',reassure:'You can change the search as you learn.'},
+    possibilities:{explain:'Look at homes that might fit — including ones you did not expect.',next:'Flag homes worth a closer look.',reassure:'Nothing else you need to do right now.'},
+    evaluation:{explain:'Tour homes and notice what each one teaches you.',next:'Tour with HBE and capture what stood out.',reassure:'Take it one home at a time.'},
+    offer:{explain:'Decide whether making an offer is the right move — before negotiating.',next:'Talk with HBE about whether an offer serves your goals.',reassure:'Excitement alone is not a reason to offer.'},
+    terms:{explain:'Build price and terms you can live with either way.',next:'Review offer terms with HBE before anything is sent.',reassure:'Nothing else you need to do right now.'},
+    negotiation:{explain:'Respond to counters while protecting what matters to you.',next:'Review any counter with HBE before you answer.',reassure:'Walking away is always an option.'},
+    diligence:{explain:'Learn new facts before the decision gets harder to change.',next:'Review new facts with HBE as they arrive.',reassure:'Nothing else you need to do right now.'},
+    inspection:{explain:'Put inspection findings in plain context — routine vs real risk.',next:'Review inspection findings with HBE.',reassure:'Nothing else you need to do right now.'},
+    value:{explain:'Compare the price with independent value evidence.',next:'Review appraisal or value evidence with HBE.',reassure:'Nothing else you need to do right now.'},
+    loan:{explain:'Finish financing without last-minute surprises.',next:'Stay on top of lender requests with HBE.',reassure:'Nothing else you need to do right now.'},
+    commitment:{explain:'Ask whether this is still the right home before final commitment.',next:'Confirm with HBE that this still fits your why.',reassure:'You can still pause and think.'},
+    closing:{explain:'Finish documents, walk-through, and get the keys.',next:'Complete closing steps with HBE guiding the checklist.',reassure:'Nothing else you need to do right now.'},
+    afterKeys:{explain:'Settle in. HBE stays available for the first surprises.',next:'Reach out to HBE if something unexpected comes up.',reassure:'Nothing else you need to do right now.'}
   };
-  // Do not seed roadmap with nextTitle — What's Next already shows it (Issue #65 acceptance).
-  // Also skip any task/checklist title that equals nextTitle so the cards stay complementary.
-  const skipDup = (s) => String(s||'').trim() === nextTitle;
-  next.querySelectorAll('.i29-task strong').forEach(el=>{ if(!skipDup(el.textContent)) pushStep(el.textContent); });
-  document.querySelectorAll('.i29-check-row strong').forEach(el=>{
-    const row=el.closest('.i29-check-row');
-    if(row&&row.querySelector('[aria-pressed="true"]')) return;
-    if(skipDup(el.textContent)) return;
-    pushStep(el.textContent);
-  });
-  ['Tell HBE what still feels unresolved','Pause anytime — your place in the journey stays saved','Open the checklist only when you want more detail']
-    .forEach(f=>{ if(stepTitles.length<3) pushStep(f); });
-  const roadmapNext=document.createElement('section');
-  roadmapNext.className='buyer-roadmap-next';
-  roadmapNext.setAttribute('aria-label','What happens next');
-  roadmapNext.innerHTML='<div class="i29-kicker">NEXT</div><h2>What happens next</h2><ol>'+stepTitles.slice(0,3).map(t=>'<li><strong>'+escapeHtml(t)+'</strong></li>').join('')+'</ol>';
-  // Governing UX: Now → Why → Answer → Next. Place next-steps after the focus card / What’s Next.
-  next.parentNode.insertBefore(roadmapNext, next.nextSibling);
+  function plainNext(raw){
+    let t=String(raw||'').trim();
+    t=t.replace(/^Continue\s+[^:]+:\s*/i,'');
+    if(!t||/seeded from|checklist item that created|empty-state fallback|highest-priority open task/i.test(t)) return '';
+    return t;
+  }
+  const preset=STAGE_COPY[stageId]||null;
+  const explain=(preset&&preset.explain)||stageBlurb||('You are on '+current+'.');
+  const nextAction=(preset&&preset.next)||plainNext(nextTitleRaw)||('Talk with HBE about '+current+'.');
+  const reassure=(preset&&preset.reassure)||'Nothing else you need to do right now.';
+  const card=document.createElement('section');
+  card.className='buyer-focus-card';
+  card.setAttribute('aria-label','Where you are');
+  card.innerHTML='<h1>'+escapeHtml(current)+'</h1><p class="buyer-here"><strong>You\u2019re here.</strong></p><p>'+escapeHtml(explain)+'</p><p class="buyer-next-line"><strong>Next:</strong> '+escapeHtml(nextAction)+'</p><p class="buyer-reassure">'+escapeHtml(reassure)+'</p>';
+  main.insertBefore(card, main.firstChild);
 
-  // Keep journey map available without redundant “17 steps / See full” primary treatment.
-  const groups=[
-    {label:'Journey map',nodes:[document.querySelector('.i29-map')]},
-    {label:'Your story and decision compass',nodes:[document.querySelector('.i29-story'),document.querySelector('.i29-compass')]},
-    {label:'Current-step checklist',nodes:[document.querySelector('.i29-checklist')]},
-    {label:'Representation and compensation details',nodes:[document.querySelector('.i29-comp')]}
-  ];
-  for(const group of groups){
-    const nodes=group.nodes.filter(Boolean); if(!nodes.length)continue;
-    const details=document.createElement('details'); details.className='buyer-more';
-    const summary=document.createElement('summary'); summary.textContent=group.label;
-    const body=document.createElement('div'); body.className='buyer-more-body';
+  // Issue #77: one primary next-action only — hide duplicate What’s Next / guides / roadmap.
+  next.remove();
+  document.querySelectorAll('.i29-guide,.buyer-roadmap-next').forEach(el=>el.remove());
+
+  // Secondary detail behind one “See more”.
+  const nodes=[
+    document.querySelector('.i29-map'),
+    document.querySelector('.i29-story'),
+    document.querySelector('.i29-compass'),
+    document.querySelector('.i29-checklist'),
+    document.querySelector('.i29-comp')
+  ].filter(Boolean);
+  if(nodes.length){
+    const details=document.createElement('details');
+    details.className='buyer-more';
+    const summary=document.createElement('summary');
+    summary.textContent='See more';
+    const body=document.createElement('div');
+    body.className='buyer-more-body';
     details.append(summary,body);
-    const anchor=nodes[0]; anchor.parentNode.insertBefore(details,anchor);
+    const anchor=nodes[0];
+    anchor.parentNode.insertBefore(details,anchor);
     nodes.forEach(node=>body.appendChild(node));
   }
   function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
