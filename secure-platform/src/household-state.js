@@ -151,9 +151,12 @@ export function deriveWhatsNext({ stage, checklistItems, completions, tasks, act
   const openTasks = tasksForActor(tasks, actor).filter(t => t.status === 'open' && allowed.includes(t.visibility || 'shared'));
   const labeled = openTasks.find(t => Number(t.is_whats_next) === 1) || chooseTopTask(openTasks);
   if (labeled) {
+    const buyer = actor.kind === 'buyer';
     return {
       title: labeled.title,
-      reason: labeled.source === 'checklist' ? 'From a checklist item that created this action' : 'Highest-priority open task',
+      reason: labeled.source === 'checklist'
+        ? (buyer ? 'Next useful step right now' : 'From a checklist item that created this action')
+        : (buyer ? 'Your highest-priority open action' : 'Highest-priority open task'),
       source: labeled.source || 'task',
       due_at: labeled.due_at || null,
       priority: labeled.priority || 'high',
@@ -165,9 +168,10 @@ export function deriveWhatsNext({ stage, checklistItems, completions, tasks, act
     .filter(i => i.stage_id === stage && allowed.includes(i.visibility) && !isCompletedForActor(i, completions, actor));
   const nextItem = currentItems[0];
   if (nextItem) {
+    const buyer = actor.kind === 'buyer';
     return {
       title: `Continue ${stageLabel(stage)}: ${nextItem.title}`,
-      reason: 'Seeded from the current-stage checklist',
+      reason: buyer ? 'Next useful step right now' : 'Seeded from the current-stage checklist',
       source: 'checklist',
       due_at: null,
       priority: 'high',
@@ -203,7 +207,7 @@ export function deriveWhatsNext({ stage, checklistItems, completions, tasks, act
   }
   return {
     title: `Review the ${stageLabel(stage)} checklist and tell HBE what still feels unresolved`,
-    reason: 'Empty-state fallback is still a useful buyer action',
+    reason: 'Best next step',
     source: 'seed',
     due_at: null,
     priority: 'normal',

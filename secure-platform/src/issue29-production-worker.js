@@ -176,14 +176,20 @@ export default {
       .replace('Empty-state fallback is still a useful HBE action', 'Best next HBE action')
       .replace('Empty-state fallback is still a useful buyer action', 'Best next step')
       .replace('From a checklist item that created this action', 'From your current checklist')
-      .replace('Highest-priority open task', 'Highest priority');
+      .replace('Highest-priority open task', 'Highest priority')
+      .replace('Seeded from the current-stage checklist', 'Next useful step right now');
 
     if (request.method === 'GET' && url.pathname === '/') {
       text = refinePublicJourney(text);
     }
 
-    // Put one clear directional cue immediately before the primary action area.
-    if (text.includes('<section class="i29-next" id="whats-next">') && !text.includes('class="i29-guide"')) {
+    // Issue #77: Buyer Portal uses the simple stage card instead of Start here + What’s Next.
+    // Keep the cue on non-portal surfaces (e.g. HBE) that still rely on What’s Next.
+    if (
+      url.pathname !== '/portal'
+      && text.includes('<section class="i29-next" id="whats-next">')
+      && !text.includes('class="i29-guide"')
+    ) {
       text = text.replace('<section class="i29-next" id="whats-next">', `${START_HERE}<section class="i29-next" id="whats-next">`);
     }
 

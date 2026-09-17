@@ -179,33 +179,31 @@ test('homepage keeps one clear primary Journey CTA ahead of secondary VALUE link
 });
 
 
-test('portal focus roadmap does not duplicate the What\'s Next title', () => {
+test('portal focus script is a single stage card without duplicate next roadmap (Issue #77)', () => {
   const html = addBuyerFirstClarity(
-    '<!doctype html><html><head></head><body><main><div class="i29-map"><div class="i29-stop current"><strong>Consultation</strong></div></div><section class="i29-next"><strong>Schedule the strategy session</strong><small>Turn answers into understanding</small><div class="i29-tasks"><div class="i29-task"><strong>Bring your open questions</strong></div></div></section><div class="i29-checklist"><div class="i29-check-row"><strong>Schedule the strategy session</strong><button aria-pressed="false">○</button></div><div class="i29-check-row"><strong>Name what still feels unresolved</strong><button aria-pressed="false">○</button></div></div></main></body></html>',
+    '<!doctype html><html><head></head><body><main><div class="i29-map"><div class="i29-stop current" data-stage="consultation"><strong>Consultation</strong></div></div><section class="i29-next"><strong>Schedule the strategy session</strong><small>Turn answers into understanding</small><div class="i29-tasks"><div class="i29-task"><strong>Bring your open questions</strong></div></div></section><div class="i29-checklist"><div class="i29-check-row"><strong>Schedule the strategy session</strong><button aria-pressed="false">○</button></div><div class="i29-check-row"><strong>Name what still feels unresolved</strong><button aria-pressed="false">○</button></div></div></main></body></html>',
     '/portal'
   );
-  assert.match(html, /buyer-roadmap-next/);
-  const roadmap = html.match(/buyer-roadmap-next[\s\S]*?<\/ol>/);
-  assert.ok(roadmap, 'roadmap ol present');
-  // What's Next title must not appear as a roadmap li even if also present as a checklist row
-  assert.doesNotMatch(roadmap[0], /<li><strong>Schedule the strategy session<\/strong><\/li>/);
-  assert.match(roadmap[0], /Bring your open questions|Name what still feels unresolved/);
+  assert.match(html, /buyer-portal-focus-script/);
+  assert.match(html, /Have your consultation with HBE/);
+  assert.match(html, /See more/);
+  assert.doesNotMatch(html, /buyer-focus-grid/);
+  assert.doesNotMatch(html, /className=['"]buyer-roadmap-next['"]/);
+  assert.doesNotMatch(html, /What happens next/);
 });
 
-test('portal focus script shows next steps and does not lead with 17/See-full', () => {
+test('portal focus script does not lead with 17/See-full and has no dense primary grid', () => {
   const html = addBuyerFirstClarity(
-    '<!doctype html><html><head></head><body><main><div class="i29-map"><div class="i29-stop current"><strong>Consultation</strong></div></div><section class="i29-next"><strong>Schedule the strategy session</strong><small>Turn answers into understanding</small></section></main></body></html>',
+    '<!doctype html><html><head></head><body><main><div class="i29-map"><div class="i29-stop current" data-stage="consultation"><strong>Consultation</strong></div></div><section class="i29-next"><strong>Schedule the strategy session</strong><small>Turn answers into understanding</small></section></main></body></html>',
     '/portal'
   );
-  assert.match(html, />NOW</);
-  assert.match(html, /buyer-roadmap-next/);
-  assert.match(html, /What happens next/);
-  assert.match(html, /Journey map/);
+  assert.match(html, /buyer-focus-card/);
+  assert.match(html, /See more/);
+  assert.doesNotMatch(html, /buyer-focus-grid/);
   assert.doesNotMatch(html, /See the full 17-stage journey/);
   assert.doesNotMatch(html, /See all 17 stages/);
   assert.doesNotMatch(html, /full journey is here when you want context/i);
 });
-
 
 test('Issue #65: Stage 4 is market and Stage 5 is search across canonical STAGES', () => {
   assert.equal(assertSeventeenStages(), true);
