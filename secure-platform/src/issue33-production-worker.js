@@ -8,6 +8,7 @@ import { STAGES } from './journey-stages.js';
 import { mutationCsrfToken } from './household-state.js';
 import { BIMATRIX_CSS, buyerBimatrixPanel, handleBuyerBimatrixRefresh } from './bimatrix/freshness.js';
 import { buyerGuidanceRuntimeScript } from './buyer-guidance.js';
+import { enhanceJourneyForTenant } from './value-orbit/index.js';
 
 export const BUYER_FIRST_CSS = `<style id="buyer-first-clarity">
 .buyer-first-core{max-width:900px;margin:1rem auto;padding:1rem 1.1rem;border:1px solid #dfe8e2;border-left:4px solid #2d5a3d;border-radius:10px;background:#f7faf8;color:#2c2c2c;line-height:1.55}.buyer-first-core strong{color:#1a1a2e}.buyer-review-backdrop{position:fixed;inset:0;z-index:1000;background:rgba(26,26,46,.58);display:none;align-items:center;justify-content:center;padding:1rem}.buyer-review-backdrop.open{display:flex}.buyer-review{width:min(760px,100%);max-height:min(88vh,900px);overflow:auto;background:#fff;border-radius:14px;padding:1.35rem;box-shadow:0 24px 70px rgba(0,0,0,.28)}.buyer-review h2{margin:.15rem 0 .4rem;color:#1a1a2e;font-family:Georgia,serif}.buyer-review-intro{color:#555;margin:0 0 1rem}.buyer-review-list{display:grid;gap:.7rem;margin:1rem 0}.buyer-review-item{padding:.8rem .9rem;border:1px solid #e8e5e0;border-radius:9px;background:#faf9f6}.buyer-review-item small{display:block;color:#6b6b6b;font-weight:800;text-transform:uppercase;letter-spacing:.04em}.buyer-review-item div{white-space:pre-wrap}.buyer-review-trust{padding:1rem;border-radius:9px;background:#f7faf8;border:1px solid #dfe8e2;color:#333}.buyer-review-actions{display:flex;gap:.7rem;justify-content:flex-end;flex-wrap:wrap;margin-top:1rem}.buyer-review-actions button{font:inherit;font-weight:800;border-radius:7px;padding:.75rem 1rem;cursor:pointer}.buyer-review-edit{background:#fff;color:#2d5a3d;border:1px solid #2d5a3d}.buyer-review-send{background:#2d5a3d;color:#fff;border:1px solid #2d5a3d}.buyer-review-empty{color:#6b6b6b;font-style:italic}
@@ -181,6 +182,7 @@ main.wrap.journey-landing>.buyer-first-core,
 main.wrap.journey-landing>.value-context,
 main.wrap.journey-landing>.value-context.hbe-value-public{margin-left:auto!important;margin-right:auto!important;max-width:36rem;text-align:center;justify-content:center}
 main.wrap.journey-landing>.public-journey-stages{width:min(40rem,100%);max-width:40rem;margin-left:auto!important;margin-right:auto!important}
+main.wrap.journey-landing>.vo-orbit{width:min(40rem,100%)!important;max-width:40rem;margin-left:auto!important;margin-right:auto!important}
 </style>`;
 
 export default {
@@ -238,8 +240,12 @@ export default {
 
     if (request.method === 'GET' && response.status === 200) {
       text = addBuyerFirstClarity(text, url.pathname);
-      if (url.pathname === '/' && !text.includes('id="journey-landing-layout"')) {
-        text = text.includes('</head>') ? text.replace('</head>', `${JOURNEY_LANDING_LAYOUT_CSS}</head>`) : text;
+      if (url.pathname === '/') {
+        if (!text.includes('id="journey-landing-layout"')) {
+          text = text.includes('</head>') ? text.replace('</head>', `${JOURNEY_LANDING_LAYOUT_CSS}</head>`) : text;
+        }
+        // VALUE orbit → service-area prototype (HBE tenant). Non-blocking; reversible.
+        text = enhanceJourneyForTenant(text, 'hbe');
       }
       if (url.pathname === '/questionnaire') {
         text = confineOrientationCardsToPage1(text);
