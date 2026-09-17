@@ -95,7 +95,21 @@ async function updateStage(request, env, url) {
   if (!STAGES.some(s => s[0] === stage) && stage !== 'complete') return redirect(`/hbe?buyer=${encodeURIComponent(buyerId)}`);
   // Write path: canonical predecessors under current STAGES order (market before search).
   const completed = stage === 'complete' ? STAGES.map(s => s[0]) : STAGES.slice(0, Math.max(0, STAGES.findIndex(s => s[0] === stage))).map(s => s[0]);
-  await env.BUYER_DB.prepare('UPDATE buyers SET stage=?, completed_stages=?, updated_at=? WHERE id=?').bind(stage, JSON.stringify(completed), new Date().toISOString(), buyerId).run();
+  const completedJson = JSON.stringify(completed);
+  const now = new Date().toISOString();
+  const membership = await env.BUYER_DB.prepare('SELECT case_id FROM buyer_case_members WHERE buyer_id=? LIMIT 1').bind(buyerId).first();
+  if (membership?.case_id) {
+    // Journey stage is household truth: advance the case and every linked buyer together.
+    await env.BUYER_DB.batch([
+      env.BUYER_DB.prepare('UPDATE buyer_cases SET stage=?, completed_stages=?, updated_at=? WHERE id=?')
+        .bind(stage, completedJson, now, membership.case_id),
+      env.BUYER_DB.prepare('UPDATE buyers SET stage=?, completed_stages=?, updated_at=? WHERE id IN (SELECT buyer_id FROM buyer_case_members WHERE case_id=?)')
+        .bind(stage, completedJson, now, membership.case_id)
+    ]);
+  } else {
+    await env.BUYER_DB.prepare('UPDATE buyers SET stage=?, completed_stages=?, updated_at=? WHERE id=?')
+      .bind(stage, completedJson, now, buyerId).run();
+  }
   return redirect(`/hbe?buyer=${encodeURIComponent(buyerId)}`);
 }
 

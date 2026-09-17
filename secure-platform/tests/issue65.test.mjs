@@ -10,6 +10,7 @@ import {
   STAGES, assertSeventeenStages, isStageVisuallyDone, normalizeCompletedList, inferCompletedOnAdvance
 } from '../src/journey-stages.js';
 import { BUYER_GUIDANCE, installBuyerGuidance } from '../src/buyer-guidance.js';
+import hbeWorker from '../src/hbe-worker.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const repoRoot = join(root, '..');
@@ -304,4 +305,61 @@ test('Issue #65: open-ended fields have example affordances; identity has no Iâ€
 test('Issue #65: normalizeCompletedList tolerates JSON strings', () => {
   assert.deepEqual(normalizeCompletedList('["buyerExperience","consultation"]'), ['buyerExperience', 'consultation']);
   assert.deepEqual(normalizeCompletedList(null), []);
+});
+
+test('Issue #65: household bundle retains persisted completed stages for HBE rendering', () => {
+  const household = read('src/household-state.js');
+  assert.match(
+    household,
+    /SELECT b\.id,b\.first_name,b\.last_name,b\.email,b\.stage,b\.completed_stages,b\.phone,b\.answers_json/
+  );
+});
+
+test('Issue #65: HBE stage advance updates authoritative case and all linked buyers', async () => {
+  const executed = [];
+  function statement(sql) {
+    return {
+      sql,
+      args: [],
+      bind(...args) { this.args = args; return this; },
+      async first() {
+        if (/SELECT case_id FROM buyer_case_members/.test(sql)) return { case_id: 'case-1' };
+        return null;
+      },
+      async run() { executed.push({ sql, args: this.args }); return { success: true }; }
+    };
+  }
+  const env = {
+    HBE_ADMIN_EMAIL: 'advisor@example.test',
+    BUYER_DB: {
+      prepare: statement,
+      async batch(statements) {
+        for (const item of statements) executed.push({ sql: item.sql, args: item.args });
+        return statements.map(() => ({ success: true }));
+      }
+    }
+  };
+  const response = await hbeWorker.fetch(new Request(
+    'https://buyer.hbexperts.com/api/hbe/buyer/buyer-1/stage',
+    {
+      method: 'POST',
+      headers: {
+        'Cf-Access-Authenticated-User-Email': 'advisor@example.test',
+        'content-type': 'application/x-www-form-urlencoded'
+      },
+      body: new URLSearchParams({ stage: 'search' })
+    }
+  ), env, {});
+
+  assert.equal(response.status, 303);
+  const caseUpdate = executed.find(row => /UPDATE buyer_cases SET stage=/.test(row.sql));
+  const memberUpdate = executed.find(row => /UPDATE buyers SET stage=.*buyer_case_members/.test(row.sql));
+  assert.ok(caseUpdate, 'authoritative buyer_cases stage must advance');
+  assert.ok(memberUpdate, 'all linked buyer rows must advance with the case');
+  assert.deepEqual(caseUpdate.args.slice(0, 2), [
+    'search',
+    '["buyerExperience","consultation","representation","market"]'
+  ]);
+  assert.equal(caseUpdate.args[3], 'case-1');
+  assert.equal(memberUpdate.args[3], 'case-1');
 });
