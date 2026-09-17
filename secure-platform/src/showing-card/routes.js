@@ -7,6 +7,7 @@ import {
 } from './store.js';
 import { fieldById, sectionIds } from './dossier-schema.js';
 import { propertiesPanelHtml, showingCardPageHtml, SHOWING_CARD_CSS, esc } from './ui.js';
+import { injectHbeOps } from '../hbeui-lanes.js';
 
 function securityHeaders(type) {
   return new Headers({
@@ -251,7 +252,7 @@ async function apiGetPhoto(request, env, path) {
 export async function enhanceHbeWithProperties(request, env, url, text) {
   if (!env?.BUYER_DB) {
     if (!text.includes('id="properties-showings"')) {
-      return injectBeforeMainEnd(text, `<section class="sc-panel" id="properties-showings"><h2>Properties / Showings</h2><p>Showing-card schema ready; D1 not bound here.</p></section>`);
+      return injectHbeOps(text, `<section class="sc-panel" id="properties-showings"><h2>Properties / Showings</h2><p>Showing-card schema ready; D1 not bound here.</p></section>`);
     }
     return text;
   }
@@ -304,7 +305,7 @@ export async function enhanceHbeWithProperties(request, env, url, text) {
   if (text.includes('id="properties-showings"')) {
     text = text.replace(/<section class="sc-panel" id="properties-showings"[\s\S]*?<\/section>/, panel);
   } else {
-    text = injectBeforeMainEnd(text, panel);
+    text = injectHbeOps(text, panel);
   }
   return text;
 }
