@@ -1,7 +1,7 @@
 import appWorker from './access-code-worker.js';
 
 const STAGES = [
-  ['buyerExperience','Buyer Experience'],['consultation','Consultation'],['representation','Hire HBE'],['search','Build Your Home Search'],['market','Learn the Market'],['possibilities','Discover Possibilities'],['evaluation','Evaluate Homes'],['offer','Ready to Offer?'],['terms','Build the Offer'],['negotiation','Negotiate Wisely'],['diligence','Learn What We Did Not Know'],['inspection','Inspection Decision'],['value','Value Check'],['loan','Final Financing'],['commitment','Final Decision'],['closing','Get the Keys'],['afterKeys','After the Keys']
+  ['buyerExperience','Buyer Experience'],['consultation','Consultation'],['representation','Hire HBE'],['market','Learn the Market'],['search','Build Your Home Search'],['possibilities','Discover Possibilities'],['evaluation','Evaluate Homes'],['offer','Ready to Offer?'],['terms','Build the Offer'],['negotiation','Negotiate Wisely'],['diligence','Learn What We Did Not Know'],['inspection','Inspection Decision'],['value','Value Check'],['loan','Final Financing'],['commitment','Final Decision'],['closing','Get the Keys'],['afterKeys','After the Keys']
 ];
 
 export default {
@@ -93,6 +93,7 @@ async function updateStage(request, env, url) {
   const form = await request.formData();
   const stage = clean(form.get('stage'));
   if (!STAGES.some(s => s[0] === stage) && stage !== 'complete') return redirect(`/hbe?buyer=${encodeURIComponent(buyerId)}`);
+  // Write path: canonical predecessors under current STAGES order (market before search).
   const completed = stage === 'complete' ? STAGES.map(s => s[0]) : STAGES.slice(0, Math.max(0, STAGES.findIndex(s => s[0] === stage))).map(s => s[0]);
   await env.BUYER_DB.prepare('UPDATE buyers SET stage=?, completed_stages=?, updated_at=? WHERE id=?').bind(stage, JSON.stringify(completed), new Date().toISOString(), buyerId).run();
   return redirect(`/hbe?buyer=${encodeURIComponent(buyerId)}`);
@@ -133,11 +134,15 @@ function selectedBuyer(b, tasks, notes, notifications) {
   const openTasks = tasks.filter(t => t.status === 'open');
   const dateCritical = openTasks.filter(t => t.due_at && (t.priority === 'critical' || isDueSoon(t.due_at))).sort(sortDue);
   const topTask = chooseTopTask(openTasks);
+  // Issue #65: prefer stored completed_stages; never invent market done from index alone.
+  let completedList = [];
+  try { const parsed = JSON.parse(b.completed_stages || '[]'); if (Array.isArray(parsed)) completedList = parsed; } catch {}
+  const stageDone = (id, i) => b.stage === 'complete' || completedList.includes(id) || (i < stageIndex && !(id === 'market' && !completedList.includes('market')));
   return `<section class="buyer-main">
     <div class="buyer-heading"><div><div class="eyebrow">SELECTED BUYER</div><h2>${esc(b.first_name)} ${esc(b.last_name)}</h2><p><a href="mailto:${esc(b.email)}">${esc(b.email)}</a>${b.phone ? ` · <a href="tel:${esc(b.phone)}">${esc(b.phone)}</a>` : ''}${answers.co_buyer?.name ? ` · With ${esc(answers.co_buyer.name)}` : ''}</p></div><div class="stage-summary"><small>Current</small><strong>${esc(stageLabel(b.stage))}</strong>${next ? `<small>Next</small><strong>${esc(next[1])}</strong>` : ''}</div></div>
     ${dateCritical.length ? `<div class="critical-bar"><strong>Date-critical</strong>${dateCritical.slice(0,3).map(t => `<span>${esc(t.title)} · ${fmtDate(t.due_at)}</span>`).join('')}</div>` : ''}
     ${topTask ? `<div class="priority-task"><small>Highest priority right now</small><strong>${esc(topTask.title)}</strong>${topTask.due_at ? `<span>${fmtDate(topTask.due_at)}</span>` : ''}</div>` : ''}
-    <div class="roadmap">${STAGES.map((s,i) => `<form method="post" action="/api/hbe/buyer/${encodeURIComponent(b.id)}/stage"><input type="hidden" name="stage" value="${s[0]}"><button class="stage ${s[0] === b.stage ? 'current' : i < stageIndex || b.stage === 'complete' ? 'done' : ''}" title="Set current stage to ${esc(s[1])}"><span>${i+1}</span><em>${esc(s[1])}</em></button></form>`).join('')}</div>
+    <div class="roadmap">${STAGES.map((s,i) => `<form method="post" action="/api/hbe/buyer/${encodeURIComponent(b.id)}/stage"><input type="hidden" name="stage" value="${s[0]}"><button class="stage ${s[0] === b.stage ? 'current' : stageDone(s[0], i) ? 'done' : ''}" title="Set current stage to ${esc(s[1])}"><span>${i+1}</span><em>${esc(s[1])}</em></button></form>`).join('')}</div>
     <div class="workspace-grid">
       <div class="column">
         ${decisionProfile(answers)}
