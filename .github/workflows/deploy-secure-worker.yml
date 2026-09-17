@@ -1,5 +1,15 @@
 name: Deploy Secure HBE Buyer Platform
 
+# Manual production deploy only. Sentinel acceptance requires:
+# 1) Pinned Actions commit SHAs + pinned Wrangler version (no @latest / floating major tags).
+# 2) GitHub Environment `hbe-secure-production` configured with a REQUIRED human reviewer
+#    before secrets are released. Naming the environment below does NOT create that gate —
+#    an org/repo admin must set Required reviewers (and optionally Wait timer) on the
+#    Environment in Settings → Environments → hbe-secure-production. Without that UI
+#    protection, this workflow must not be treated as production-safe.
+# 3) CLOUDFLARE_API_TOKEN must be least-privilege (see secure-platform/docs/REMOTE_SECURE_DEPLOY.md).
+#    Never commit the token. Prefer Environment secrets over repository secrets.
+
 on:
   workflow_dispatch:
 
@@ -15,15 +25,22 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
+      # Production approval gate: configure Required reviewers on this Environment in GitHub.
+      # Actions cannot declare reviewers in YAML; protection is Environment settings only.
       name: hbe-secure-production
+      url: https://buyer.hbexperts.com
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      # Must match the pin in secure-platform/deploy.ps1 ($WranglerVersion).
+      WRANGLER_VERSION: '4.134.0'
     steps:
       - name: Checkout main
-        uses: actions/checkout@v4
+        # Pin immutable commit (actions/checkout@v4.2.2). Do not float on @v4.
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        # Pin immutable commit (actions/setup-node@v4.4.0). Do not float on @v4.
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '22'
 
@@ -31,9 +48,16 @@ jobs:
         shell: bash
         run: |
           if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
-            echo "CLOUDFLARE_API_TOKEN secret is not configured." >&2
+            echo "CLOUDFLARE_API_TOKEN secret is not configured on Environment hbe-secure-production." >&2
             exit 1
           fi
+
+      - name: Assert Environment gate documentation present
+        shell: bash
+        run: |
+          test -f secure-platform/docs/REMOTE_SECURE_DEPLOY.md
+          grep -q 'Required reviewers' secure-platform/docs/REMOTE_SECURE_DEPLOY.md
+          grep -q 'least-privilege' secure-platform/docs/REMOTE_SECURE_DEPLOY.md
 
       - name: Deploy secure Buyer Platform
         shell: pwsh
@@ -47,3 +71,4 @@ jobs:
           echo "SECURE_PLATFORM_RELEASE=${GITHUB_SHA}" >> "$GITHUB_STEP_SUMMARY"
           echo "BUYER_PLATFORM=https://buyer.hbexperts.com" >> "$GITHUB_STEP_SUMMARY"
           echo "DEPLOYED_FROM=GitHub Actions manual workflow" >> "$GITHUB_STEP_SUMMARY"
+          echo "WRANGLER_VERSION=${WRANGLER_VERSION}" >> "$GITHUB_STEP_SUMMARY"
