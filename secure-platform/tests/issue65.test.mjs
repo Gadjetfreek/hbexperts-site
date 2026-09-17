@@ -181,15 +181,15 @@ test('homepage keeps one clear primary Journey CTA ahead of secondary VALUE link
 
 test('portal focus roadmap does not duplicate the What\'s Next title', () => {
   const html = addBuyerFirstClarity(
-    '<!doctype html><html><head></head><body><main><div class="i29-map"><div class="i29-stop current"><strong>Consultation</strong></div></div><section class="i29-next"><strong>Schedule the strategy session</strong><small>Turn answers into understanding</small><div class="i29-tasks"><div class="i29-task"><strong>Bring your open questions</strong></div></div></section></main></body></html>',
+    '<!doctype html><html><head></head><body><main><div class="i29-map"><div class="i29-stop current"><strong>Consultation</strong></div></div><section class="i29-next"><strong>Schedule the strategy session</strong><small>Turn answers into understanding</small><div class="i29-tasks"><div class="i29-task"><strong>Bring your open questions</strong></div></div></section><div class="i29-checklist"><div class="i29-check-row"><strong>Schedule the strategy session</strong><button aria-pressed="false">○</button></div><div class="i29-check-row"><strong>Name what still feels unresolved</strong><button aria-pressed="false">○</button></div></div></main></body></html>',
     '/portal'
   );
   assert.match(html, /buyer-roadmap-next/);
   const roadmap = html.match(/buyer-roadmap-next[\s\S]*?<\/ol>/);
   assert.ok(roadmap, 'roadmap ol present');
-  // What's Next title may still appear in focus card Answer/act, but must not be the seeded first roadmap li
+  // What's Next title must not appear as a roadmap li even if also present as a checklist row
   assert.doesNotMatch(roadmap[0], /<li><strong>Schedule the strategy session<\/strong><\/li>/);
-  assert.match(roadmap[0], /Bring your open questions/);
+  assert.match(roadmap[0], /Bring your open questions|Name what still feels unresolved/);
 });
 
 test('portal focus script shows next steps and does not lead with 17/See-full', () => {

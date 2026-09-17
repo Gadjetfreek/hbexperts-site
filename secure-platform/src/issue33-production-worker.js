@@ -80,10 +80,13 @@ export const BUYER_PORTAL_FOCUS_JS = `<script id="buyer-portal-focus-script">
     stepTitles.push(s);
   };
   // Do not seed roadmap with nextTitle — What's Next already shows it (Issue #65 acceptance).
-  next.querySelectorAll('.i29-task strong').forEach(el=>pushStep(el.textContent));
+  // Also skip any task/checklist title that equals nextTitle so the cards stay complementary.
+  const skipDup = (s) => String(s||'').trim() === nextTitle;
+  next.querySelectorAll('.i29-task strong').forEach(el=>{ if(!skipDup(el.textContent)) pushStep(el.textContent); });
   document.querySelectorAll('.i29-check-row strong').forEach(el=>{
     const row=el.closest('.i29-check-row');
     if(row&&row.querySelector('[aria-pressed="true"]')) return;
+    if(skipDup(el.textContent)) return;
     pushStep(el.textContent);
   });
   ['Tell HBE what still feels unresolved','Pause anytime — your place in the journey stays saved','Open the checklist only when you want more detail']
