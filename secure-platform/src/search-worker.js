@@ -107,7 +107,7 @@ async function runHbeSearch(request, env) {
   const notConfirmed = (confirmations.results || []).filter(row => Number(row.profile_version || 0) !== Number(profile.version || 0));
   if (notConfirmed.length) return messagePage('Buyer confirmation needed','Each linked buyer must confirm the current search profile before HBE runs the automated MLS search.',409,buyerId);
 
-  if (!mlsConfigured(env)) return messagePage('MLS feed not connected','Stage 4 is ready, but the approved MLS Now/Trestle feed credentials have not been configured yet. No listing data was requested.',409,buyerId);
+  if (!mlsConfigured(env)) return messagePage('MLS feed not connected','Stage 5 is ready, but the approved MLS Now/Trestle feed credentials have not been configured yet. No listing data was requested.',409,buyerId);
 
   try {
     const result = await searchMls(env, profile, {top:25});
@@ -185,16 +185,21 @@ function buyerSearchPanel(data) {
   const p = data.profile || {};
   const me = data.members.find(m=>m.id===data.selectedBuyerId) || {};
   const confirmed = data.profile && Number(me.profile_version || 0) === Number(p.version || 0);
-  if (!active) return `<section id="home-search" class="search-shell search-locked"><div class="search-kicker">STAGE 4 · BUILD YOUR HOME SEARCH</div><h2>Your search begins after representation is active.</h2><p>We can learn about what matters before then, but HBE will not treat you as an active represented search until the written representation agreement is in place.</p></section>`;
+  if (!active) {
+    const waiting = data.caseRow?.stage === 'market'
+      ? `<h2>Learn the Market comes before building the search.</h2><p>Representation is active. Stage 4 helps you understand what the market is offering; Stage 5 unlocks the household MLS search when you are ready to turn priorities into criteria.</p>`
+      : `<h2>Your search begins after representation is active.</h2><p>We can learn about what matters before then, but HBE will not treat you as an active represented search until the written representation agreement is in place.</p>`;
+    return `<section id="home-search" class="search-shell search-locked"><div class="search-kicker">STAGE 5 · BUILD YOUR HOME SEARCH</div>${waiting}</section>`;
+  }
 
-  return `<section id="home-search" class="search-shell"><div class="search-kicker">STAGE 4 · BUILD YOUR HOME SEARCH</div><h2>Turn what matters into a search we can learn from.</h2><p class="search-lede">An MLS filter is not your decision. This profile separates <strong>hard constraints</strong> from <strong>preferences</strong> and keeps tradeoffs visible as the market teaches us more.</p>${searchProfileForm(p,'/api/search/profile',null)}<div class="search-confirm ${confirmed?'confirmed':''}"><strong>${confirmed?'You confirmed this version of the search.':'Your confirmation is still needed.'}</strong><span>${confirmed?`Version ${esc(p.version)} is the current shared search profile.`:'Review the profile, make any corrections, then save it. Your save confirms the current version for you.'}</span></div></section>`;
+  return `<section id="home-search" class="search-shell"><div class="search-kicker">STAGE 5 · BUILD YOUR HOME SEARCH</div><h2>Turn what matters into a search we can learn from.</h2><p class="search-lede">An MLS filter is not your decision. This profile separates <strong>hard constraints</strong> from <strong>preferences</strong> and keeps tradeoffs visible as the market teaches us more.</p>${searchProfileForm(p,'/api/search/profile',null)}<div class="search-confirm ${confirmed?'confirmed':''}"><strong>${confirmed?'You confirmed this version of the search.':'Your confirmation is still needed.'}</strong><span>${confirmed?`Version ${esc(p.version)} is the current shared search profile.`:'Review the profile, make any corrections, then save it. Your save confirms the current version for you.'}</span></div></section>`;
 }
 
 function hbeSearchPanel(data, env) {
   const active = data.caseRow.stage === 'search';
   const p = data.profile || {};
   const everyoneConfirmed = data.profile && data.members.length && data.members.every(m=>Number(m.profile_version||0)===Number(p.version||0));
-  return `<section id="home-search" class="search-shell search-hbe"><div class="search-head"><div><div class="search-kicker">STAGE 4 · BUILD YOUR HOME SEARCH · HBE WORKSPACE</div><h2>Household search profile</h2><p>Keep buyer meaning visible; compile only objective fields into the automated MLS query.</p></div><span class="search-stage ${active?'active':''}">${active?'Stage 4 active':'Waiting for representation'}</span></div>
+  return `<section id="home-search" class="search-shell search-hbe"><div class="search-head"><div><div class="search-kicker">STAGE 5 · BUILD YOUR HOME SEARCH · HBE WORKSPACE</div><h2>Household search profile</h2><p>Keep buyer meaning visible; compile only objective fields into the automated MLS query.</p></div><span class="search-stage ${active?'active':''}">${active?'Stage 5 active':(data.caseRow.stage==='market'?'Stage 4 · market first':'Waiting for representation')}</span></div>
     ${searchProfileForm(p,'/api/hbe/search/profile',data.selectedBuyerId)}
     <div class="search-member-grid">${data.members.map(m=>memberConfirmation(m,p)).join('')}</div>
     <div class="search-mls-box"><div><div class="search-kicker">MLS CONNECTION</div><h3>${mlsConfigured(env)?'Trestle feed configured':'Feed adapter ready · credentials not configured'}</h3><p>${mlsConfigured(env)?'The automated search will use only the objective fields above and will log each run.':'No MLS listing data is requested until the approved MLS Now/Trestle license and credentials are configured.'}</p></div><form method="post" action="/api/hbe/search/run"><input type="hidden" name="buyer_id" value="${esc(data.selectedBuyerId)}"><button type="submit" ${(!active||!data.profile||!everyoneConfirmed||!mlsConfigured(env))?'disabled':''}>Run MLS search</button></form></div>

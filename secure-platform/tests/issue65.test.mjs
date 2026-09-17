@@ -6,6 +6,11 @@ import { dirname, join } from 'node:path';
 import { refinePublicJourney, wrapPublicRoadmapInDisclosure } from '../src/issue29-production-worker.js';
 import { addBuyerFirstClarity } from '../src/issue33-production-worker.js';
 import { stageMapHtml } from '../src/issue29-ui.js';
+import {
+  STAGES, assertSeventeenStages, isStageVisuallyDone, normalizeCompletedList, inferCompletedOnAdvance
+} from '../src/journey-stages.js';
+import { BUYER_GUIDANCE, installBuyerGuidance } from '../src/buyer-guidance.js';
+import hbeWorker from '../src/hbe-worker.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const repoRoot = join(root, '..');
@@ -173,12 +178,202 @@ test('homepage keeps one clear primary Journey CTA ahead of secondary VALUE link
   assert.doesNotMatch(index, /consequential decision/i);
 });
 
-test('portal focus script still discloses full roadmap after current/next', () => {
+
+test('portal focus roadmap does not duplicate the What\'s Next title', () => {
+  const html = addBuyerFirstClarity(
+    '<!doctype html><html><head></head><body><main><div class="i29-map"><div class="i29-stop current"><strong>Consultation</strong></div></div><section class="i29-next"><strong>Schedule the strategy session</strong><small>Turn answers into understanding</small><div class="i29-tasks"><div class="i29-task"><strong>Bring your open questions</strong></div></div></section><div class="i29-checklist"><div class="i29-check-row"><strong>Schedule the strategy session</strong><button aria-pressed="false">○</button></div><div class="i29-check-row"><strong>Name what still feels unresolved</strong><button aria-pressed="false">○</button></div></div></main></body></html>',
+    '/portal'
+  );
+  assert.match(html, /buyer-roadmap-next/);
+  const roadmap = html.match(/buyer-roadmap-next[\s\S]*?<\/ol>/);
+  assert.ok(roadmap, 'roadmap ol present');
+  // What's Next title must not appear as a roadmap li even if also present as a checklist row
+  assert.doesNotMatch(roadmap[0], /<li><strong>Schedule the strategy session<\/strong><\/li>/);
+  assert.match(roadmap[0], /Bring your open questions|Name what still feels unresolved/);
+});
+
+test('portal focus script shows next steps and does not lead with 17/See-full', () => {
   const html = addBuyerFirstClarity(
     '<!doctype html><html><head></head><body><main><div class="i29-map"><div class="i29-stop current"><strong>Consultation</strong></div></div><section class="i29-next"><strong>Schedule the strategy session</strong><small>Turn answers into understanding</small></section></main></body></html>',
     '/portal'
   );
   assert.match(html, />NOW</);
-  assert.match(html, /See the full 17-stage journey/);
+  assert.match(html, /buyer-roadmap-next/);
+  assert.match(html, /What happens next/);
+  assert.match(html, /Journey map/);
+  assert.doesNotMatch(html, /See the full 17-stage journey/);
+  assert.doesNotMatch(html, /See all 17 stages/);
   assert.doesNotMatch(html, /full journey is here when you want context/i);
+});
+
+
+test('Issue #65: Stage 4 is market and Stage 5 is search across canonical STAGES', () => {
+  assert.equal(assertSeventeenStages(), true);
+  assert.equal(STAGES[3][0], 'market');
+  assert.equal(STAGES[3][1], 'Learn the Market');
+  assert.equal(STAGES[4][0], 'search');
+  assert.equal(STAGES[4][1], 'Build Your Home Search');
+
+  for (const rel of ['src/journey-stages.js', 'src/worker.js', 'src/ui-worker.js', 'src/hbe-worker.js']) {
+    const src = read(rel);
+    const marketAt = src.indexOf("['market'");
+    const searchAt = src.indexOf("['search'");
+    assert.ok(marketAt > 0 && searchAt > 0, rel);
+    assert.ok(marketAt < searchAt, rel + ' must list market before search');
+  }
+});
+
+test('Issue #65: existing search-stage buyer does not get market marked done from reorder', () => {
+  const completed = ['buyerExperience', 'consultation', 'representation'];
+  assert.equal(isStageVisuallyDone('market', 'search', completed), false);
+  assert.equal(isStageVisuallyDone('representation', 'search', completed), true);
+  assert.equal(isStageVisuallyDone('search', 'search', completed), false);
+
+  const html = stageMapHtml({ currentStage: 'search', completed, actor: { kind: 'buyer' } });
+  const marketStop = html.match(/<div class="i29-stop[^"]*" data-i29-stop data-stage="market"[^>]*>/);
+  const searchStop = html.match(/<div class="i29-stop[^"]*" data-i29-stop data-stage="search"[^>]*>/);
+  assert.ok(marketStop, 'market stop present');
+  assert.ok(searchStop, 'search stop present');
+  assert.match(marketStop[0], /\bfuture\b/);
+  assert.doesNotMatch(marketStop[0], /\bdone\b/);
+  assert.match(searchStop[0], /\bcurrent\b/);
+});
+
+test('Issue #65: representation activation advances to market (not search)', () => {
+  const rep = read('src/representation-worker.js');
+  assert.match(rep, /SET stage='market'/);
+  assert.match(rep, /next_stage:'market'/);
+  assert.doesNotMatch(rep, /SET stage='search'/);
+  assert.doesNotMatch(rep, /next_stage:'search'/);
+  assert.match(rep, /Next: Learn the Market/);
+  // MLS/search gates stay semantic on stage key search
+  const search = read('src/search-worker.js');
+  assert.match(search, /stage !== 'search'/);
+  assert.match(search, /STAGE 5 · BUILD YOUR HOME SEARCH/);
+});
+
+test('Issue #65: write-path inferCompletedOnAdvance includes market before search', () => {
+  assert.deepEqual(inferCompletedOnAdvance('search'), [
+    'buyerExperience', 'consultation', 'representation', 'market'
+  ]);
+  assert.ok(!inferCompletedOnAdvance('market').includes('search'));
+  assert.ok(inferCompletedOnAdvance('market').includes('representation'));
+});
+
+test('Issue #65: open-ended fields have example affordances; identity has no I’m not sure yet', () => {
+  const portal = read('src/portal-worker.js');
+  for (const name of ['why', 'success_definition', 'non_negotiables', 'unknowns', 'saturday_morning_vision', 'consultation_success', 'notes']) {
+    assert.match(portal, new RegExp('name="' + name + '"[^>]*placeholder="Example:'));
+  }
+  assert.ok(BUYER_GUIDANCE.why.suggestions.some(s => /not sure yet/i.test(s)));
+  assert.equal(BUYER_GUIDANCE.first_name, undefined);
+  assert.equal(BUYER_GUIDANCE.email, undefined);
+  assert.equal(BUYER_GUIDANCE.phone, undefined);
+
+  // Chips for text fields are labeled Example:; uncertainty stays plain
+  const form = {
+    elements: {
+      namedItem(name) {
+        return form.fields[name] || null;
+      }
+    },
+    fields: {},
+    querySelector() { return null; }
+  };
+  function el(tag, name) {
+    const node = {
+      nodeType: 1, tagName: tag.toUpperCase(), type: tag === 'textarea' ? 'textarea' : 'text',
+      name, value: '', dataset: {}, nextSiblings: [],
+      dispatchEvent() {}, focus() {},
+      insertAdjacentElement(pos, child) {
+        if (pos === 'afterend') this.nextSiblings.unshift(child);
+      }
+    };
+    form.fields[name] = node;
+    return node;
+  }
+  el('textarea', 'why');
+  el('input', 'first_name');
+  const doc = {
+    createElement(tag) {
+      const children = [];
+      const node = {
+        tagName: tag.toUpperCase(), className: '', type: '', textContent: '', innerHTML: '',
+        dataset: {}, children, attributes: {},
+        setAttribute(k, v) { this.attributes[k] = v; },
+        addEventListener() {},
+        appendChild(c) { children.push(c); }
+      };
+      return node;
+    }
+  };
+  installBuyerGuidance(form, doc, BUYER_GUIDANCE);
+  const chips = form.fields.why.nextSiblings.find(n => n.className === 'buyer-suggestions');
+  assert.ok(chips);
+  const labels = chips.children.map(c => c.textContent);
+  assert.ok(labels.some(t => t.startsWith('Example:')));
+  assert.ok(labels.some(t => /not sure yet/i.test(t) && !t.startsWith('Example:')));
+  assert.equal(form.fields.first_name.dataset.guided, undefined);
+});
+
+test('Issue #65: normalizeCompletedList tolerates JSON strings', () => {
+  assert.deepEqual(normalizeCompletedList('["buyerExperience","consultation"]'), ['buyerExperience', 'consultation']);
+  assert.deepEqual(normalizeCompletedList(null), []);
+});
+
+test('Issue #65: household bundle retains persisted completed stages for HBE rendering', () => {
+  const household = read('src/household-state.js');
+  assert.match(
+    household,
+    /SELECT b\.id,b\.first_name,b\.last_name,b\.email,b\.stage,b\.completed_stages,b\.phone,b\.answers_json/
+  );
+});
+
+test('Issue #65: HBE stage advance updates authoritative case and all linked buyers', async () => {
+  const executed = [];
+  function statement(sql) {
+    return {
+      sql,
+      args: [],
+      bind(...args) { this.args = args; return this; },
+      async first() {
+        if (/SELECT case_id FROM buyer_case_members/.test(sql)) return { case_id: 'case-1' };
+        return null;
+      },
+      async run() { executed.push({ sql, args: this.args }); return { success: true }; }
+    };
+  }
+  const env = {
+    HBE_ADMIN_EMAIL: 'advisor@example.test',
+    BUYER_DB: {
+      prepare: statement,
+      async batch(statements) {
+        for (const item of statements) executed.push({ sql: item.sql, args: item.args });
+        return statements.map(() => ({ success: true }));
+      }
+    }
+  };
+  const response = await hbeWorker.fetch(new Request(
+    'https://buyer.hbexperts.com/api/hbe/buyer/buyer-1/stage',
+    {
+      method: 'POST',
+      headers: {
+        'Cf-Access-Authenticated-User-Email': 'advisor@example.test',
+        'content-type': 'application/x-www-form-urlencoded'
+      },
+      body: new URLSearchParams({ stage: 'search' })
+    }
+  ), env, {});
+
+  assert.equal(response.status, 303);
+  const caseUpdate = executed.find(row => /UPDATE buyer_cases SET stage=/.test(row.sql));
+  const memberUpdate = executed.find(row => /UPDATE buyers SET stage=.*buyer_case_members/.test(row.sql));
+  assert.ok(caseUpdate, 'authoritative buyer_cases stage must advance');
+  assert.ok(memberUpdate, 'all linked buyer rows must advance with the case');
+  assert.deepEqual(caseUpdate.args.slice(0, 2), [
+    'search',
+    '["buyerExperience","consultation","representation","market"]'
+  ]);
+  assert.equal(caseUpdate.args[3], 'case-1');
+  assert.equal(memberUpdate.args[3], 'case-1');
 });

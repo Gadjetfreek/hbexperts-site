@@ -1,4 +1,4 @@
-import { STAGES, STAGE_CHECKLISTS, stageLabel, stageIndex, COMPENSATION_PUBLIC, COMPENSATION_POST_HIRE_NOTE } from './journey-stages.js';
+import { STAGES, STAGE_CHECKLISTS, stageLabel, stageIndex, isStageVisuallyDone, normalizeCompletedList, COMPENSATION_PUBLIC, COMPENSATION_POST_HIRE_NOTE } from './journey-stages.js';
 import { deriveWhatsNext, filterStory, defaultCompass, canSeeItem, isCompletedForActor, taskVisibleToActor, buyerPrivateCompletionStatuses } from './household-state.js';
 
 export function esc(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
@@ -90,11 +90,12 @@ document.addEventListener('click',e=>{if(!e.target.closest('[data-i29-stop]'))st
 </script>`;
 
 export function stageMapHtml({ currentStage, selectedStage, completed = [], actor = { kind: 'buyer' }, hrefFor }) {
-  const currentIndex = stageIndex(currentStage);
   const journeyComplete = currentStage === 'complete';
   const viewing = selectedStage || currentStage;
+  const completedList = normalizeCompletedList(completed);
   return `<div class="i29-map" aria-label="HomeBuyer 17-stage journey">${STAGES.map((s,i)=>{
-    const done = journeyComplete || completed.includes(s[0]) || (currentIndex>i && currentIndex>=0);
+    // Issue #65: stored completed_stages + protected inference — never invent market done.
+    const done = isStageVisuallyDone(s[0], currentStage, completedList);
     const current = s[0]===currentStage;
     const viewingThis = s[0]===viewing;
     const items = (STAGE_CHECKLISTS[s[0]]||[]).filter(it=>canSeeItem(it, actor)).slice(0,5);
@@ -337,12 +338,15 @@ export function buyerDashboardBody({
   storyExtras = {},
   modeNavHtml = '',
   members = [],
-  forcePrivateReadOnly = false
+  forcePrivateReadOnly = false,
+  completedStages = null
 }) {
   const stage = currentStage || buyer?.stage || 'consultation';
   const viewing = selectedStage || stage;
-  const idx = STAGES.findIndex(s => s[0] === stage);
-  const completed = STAGES.slice(0, Math.max(0, idx)).map(s => s[0]);
+  // Issue #65: use stored completed_stages — do NOT invent from STAGES index.
+  const completed = normalizeCompletedList(
+    completedStages != null ? completedStages : buyer?.completed_stages
+  );
   const hrefFor = stageHrefFor || (id => `#stage-${id}`);
   return `
     ${modeNavHtml || modeSwitcher({ mode, firstName: buyer?.first_name || '', others, mineHref, sharedHref })}

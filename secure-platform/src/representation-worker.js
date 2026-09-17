@@ -152,20 +152,21 @@ async function activateRepresentation(env, caseId, now) {
     FROM buyer_case_members m JOIN buyers b ON b.id=m.buyer_id WHERE m.case_id=?`).bind(caseId).all();
   const caseRow = await env.BUYER_DB.prepare('SELECT completed_stages FROM buyer_cases WHERE id=?').bind(caseId).first();
 
+  // Issue #65: after hire, next canonical stage is market (Stage 4), then search (Stage 5).
   const caseCompleted = addCompleted(caseRow?.completed_stages, ['consultation','representation']);
   const statements = [
-    env.BUYER_DB.prepare(`UPDATE buyer_cases SET stage='search',completed_stages=?,updated_at=? WHERE id=?`).bind(caseCompleted,now,caseId),
+    env.BUYER_DB.prepare(`UPDATE buyer_cases SET stage='market',completed_stages=?,updated_at=? WHERE id=?`).bind(caseCompleted,now,caseId),
     env.BUYER_DB.prepare(`UPDATE buyer_case_invitations SET revoked_at=? WHERE case_id=? AND accepted_at IS NULL AND revoked_at IS NULL`).bind(now,caseId)
   ];
 
   for (const member of (members.results || [])) {
     statements.push(
-      env.BUYER_DB.prepare(`UPDATE buyers SET stage='search',completed_stages=?,updated_at=? WHERE id=?`)
+      env.BUYER_DB.prepare(`UPDATE buyers SET stage='market',completed_stages=?,updated_at=? WHERE id=?`)
         .bind(addCompleted(member.completed_stages,['consultation','representation']),now,member.id)
     );
     statements.push(
       env.BUYER_DB.prepare(`INSERT INTO notifications (id,buyer_id,type,created_at,payload_json) VALUES (?,?,?,?,?)`)
-        .bind(crypto.randomUUID(),member.id,'representation_activated',now,JSON.stringify({next_stage:'search'}))
+        .bind(crypto.randomUUID(),member.id,'representation_activated',now,JSON.stringify({next_stage:'market'}))
     );
   }
   await env.BUYER_DB.batch(statements);
@@ -190,7 +191,7 @@ function buyerRepresentationPanel(data) {
   const open = data.consultation.next_step === 'representation';
 
   if (signed) {
-    return `<section id="hire-hbe" class="rep-shell rep-active"><div class="rep-kicker">STAGE 3 · HIRE HBE</div><h2>Representation is active.</h2><p>Your written buyer-agency agreement is recorded as signed. The software record is not the agreement itself; your signed document controls the relationship.</p><div class="rep-summary"><div><small>Agreement</small><strong>${esc(data.record.agreement_version || 'Recorded agreement')}</strong></div><div><small>Signed</small><strong>${esc(formatDate(data.record.signed_at))}</strong></div><div><small>Compensation</small><strong>${esc(data.record.compensation_summary || 'See signed agreement')}</strong></div></div><div class="rep-next"><strong>Next: Build Your Home Search</strong><span>Your journey has advanced to Stage 4.</span></div></section>`;
+    return `<section id="hire-hbe" class="rep-shell rep-active"><div class="rep-kicker">STAGE 3 · HIRE HBE</div><h2>Representation is active.</h2><p>Your written buyer-agency agreement is recorded as signed. The software record is not the agreement itself; your signed document controls the relationship.</p><div class="rep-summary"><div><small>Agreement</small><strong>${esc(data.record.agreement_version || 'Recorded agreement')}</strong></div><div><small>Signed</small><strong>${esc(formatDate(data.record.signed_at))}</strong></div><div><small>Compensation</small><strong>${esc(data.record.compensation_summary || 'See signed agreement')}</strong></div></div><div class="rep-next"><strong>Next: Learn the Market</strong><span>Your journey has advanced to Stage 4.</span></div></section>`;
   }
 
   if (!open) {
@@ -230,7 +231,7 @@ function hbeRepresentationPanel(data) {
     return `<section id="hire-hbe" class="rep-shell rep-hbe rep-active"><div class="rep-kicker">STAGE 3 · HIRE HBE · HBE WORKSPACE</div><div class="rep-hbe-head"><div><h2>Representation active</h2><p>The activation record is now immutable. Future changes belong in an explicit amendment or termination workflow so the history remains truthful.</p></div><span class="rep-status signed">Representation active</span></div><div class="rep-summary"><div><small>Agreement</small><strong>${esc(r.agreement_version || 'Recorded agreement')}</strong></div><div><small>Signed</small><strong>${esc(formatDate(r.signed_at))}</strong></div><div><small>Compensation</small><strong>${esc(r.compensation_summary || 'See signed agreement')}</strong></div></div></section>`;
   }
 
-  return `<section id="hire-hbe" class="rep-shell rep-hbe"><div class="rep-kicker">STAGE 3 · HIRE HBE · HBE WORKSPACE</div><div class="rep-hbe-head"><div><h2>Representation readiness</h2><p>Buyer intent and the actual written agreement stay separate. HBE may activate Stage 4 only after the agreement exists and the linked buyers have deliberately chosen to review/proceed.</p></div><span class="rep-status ${esc(r.agreement_status || 'not_started')}">${esc(statusLabel(r.agreement_status))}</span></div>
+  return `<section id="hire-hbe" class="rep-shell rep-hbe"><div class="rep-kicker">STAGE 3 · HIRE HBE · HBE WORKSPACE</div><div class="rep-hbe-head"><div><h2>Representation readiness</h2><p>Buyer intent and the actual written agreement stay separate. HBE may activate Stage 4 (Learn the Market) only after the agreement exists and the linked buyers have deliberately chosen to review/proceed.</p></div><span class="rep-status ${esc(r.agreement_status || 'not_started')}">${esc(statusLabel(r.agreement_status))}</span></div>
     <div class="rep-readiness ${consultReady ? 'ready' : ''}"><strong>Consultation outcome</strong><span>${consultReady ? 'Explore representation is the recorded next step.' : 'Representation is not the recorded consultation next step.'}</span></div>
     <div class="rep-member-grid">${data.members.map(memberChoiceCard).join('')}</div>
     <form method="post" action="/api/hbe/representation" class="rep-hbe-form">
@@ -242,7 +243,7 @@ function hbeRepresentationPanel(data) {
         <label>Compensation summary<input name="compensation_summary" value="${esc(r.compensation_summary || '')}" placeholder="Use the actual signed terms; compensation is negotiable."></label>
       </div>
       <label>Internal notes<textarea name="notes" rows="3">${esc(r.notes || '')}</textarea></label>
-      <div class="rep-activation-note ${allReady ? 'ready' : ''}"><strong>${allReady ? 'Buyer choice gate is satisfied.' : 'Buyer choice gate is not yet satisfied.'}</strong><span>${allReady ? 'If the written agreement is signed, HBE may record it and Stage 4 will unlock.' : 'Each linked buyer must choose “prepare the written agreement” before representation can be activated in the system.'}</span></div>
+      <div class="rep-activation-note ${allReady ? 'ready' : ''}"><strong>${allReady ? 'Buyer choice gate is satisfied.' : 'Buyer choice gate is not yet satisfied.'}</strong><span>${allReady ? 'If the written agreement is signed, HBE may record it and Stage 4 (Learn the Market) will unlock.' : 'Each linked buyer must choose “prepare the written agreement” before representation can be activated in the system.'}</span></div>
       <div class="rep-action"><p><strong>Do not mark “Signed / active” from a conversation alone.</strong><br><small>Record only what the actual written agreement establishes.</small></p><button type="submit">Save representation record</button></div>
     </form>
   </section>`;

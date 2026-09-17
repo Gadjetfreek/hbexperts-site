@@ -146,6 +146,17 @@ export function installBuyerGuidance(form, doc, guide) {
     if (typeof first.focus === 'function') first.focus();
   }
 
+  /** Uncertainty paths stay plain; example answers are labeled (Issue #65). */
+  function isUncertaintySuggestion(suggestion) {
+    return /not sure yet|none yet|still figuring|still naming|still picturing|don.?t know what i don.?t know|nothing else right now|rather discuss|nothing specific|first-time buyer|prefer to discuss live|i.?m still /i.test(String(suggestion || ''));
+  }
+
+  function chipLabel(suggestion, kind) {
+    if (kind === 'checkbox' || kind === 'radio' || kind === 'select') return suggestion;
+    if (isUncertaintySuggestion(suggestion)) return suggestion;
+    return 'Example: ' + suggestion;
+  }
+
   const entries = Object.entries(guide);
   for (let i = 0; i < entries.length; i++) {
     const name = entries[i][0];
@@ -159,19 +170,24 @@ export function installBuyerGuidance(form, doc, guide) {
       first.dataset.guided = 'yes';
       const anchor = insertAnchor(name, first);
       if (!anchor || typeof anchor.insertAdjacentElement !== 'function') continue;
+      const kind = fieldKind(first);
       const help = doc.createElement('small');
       help.className = 'buyer-answer-help';
-      help.innerHTML = '<strong>Need a starting point?</strong> ' + cfg.help + ' It is okay not to know yet.';
+      const exampleHint = (kind === 'text')
+        ? ' Examples below are prompts — they do not fill in until you choose one.'
+        : '';
+      help.innerHTML = '<strong>Need a starting point?</strong> ' + cfg.help + exampleHint + (cfg.allowUnsure === false ? '' : ' It is okay not to know yet.');
       const chips = doc.createElement('div');
       chips.className = 'buyer-suggestions';
-      chips.setAttribute('aria-label', 'Answer suggestions');
+      chips.setAttribute('aria-label', 'Answer examples');
       const suggestions = cfg.suggestions || [];
       for (let s = 0; s < suggestions.length; s++) {
         const suggestion = suggestions[s];
         const button = doc.createElement('button');
         button.type = 'button';
         button.className = 'buyer-suggestion';
-        button.textContent = suggestion;
+        button.dataset.value = suggestion;
+        button.textContent = chipLabel(suggestion, kind);
         button.addEventListener('click', function () { applySuggestion(name, suggestion); });
         chips.appendChild(button);
       }

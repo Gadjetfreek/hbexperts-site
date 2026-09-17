@@ -1,6 +1,6 @@
 import appWorker from './value-brand-worker.js';
 import { authenticateHbeProfessional } from './hbe-access-worker.js';
-import { STAGES, STAGE_CHECKLISTS, assertSeventeenStages } from './journey-stages.js';
+import { STAGES, STAGE_CHECKLISTS, assertSeventeenStages, normalizeCompletedList } from './journey-stages.js';
 import {
   ensureHouseholdState, loadHouseholdBundle, completeChecklistItem, saveStory, saveCompass,
   caseIdForBuyer, mutationCsrfToken, assertMutationCsrf, validStageId
@@ -304,7 +304,8 @@ async function enhanceHbeDashboard(request, env, url, text) {
   const hired = await isHired(env, caseId);
   const currentStage = buyer.stage || 'consultation';
   const selectedStage = validStageId(url.searchParams.get('stage')) || currentStage;
-  const completed = STAGES.slice(0, Math.max(0, STAGES.findIndex(s => s[0] === currentStage))).map(s => s[0]);
+  // Issue #65: stored completed_stages only — do not invent market from index.
+  const completed = normalizeCompletedList(buyer.completed_stages);
   const jwt = String(request.headers.get('Cf-Access-Jwt-Assertion') || '');
   const csrfField = await csrfFieldFor(jwt);
   const ids = `<input type="hidden" name="buyer_id" value="${esc(buyerId)}"><input type="hidden" name="case_id" value="${esc(caseId||'')}">`;
@@ -372,10 +373,11 @@ async function enhanceBuyerPortal(request, env, url, text) {
   const hired = await isHired(env, caseId);
   const compensationHtml = hired ? compensationPostHireHtml(await compensationSummary(env, caseId)) : compensationPublicHtml();
 
+  const storedCompleted = normalizeCompletedList(auth.buyer.completed_stages);
   const map = stageMapHtml({
     currentStage,
     selectedStage,
-    completed: STAGES.slice(0, Math.max(0, STAGES.findIndex(s => s[0] === currentStage))).map(s => s[0]),
+    completed: storedCompleted,
     actor,
     hrefFor: id => `/portal?view=${mode}&stage=${encodeURIComponent(id)}#stage-${encodeURIComponent(id)}`
   });
@@ -386,6 +388,7 @@ async function enhanceBuyerPortal(request, env, url, text) {
     mode,
     currentStage,
     selectedStage,
+    completedStages: storedCompleted,
     checklistAction: '/api/portal/checklist/toggle',
     hiddenFields: `<input type="hidden" name="view" value="${esc(mode)}">`,
     csrfField,

@@ -4,7 +4,11 @@
  * through Get the Keys. Stage 17 is After the Keys.
  * Do not invent stages 18–21. Post-closing 30/90/365/anniversary/warranty
  * items live as checklist entries inside Stage 17.
+ *
+ * Issue #65: Stage 4 = market (Learn the Market), Stage 5 = search
+ * (Build Your Home Search). Persisted stage IDs are semantic keys, not indices.
  */
+
 export const STAGE_COUNT = 17;
 
 export const STAGES = [
@@ -23,15 +27,15 @@ export const STAGES = [
     'Review responsibilities and the written agency agreement.',
     'Choose whether to hire HBE without pressure. Compensation is negotiable and belongs in the written arrangement — it is not a public rate card, and seller-paid compensation is not automatic.'
   ]],
-  ['search','Build Your Home Search','Turn priorities into a useful search',[
-    'Translate your priorities into search criteria and tradeoffs.',
-    'Connect your profile to the MLS search.',
-    'Adjust the search as we learn what actually fits.'
-  ]],
   ['market','Learn the Market','Understand what the market is really offering',[
     'See what your money buys in the current market.',
     'Compare location, condition, value, and alternatives.',
     'Refine expectations before chasing individual homes.'
+  ]],
+  ['search','Build Your Home Search','Turn priorities into a useful search',[
+    'Translate your priorities into search criteria and tradeoffs.',
+    'Connect your profile to the MLS search.',
+    'Adjust the search as we learn what actually fits.'
   ]],
   ['possibilities','Discover Possibilities','Find homes worth learning from',[
     'Review homes that may fit your evolving profile.',
@@ -218,6 +222,9 @@ export function assertSeventeenStages() {
   if (STAGES.length !== STAGE_COUNT) {
     throw new Error(`Expected ${STAGE_COUNT} stages, found ${STAGES.length}`);
   }
+  if (STAGES[3][0] !== 'market' || STAGES[4][0] !== 'search') {
+    throw new Error('Stage 4 must be market and Stage 5 must be search (Issue #65)');
+  }
   if (STAGES[15][0] !== 'closing' || STAGES[15][1] !== 'Get the Keys') {
     throw new Error('Stage 16 must remain Get the Keys');
   }
@@ -229,6 +236,58 @@ export function assertSeventeenStages() {
     if (STAGES.some(s => s[0] === id)) throw new Error(`Do not create extra stage ${id}`);
   }
   return true;
+}
+
+
+/**
+ * Normalize completed_stages from DB (JSON string or array) to a string[].
+ */
+export function normalizeCompletedList(completed) {
+  if (Array.isArray(completed)) return completed.filter(Boolean).map(String);
+  if (typeof completed === 'string' && completed.trim()) {
+    try {
+      const parsed = JSON.parse(completed);
+      return Array.isArray(parsed) ? parsed.filter(Boolean).map(String) : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+/**
+ * Issue #65 — visual "done" must NOT invent completion from STAGES index alone
+ * when that would mark `market` complete for pre-reorder buyers already at
+ * `search` (or later) who never completed Learn the Market.
+ *
+ * Prefer stored completed_stages. Index-before-current is only a fallback for
+ * other stages; `market` requires an explicit completed_stages entry.
+ */
+export function isStageVisuallyDone(stageId, currentStage, completed = []) {
+  if (currentStage === 'complete') return true;
+  const list = normalizeCompletedList(completed);
+  if (list.includes(stageId)) return true;
+  if (stageId === currentStage) return false;
+
+  const curIdx = stageIndex(currentStage);
+  const sIdx = stageIndex(stageId);
+  if (curIdx < 0 || sIdx < 0 || sIdx >= curIdx) return false;
+
+  // Protect market/search reorder survivors (semantic keys unchanged; order flipped).
+  if (stageId === 'market' && !list.includes('market')) return false;
+  return true;
+}
+
+/**
+ * Write-path helper when HBE/system advances the current stage.
+ * Marks every canonical predecessor complete under the CURRENT STAGES order.
+ * Do not use this on read for display — use isStageVisuallyDone instead.
+ */
+export function inferCompletedOnAdvance(stage) {
+  if (stage === 'complete') return STAGES.map(s => s[0]);
+  const idx = stageIndex(stage);
+  if (idx < 0) return [];
+  return STAGES.slice(0, idx).map(s => s[0]);
 }
 
 export const COMPENSATION_PUBLIC = {

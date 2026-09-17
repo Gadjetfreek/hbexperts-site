@@ -75,15 +75,18 @@ test('public journey stays lean without orientation or submission dialog markup'
   assert.doesNotMatch(html, /id="buyer-first-review-script"/);
 });
 
-test('buyer portal gets a focused Now Next Why Time layer while preserving expandable detail', () => {
+test('buyer portal gets a focused Now Why Answer Next layer while preserving expandable detail', () => {
   const portal = '<!doctype html><html><head></head><body><main><div class="i29-map"><div class="i29-stop current"><strong>Consultation</strong></div></div><section class="i29-next"><div>What’s Next</div><h2>Highest priority right now</h2><strong>Schedule the strategy session</strong><small>Turn answers into understanding</small></section><section class="i29-story"></section><section class="i29-compass"></section><section class="i29-checklist"></section><section class="i29-comp"></section></main></body></html>';
   const html = addBuyerFirstClarity(portal, '/portal');
   assert.match(html, /buyer-portal-focus-script/);
   assert.match(html, />NOW</);
-  assert.match(html, /Best next step/);
+  assert.match(html, /Answer \/ act/);
   assert.match(html, /Why this matters/);
   assert.match(html, /Time/);
-  assert.match(html, /See the full 17-stage journey/);
+  assert.match(html, /What happens next/);
+  assert.match(html, /buyer-roadmap-next/);
+  assert.match(html, /Journey map/);
+  assert.doesNotMatch(html, /See the full 17-stage journey/);
   assert.match(html, /Current-step checklist/);
 });
 function matches(el, selector) {
@@ -193,7 +196,11 @@ function chipsAfter(el) {
 function clickChip(el, label) {
   const chips = chipsAfter(el);
   assert.ok(chips, 'expected suggestion chips after field/group');
-  const btn = chips.children.find(b => b.textContent === label);
+  const btn = chips.children.find(b =>
+    b.textContent === label ||
+    b.textContent === 'Example: ' + label ||
+    (b.dataset && b.dataset.value === label)
+  );
   assert.ok(btn, 'expected chip labeled ' + label);
   btn.click();
   return btn;
@@ -398,7 +405,12 @@ test('remaining optional textareas each receive help and 4-6 starting-point chip
     assert.ok(chips, name + ' should have chips');
     const count = chips.children.length;
     assert.ok(count >= 4 && count <= 6, name + ' should have 4-6 chips, got ' + count);
-    assert.deepEqual(chips.children.map(b => b.textContent), BUYER_GUIDANCE[name].suggestions);
+    const expectedLabels = BUYER_GUIDANCE[name].suggestions.map(s =>
+      /not sure yet|none yet|still figuring|still naming|still picturing|don.?t know what i don.?t know|nothing else|rather discuss|nothing specific|first-time|prefer to discuss|i.?m still /i.test(s)
+        ? s
+        : 'Example: ' + s
+    );
+    assert.deepEqual(chips.children.map(b => b.textContent), expectedLabels);
     clickChip(field, BUYER_GUIDANCE[name].suggestions[0]);
     assert.equal(field.value, BUYER_GUIDANCE[name].suggestions[0]);
   }

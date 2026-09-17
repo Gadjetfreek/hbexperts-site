@@ -13,7 +13,8 @@ export const BUYER_FIRST_CSS = `<style id="buyer-first-clarity">
 .buyer-first-core{max-width:900px;margin:1rem auto;padding:1rem 1.1rem;border:1px solid #dfe8e2;border-left:4px solid #2d5a3d;border-radius:10px;background:#f7faf8;color:#2c2c2c;line-height:1.55}.buyer-first-core strong{color:#1a1a2e}.buyer-review-backdrop{position:fixed;inset:0;z-index:1000;background:rgba(26,26,46,.58);display:none;align-items:center;justify-content:center;padding:1rem}.buyer-review-backdrop.open{display:flex}.buyer-review{width:min(760px,100%);max-height:min(88vh,900px);overflow:auto;background:#fff;border-radius:14px;padding:1.35rem;box-shadow:0 24px 70px rgba(0,0,0,.28)}.buyer-review h2{margin:.15rem 0 .4rem;color:#1a1a2e;font-family:Georgia,serif}.buyer-review-intro{color:#555;margin:0 0 1rem}.buyer-review-list{display:grid;gap:.7rem;margin:1rem 0}.buyer-review-item{padding:.8rem .9rem;border:1px solid #e8e5e0;border-radius:9px;background:#faf9f6}.buyer-review-item small{display:block;color:#6b6b6b;font-weight:800;text-transform:uppercase;letter-spacing:.04em}.buyer-review-item div{white-space:pre-wrap}.buyer-review-trust{padding:1rem;border-radius:9px;background:#f7faf8;border:1px solid #dfe8e2;color:#333}.buyer-review-actions{display:flex;gap:.7rem;justify-content:flex-end;flex-wrap:wrap;margin-top:1rem}.buyer-review-actions button{font:inherit;font-weight:800;border-radius:7px;padding:.75rem 1rem;cursor:pointer}.buyer-review-edit{background:#fff;color:#2d5a3d;border:1px solid #2d5a3d}.buyer-review-send{background:#2d5a3d;color:#fff;border:1px solid #2d5a3d}.buyer-review-empty{color:#6b6b6b;font-style:italic}
 .buyer-answer-help{display:block;margin:.4rem 0 .15rem;color:#5f625f;font-size:.86rem;line-height:1.45}.buyer-answer-help strong{color:#2d5a3d}.buyer-suggestions{display:flex;flex-wrap:wrap;gap:.4rem;margin:.45rem 0 .7rem}.buyer-suggestion{appearance:none;border:1px solid #cad8ce;background:#fff;color:#2d5a3d;border-radius:999px;padding:.38rem .62rem;font:inherit;font-size:.8rem;font-weight:700;cursor:pointer}.buyer-suggestion:hover,.buyer-suggestion:focus-visible{background:#edf6f0;outline:2px solid rgba(45,90,61,.24);outline-offset:1px}
 .buyer-focus-card{background:#fff;border:1px solid #dfe8e2;border-radius:14px;padding:1.2rem 1.25rem;margin:1rem 0 1.15rem;box-shadow:0 8px 26px rgba(26,26,46,.05)}.buyer-focus-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.7rem;margin-top:.9rem}.buyer-focus-grid>div{background:#faf9f6;border-radius:10px;padding:.8rem}.buyer-focus-grid small{display:block;color:#6b6b6b;font-size:.68rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.2rem}.buyer-focus-grid strong{color:#1a1a2e;line-height:1.35}.buyer-focus-card h1{font:600 clamp(1.5rem,4vw,2.05rem) Georgia,serif;color:#1a1a2e;margin:.2rem 0}.buyer-focus-card p{margin:.35rem 0;color:#555;line-height:1.5}.buyer-more{background:#fff;border:1px solid #e8e5e0;border-radius:12px;margin:.8rem 0;overflow:hidden}.buyer-more>summary{cursor:pointer;padding:1rem 1.05rem;font-weight:850;color:#1a1a2e;list-style:none}.buyer-more>summary::-webkit-details-marker{display:none}.buyer-more>summary:after{content:'+';float:right;color:#2d5a3d;font-size:1.2rem}.buyer-more[open]>summary:after{content:'–'}.buyer-more-body{padding:0 1rem 1rem}.buyer-focus-card+.i29-next{margin-top:0}.buyer-focus-card+.i29-next h2{font-size:1.05rem}.buyer-focus-card+.i29-next>strong{font-size:1.35rem}.buyer-focus-card+.i29-next .i29-tasks{display:none}
-@media(max-width:760px){.buyer-focus-grid{grid-template-columns:1fr 1fr}}@media(max-width:600px){.buyer-review{padding:1rem}.buyer-review-actions{display:grid;grid-template-columns:1fr}.buyer-review-actions button{width:100%}.buyer-focus-grid{grid-template-columns:1fr}.buyer-focus-card{padding:1rem}}
+@media(max-width:760px){.buyer-focus-grid{grid-template-columns:1fr 1fr}}@media(max-width:600px){.buyer-review{padding:1rem}.buyer-review-actions{display:grid;grid-template-columns:1fr}.buyer-review-actions button{width:100%}.buyer-focus-grid{grid-template-columns:1fr}.buyer-focus-card{padding:1rem}.buyer-roadmap-next{padding:1rem}}
+.buyer-roadmap-next{background:#fff;border:1px solid #dfe8e2;border-left:4px solid #c4a35a;border-radius:14px;padding:1.15rem 1.25rem;margin:1rem 0 1.15rem;box-shadow:0 8px 26px rgba(26,26,46,.05)}.buyer-roadmap-next h2{font:600 1.15rem Georgia,serif;color:#1a1a2e;margin:.2rem 0 .55rem}.buyer-roadmap-next ol{margin:.35rem 0 0;padding-left:1.15rem;color:#2c2c2c;line-height:1.5}.buyer-roadmap-next li{margin:.35rem 0}.buyer-roadmap-next li strong{color:#1a1a2e}
 .qx-page1-orient{margin:0 0 1rem}.step .buyer-first-core.qx-page1-orient{max-width:none;margin:0 0 1rem}.step .value-context.qx-page1-orient{max-width:none;margin:0 0 .85rem}.step .i29-comp.qx-page1-orient{margin:0 0 1.15rem}
 </style>`;
 
@@ -66,10 +67,40 @@ export const BUYER_PORTAL_FOCUS_JS = `<script id="buyer-portal-focus-script">
   const nextTitle=next.querySelector(':scope > strong')?.textContent?.trim()||'Review your next step';
   const reason=next.querySelector(':scope > small')?.textContent?.trim()||'This keeps the decision moving without making you solve the whole process at once.';
   const card=document.createElement('section'); card.className='buyer-focus-card'; card.setAttribute('aria-label','Your current focus');
-  card.innerHTML='<div class="i29-kicker">NOW</div><h1>'+escapeHtml(current)+'</h1><p>Focus on the next useful decision. You do not need to solve the whole process at once.</p><div class="buyer-focus-grid"><div><small>Now</small><strong>'+escapeHtml(current)+'</strong></div><div><small>Why this matters</small><strong>'+escapeHtml(reason)+'</strong></div><div><small>Best next step</small><strong>'+escapeHtml(nextTitle)+'</strong></div><div><small>Time</small><strong>Do this when you are ready. HBE will flag anything truly date-critical.</strong></div></div>';
-  next.parentNode.insertBefore(card,next); next.parentNode.insertBefore(next,card.nextSibling);
+  card.innerHTML='<div class="i29-kicker">NOW</div><h1>'+escapeHtml(current)+'</h1><p>Focus on the next useful decision. You do not need to solve the whole process at once.</p><div class="buyer-focus-grid"><div><small>Now</small><strong>'+escapeHtml(current)+'</strong></div><div><small>Why this matters</small><strong>'+escapeHtml(reason)+'</strong></div><div><small>Answer / act</small><strong>'+escapeHtml(nextTitle)+'</strong></div><div><small>Time</small><strong>Do this when you are ready. HBE will flag anything truly date-critical.</strong></div></div>';
+  // Governing UX order: Now → Why/Answer → Next, then optional journey map.
+  main.insertBefore(card, main.firstChild);
+  card.parentNode.insertBefore(next, card.nextSibling);
+
+  // Issue #65: replace blank/redundant roadmap treatment with immediate next 2–3 steps.
+  const stepTitles=[];
+  const pushStep=t=>{
+    const s=String(t||'').trim(); if(!s) return;
+    if(stepTitles.some(x=>x===s || x.includes(s) || s.includes(x))) return;
+    stepTitles.push(s);
+  };
+  // Do not seed roadmap with nextTitle — What's Next already shows it (Issue #65 acceptance).
+  // Also skip any task/checklist title that equals nextTitle so the cards stay complementary.
+  const skipDup = (s) => String(s||'').trim() === nextTitle;
+  next.querySelectorAll('.i29-task strong').forEach(el=>{ if(!skipDup(el.textContent)) pushStep(el.textContent); });
+  document.querySelectorAll('.i29-check-row strong').forEach(el=>{
+    const row=el.closest('.i29-check-row');
+    if(row&&row.querySelector('[aria-pressed="true"]')) return;
+    if(skipDup(el.textContent)) return;
+    pushStep(el.textContent);
+  });
+  ['Tell HBE what still feels unresolved','Pause anytime — your place in the journey stays saved','Open the checklist only when you want more detail']
+    .forEach(f=>{ if(stepTitles.length<3) pushStep(f); });
+  const roadmapNext=document.createElement('section');
+  roadmapNext.className='buyer-roadmap-next';
+  roadmapNext.setAttribute('aria-label','What happens next');
+  roadmapNext.innerHTML='<div class="i29-kicker">NEXT</div><h2>What happens next</h2><ol>'+stepTitles.slice(0,3).map(t=>'<li><strong>'+escapeHtml(t)+'</strong></li>').join('')+'</ol>';
+  // Governing UX: Now → Why → Answer → Next. Place next-steps after the focus card / What’s Next.
+  next.parentNode.insertBefore(roadmapNext, next.nextSibling);
+
+  // Keep journey map available without redundant “17 steps / See full” primary treatment.
   const groups=[
-    {label:'See the full 17-stage journey',nodes:[document.querySelector('.i29-map')]},
+    {label:'Journey map',nodes:[document.querySelector('.i29-map')]},
     {label:'Your story and decision compass',nodes:[document.querySelector('.i29-story'),document.querySelector('.i29-compass')]},
     {label:'Current-step checklist',nodes:[document.querySelector('.i29-checklist')]},
     {label:'Representation and compensation details',nodes:[document.querySelector('.i29-comp')]}

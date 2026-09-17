@@ -317,7 +317,7 @@ export async function loadHouseholdBundle(env, caseId, actor) {
     env.BUYER_DB.prepare('SELECT * FROM household_stories WHERE case_id=? LIMIT 1').bind(caseId).first(),
     env.BUYER_DB.prepare('SELECT * FROM household_compass WHERE case_id=? LIMIT 1').bind(caseId).first(),
     env.BUYER_DB.prepare('SELECT * FROM household_audit_events WHERE case_id=? ORDER BY created_at DESC LIMIT 40').bind(caseId).all(),
-    env.BUYER_DB.prepare(`SELECT b.id,b.first_name,b.last_name,b.email,b.stage,b.phone,b.answers_json,m.role,m.created_at
+    env.BUYER_DB.prepare(`SELECT b.id,b.first_name,b.last_name,b.email,b.stage,b.completed_stages,b.phone,b.answers_json,m.role,m.created_at
       FROM buyer_case_members m JOIN buyers b ON b.id=m.buyer_id WHERE m.case_id=? ORDER BY m.created_at`).bind(caseId).all(),
     env.BUYER_DB.prepare('SELECT * FROM household_view_permissions WHERE case_id=?').bind(caseId).all()
   ]);
