@@ -5,8 +5,17 @@ Write-Host 'HBE Secure Buyer Platform deployment' -ForegroundColor Cyan
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $root
 
+# Production toolchain pin — keep in sync with .github/workflows/deploy-secure-worker.yml WRANGLER_VERSION.
+# Prefer env WRANGLER_VERSION when set (CI); otherwise this tested version.
+$WranglerVersion = if ($env:WRANGLER_VERSION) { $env:WRANGLER_VERSION.Trim() } else { '4.134.0' }
+if (-not $WranglerVersion -or $WranglerVersion -eq 'latest') {
+  throw 'Production deployment stopped: Wrangler version must be an explicit pin (not latest).'
+}
+$WranglerPkg = "wrangler@$WranglerVersion"
+Write-Host "Using pinned Wrangler $WranglerVersion"
+
 Write-Host '1/6 Checking Wrangler authentication...'
-npx --yes wrangler@latest whoami
+npx --yes $WranglerPkg whoami
 
 $dbName = 'hbe-buyer-journey-v2'
 $buyerBaseUrl = 'https://buyer.hbexperts.com'
@@ -15,7 +24,7 @@ $tempConfigPath = Join-Path $root '.wrangler.deploy.toml'
 $config = Get-Content $configPath -Raw
 
 Write-Host '2/6 Locating existing D1 database...'
-$dbs = npx --yes wrangler@latest d1 list --json | ConvertFrom-Json
+$dbs = npx --yes $WranglerPkg d1 list --json | ConvertFrom-Json
 $db = $dbs | Where-Object { $_.name -eq $dbName } | Select-Object -First 1
 if (-not $db -or -not $db.uuid) {
   throw "Production deployment stopped: existing D1 database '$dbName' was not found. This release will not create or substitute a production database automatically."
@@ -36,10 +45,10 @@ Write-Host "Using existing D1 database $dbName ($($db.uuid))"
 
 try {
   Write-Host '3/6 Applying additive database schema...'
-  npx --yes wrangler@latest d1 execute $dbName --remote --file=schema.sql --config $tempConfigPath
-  npx --yes wrangler@latest d1 execute $dbName --remote --file=schema-stage4.sql --config $tempConfigPath
-  npx --yes wrangler@latest d1 execute $dbName --remote --file=schema-issue29.sql --config $tempConfigPath
-  npx --yes wrangler@latest d1 execute $dbName --remote --file=schema-issue33.sql --config $tempConfigPath
+  npx --yes $WranglerPkg d1 execute $dbName --remote --file=schema.sql --config $tempConfigPath
+  npx --yes $WranglerPkg d1 execute $dbName --remote --file=schema-stage4.sql --config $tempConfigPath
+  npx --yes $WranglerPkg d1 execute $dbName --remote --file=schema-issue29.sql --config $tempConfigPath
+  npx --yes $WranglerPkg d1 execute $dbName --remote --file=schema-issue33.sql --config $tempConfigPath
 
   Write-Host '4/6 Running local source, Issue 29, Issue 33, and buyer-first checks...'
   node --check src/worker.js
@@ -73,12 +82,12 @@ try {
   }
 
   Write-Host 'Running Wrangler bundle dry-run...'
-  npx --yes wrangler@latest deploy --dry-run --config $tempConfigPath
+  npx --yes $WranglerPkg deploy --dry-run --config $tempConfigPath
 
   Write-Host '5/6 Deploying Worker to buyer.hbexperts.com...'
   $oldErrorActionPreference = $ErrorActionPreference
   $ErrorActionPreference = 'Continue'
-  $deployOutput = & npx --yes wrangler@latest deploy --config $tempConfigPath 2>&1
+  $deployOutput = & npx --yes $WranglerPkg deploy --config $tempConfigPath 2>&1
   $deployExitCode = $LASTEXITCODE
   $ErrorActionPreference = $oldErrorActionPreference
   $deployOutput | ForEach-Object { Write-Host $_ }
