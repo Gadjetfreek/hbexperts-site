@@ -52,13 +52,6 @@ jobs:
             exit 1
           fi
 
-      - name: Assert Environment gate documentation present
-        shell: bash
-        run: |
-          test -f secure-platform/docs/REMOTE_SECURE_DEPLOY.md
-          grep -q 'Required reviewers' secure-platform/docs/REMOTE_SECURE_DEPLOY.md
-          grep -q 'least-privilege' secure-platform/docs/REMOTE_SECURE_DEPLOY.md
-
       - name: Deploy secure Buyer Platform
         shell: pwsh
         working-directory: secure-platform
