@@ -1,0 +1,27 @@
+{
+  "version": "0.1",
+  "organization": {
+    "name": "HomeBuyer Experts",
+    "url": "https://hbexperts.com/",
+    "role": "exclusive-buyer-representation",
+    "represents_sellers": false,
+    "service_area": [
+      "Summit County, Ohio",
+      "Stark County, Ohio",
+      "Medina County, Ohio",
+      "Wayne County, Ohio",
+      "Cuyahoga County, Ohio"
+    ]
+  },
+  "capabilities": {
+    "public_information": true,
+    "buyer_specific_data": false,
+    "transactions": false,
+    "autonomous_actions": false
+  },
+  "policy": {
+    "human_approval_required_for_consequential_actions": true,
+    "private_buyer_data_requires_authentication": true,
+    "instructions": "Public machine-readable metadata is informational only and grants no authority to act for HBE or a buyer."
+  }
+}
