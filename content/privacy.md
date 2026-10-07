@@ -47,7 +47,7 @@ Hosting and infrastructure providers may process technical information needed to
 
 The public informational site includes first-party acquisition instrumentation that records coarse events (for example, that a page was viewed and which high-level channel the visit appears to have come from). Those events use the page pathname and sanitized campaign tokens only. They may be kept briefly in browser memory/session storage and sent to HBE's first-party collector on the secure Buyer Journey host as **aggregate counts** (by day, event, channel, campaign token, and entry page). They do not include names, email addresses, phone numbers, Buyer Experience answers, household identifiers, IP addresses stored for analytics, user agents, full referrer URLs, or advertising/cross-site identifiers. An optional aggregate Cloudflare Web Analytics beacon may be enabled later; it is a separate pageview product, it does not receive these custom events, and it is off by default. We do not use this public-site instrumentation for advertising or cross-site targeting.
 
-On the paid-search landing page, HBE uses the Google Ads tag to measure advertising visits. After a Buyer Experience is successfully sent, the confirmation response may use the same tag to record one completed-submission conversion. The tag is not loaded throughout the Buyer Experience questionnaire, and HBE does not send Google names, email addresses, phone numbers, questionnaire answers, household or buyer identifiers, or the contents of a submission. Google may use cookies or similar browser storage for advertising measurement under its own terms. HBE does not use Buyer Journey answers to build advertising profiles or sell behavioral data.
+On the paid-search landing page, HBE uses the Google Ads tag to measure advertising visits. The tag is not loaded in the secure Buyer Journey, including the Buyer Experience questionnaire and submission confirmation. HBE does not send Google names, email addresses, phone numbers, questionnaire answers, access codes, household or buyer identifiers, or the contents of a submission. Google may use cookies or similar browser storage for advertising measurement on the public landing page under its own terms. HBE does not use Buyer Journey answers to build advertising profiles or sell behavioral data.
 
 ---
 
@@ -86,13 +86,13 @@ The public HBE informational website is hosted on GitHub Pages. GitHub may log s
 
 ### Google Ads
 
-HBE uses Google Ads measurement on the paid-search landing page and on the non-sensitive confirmation response shown only after a successful Buyer Experience submission. This helps HBE measure whether an ad led to a completed Buyer Experience. Google does not receive the Buyer Experience form fields from this integration.
+HBE uses Google Ads measurement only on the public paid-search landing page. Google Ads code is not loaded in the secure Buyer Journey or on the Buyer Experience submission confirmation. Google does not receive Buyer Experience form fields, access codes, or other secure Buyer Journey content from this integration.
 
 ---
 
 ## Cookies and Sessions
 
-The public informational site may use standard browser technologies needed for functionality. Coarse first-party instrumentation events may be stored in session storage for the visit only. Optional Cloudflare Web Analytics is a separate pageview product and is off by default; it does not receive those custom events. The Google Ads tag on the paid-search landing page and successful-submission confirmation may set or read advertising-measurement cookies or similar browser storage.
+The public informational site may use standard browser technologies needed for functionality. Coarse first-party instrumentation events may be stored in session storage for the visit only. Optional Cloudflare Web Analytics is a separate pageview product and is off by default; it does not receive those custom events. The Google Ads tag on the public paid-search landing page may set or read advertising-measurement cookies or similar browser storage.
 
 The secure Buyer Journey uses a session cookie to keep an authorized buyer signed in. If a buyer deliberately selects a "remember this device" option, that session may persist longer than a normal browser session.
 
