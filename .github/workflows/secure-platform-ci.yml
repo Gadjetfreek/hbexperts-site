@@ -27,3 +27,6 @@ jobs:
 
       - name: Test buyer-first clarity and review flow
         run: node --test secure-platform/tests/issue36.test.mjs
+
+      - name: Test privacy-safe Google Ads conversion boundary
+        run: node --test secure-platform/tests/google-ads-conversion.test.mjs

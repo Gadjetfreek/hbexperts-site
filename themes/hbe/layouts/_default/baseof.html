@@ -23,6 +23,16 @@
   {{ with .Site.Params.cloudflareWebAnalyticsToken }}
   <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": {{ . | jsonify }}}'></script>
   {{ end }}
+  {{ if eq .RelPermalink "/buyer-representation/" }}
+  <!-- Google tag: limited to the paid-search landing page. -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-18500305800"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'AW-18500305800');
+  </script>
+  {{ end }}
 </head>
 <body data-hbe-page="{{ if .IsHome }}home{{ else if eq .RelPermalink "/strategy-session/" }}strategy{{ else if eq .RelPermalink "/about/" }}about{{ else }}other{{ end }}">
   {{ partial "header.html" . }}
