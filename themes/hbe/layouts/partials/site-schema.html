@@ -1,0 +1,39 @@
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "{{ .Site.BaseURL }}#organization",
+      "name": "HomeBuyer Experts",
+      "url": {{ .Site.BaseURL | jsonify }},
+      "description": {{ .Site.Params.description | jsonify }},
+      "foundingDate": "2004",
+      "telephone": {{ .Site.Params.phone | jsonify }},
+      "email": {{ .Site.Params.email | jsonify }},
+      "areaServed": [
+        { "@type": "AdministrativeArea", "name": "Summit County, Ohio" },
+        { "@type": "AdministrativeArea", "name": "Stark County, Ohio" },
+        { "@type": "AdministrativeArea", "name": "Medina County, Ohio" },
+        { "@type": "AdministrativeArea", "name": "Wayne County, Ohio" },
+        { "@type": "AdministrativeArea", "name": "Cuyahoga County, Ohio" }
+      ],
+      "knowsAbout": [
+        "Exclusive buyer representation",
+        "Home buying in Northeast Ohio",
+        "Buyer agency",
+        "Residential real estate negotiation",
+        "Home buyer decision support"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "{{ .Site.BaseURL }}#website",
+      "url": {{ .Site.BaseURL | jsonify }},
+      "name": "HomeBuyer Experts",
+      "publisher": { "@id": "{{ .Site.BaseURL }}#organization" },
+      "inLanguage": "en-US"
+    }
+  ]
+}
+</script>

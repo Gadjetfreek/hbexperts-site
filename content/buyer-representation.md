@@ -19,6 +19,15 @@ But the consequential questions go deeper:
 
 **A strong buyer advocate helps keep those questions visible even when the transaction becomes emotional or fast-moving.**
 
+<div class="conversion-callout">
+  <strong>Buying in Northeast Ohio?</strong>
+  <p>Talk directly with a brokerage that represents buyers only. Call <a href="tel:3303283170">(330) 328-3170</a> or explore the process before sharing anything.</p>
+  <div class="conversion-actions">
+    <a class="btn btn-primary" href="/strategy-session/">Start with a Buyer Strategy Session</a>
+    <a class="btn btn-secondary" href="https://buyer.hbexperts.com/">Explore the Buyer Journey</a>
+  </div>
+</div>
+
 ---
 
 ## What Is Exclusive Buyer Representation?
@@ -210,4 +219,3 @@ HBE primarily serves Summit, Stark, Medina, Wayne, and Cuyahoga Counties. Buyers
 You can see the entire Buyer Journey before giving HBE any personal information.
 
 [Explore the Buyer Journey →](https://buyer.hbexperts.com/)
-
