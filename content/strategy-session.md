@@ -10,6 +10,15 @@ The Buyer Strategy Session is a **complimentary**, about **one-hour** conversati
 
 Sending a Buyer Experience does not hire HomeBuyer Experts, sign an agency agreement, or obligate you to buy a home.
 
+<div class="conversion-callout">
+  <strong>Want to talk first?</strong>
+  <p>Call a buyer-only broker at <a href="tel:3303283170">(330) 328-3170</a>. No obligation and no sales pressure.</p>
+  <div class="conversion-actions">
+    <a class="btn btn-primary" href="tel:3303283170">Call HomeBuyer Experts</a>
+    <a class="btn btn-secondary" href="https://buyer.hbexperts.com/">Explore the Buyer Journey</a>
+  </div>
+</div>
+
 [Explore the Buyer Journey →](https://buyer.hbexperts.com/)
 
 ---
