@@ -18,6 +18,7 @@ test('base tag is added without inventing or sending a conversion label', () => 
   assert.match(out, new RegExp(`gtag\\('config','${GOOGLE_ADS_ID}'\\)`));
   assert.doesNotMatch(out, /send_to/);
   assert.match(out, /hbe:buyer-experience-submitted/);
+  assert.ok(out.indexOf('hbe-google-ads-submission') < out.indexOf('<title>'));
 });
 
 test('a deployment-provided label enables exactly one non-sensitive conversion call', () => {
@@ -48,6 +49,7 @@ test('public base tag is scoped to the buyer representation landing page', () =>
   const layout = readFileSync(join(root, 'themes/hbe/layouts/_default/baseof.html'), 'utf8');
   assert.match(layout, /if eq \.RelPermalink "\/buyer-representation\/"/);
   assert.equal((layout.match(/AW-18500305800/g) || []).length, 2);
+  assert.ok(layout.indexOf('AW-18500305800') < layout.indexOf('<meta charset="utf-8">'));
 });
 
 test('production worker gates Google injection on successful intake only', () => {

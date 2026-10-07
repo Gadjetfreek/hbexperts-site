@@ -22,7 +22,7 @@ export function addGoogleAdsSubmissionConversion(html, conversionLabel = '') {
     : '';
   const base = `<script async src="https://www.googletagmanager.com/gtag/js?id=${GOOGLE_ADS_ID}" id="hbe-google-ads-submission"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','${GOOGLE_ADS_ID}');${send}document.dispatchEvent(new CustomEvent('hbe:buyer-experience-submitted'));</script>`;
 
-  return html.replace('</head>', `${base}</head>`);
+  return html.replace(/(<head(?:\s[^>]*)?>)/i, `$1${base}`);
 }
 
 export function allowGoogleAdsForSubmission(headers) {
