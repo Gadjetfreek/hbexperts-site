@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-18500305800"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'AW-18500305800', { send_page_view: false });
+    (() => {
+      let fired = false;
+      window.addEventListener('message', event => {
+        if (fired || event.origin !== 'https://buyer.hbexperts.com' || event.source !== window.parent) return;
+        if (event.data !== 'hbe:buyer-experience-submitted') return;
+        fired = true;
+        gtag('event', 'conversion', { send_to: 'AW-18500305800/_HR6CNKd55QdEIiH0fVE' });
+      });
+    })();
+  </script>
+  <meta charset="utf-8">
+  <meta name="robots" content="noindex,nofollow,noarchive,nosnippet">
+  <meta name="referrer" content="no-referrer">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Buyer Experience conversion | HomeBuyer Experts</title>
+</head>
+<body></body>
+</html>

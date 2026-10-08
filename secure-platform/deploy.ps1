@@ -77,6 +77,7 @@ try {
   node --test tests/issue29.test.mjs
   node --test tests/bimatrix.test.mjs
   node --test tests/issue36.test.mjs
+  node --test tests/google-ads-conversion.test.mjs
   if (Select-String -Path src/worker.js -Pattern 'donald-kelley|localStorage|buyer_token_hash' -Quiet) {
     throw 'Security/source check failed: legacy buyer-specific or browser-local journey code detected.'
   }

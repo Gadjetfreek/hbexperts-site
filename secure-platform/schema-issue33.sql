@@ -74,3 +74,15 @@ CREATE INDEX IF NOT EXISTS idx_bimatrix_results_case_class ON bimatrix_results(c
 CREATE INDEX IF NOT EXISTS idx_bimatrix_results_program ON bimatrix_results(program_id, program_version);
 CREATE INDEX IF NOT EXISTS idx_bimatrix_annotations_case ON bimatrix_hbe_annotations(case_id, updated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_bimatrix_freshness_case ON bimatrix_freshness_checks(case_id, checked_at DESC);
+
+-- Privacy-safe, short-lived idempotency receipts for Buyer Experience conversions.
+-- Nonces are stored only as hashes and are never sent to Google or placed in URLs.
+CREATE TABLE IF NOT EXISTS google_ads_conversion_nonces (
+  nonce_hash TEXT PRIMARY KEY,
+  issued_at TEXT NOT NULL,
+  expires_at TEXT NOT NULL,
+  converted_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_google_ads_conversion_nonces_expiry
+  ON google_ads_conversion_nonces(expires_at);
