@@ -57,7 +57,6 @@ jobs:
             public/hbeui \
             public/buyer-portal \
             public/purchaseplanningworkbook \
-            public/assessment \
             public/discovery \
             public/home-dna \
             public/next-choice-listening-room \
@@ -85,14 +84,23 @@ jobs:
                   super().__init__()
                   self.hrefs = set()
                   self.scripts = set()
+                  self.anchors = set()
+                  self.meta = {}
+                  self.tags = set()
 
               def handle_starttag(self, tag, attrs):
                   values = {key.lower(): value for key, value in attrs if key and value is not None}
                   tag = tag.lower()
+                  self.tags.add(tag)
                   if tag == 'link' and 'href' in values:
                       self.hrefs.add(values['href'])
                   elif tag == 'script' and 'src' in values:
                       self.scripts.add(values['src'])
+                  elif tag == 'a' and 'href' in values:
+                      self.anchors.add(values['href'])
+                  elif tag == 'meta':
+                      key = values.get('name', values.get('http-equiv', '')).lower()
+                      self.meta[key] = values.get('content', '')
 
           homepage = PageFacts()
           homepage.feed(Path('public/index.html').read_text(encoding='utf-8'))
@@ -100,6 +108,22 @@ jobs:
               raise SystemExit('VALIDATION FAILURE: homepage does not reference /css/style.css.')
           if '/js/nav.js' not in homepage.scripts:
               raise SystemExit('VALIDATION FAILURE: homepage does not reference /js/nav.js.')
+
+          # Legacy intake URLs may serve only a static forwarding page, never a form.
+          destination = 'https://buyer.hbexperts.com/questionnaire'
+          for legacy in ('assessment', 'buyer-discovery'):
+              directory = Path('public') / legacy
+              page = directory / 'index.html'
+              if sorted(p.relative_to(directory).as_posix() for p in directory.rglob('*') if p.is_file()) != ['index.html']:
+                  raise SystemExit(f'SECURITY FAILURE: unexpected legacy content at /{legacy}/.')
+              facts = PageFacts()
+              facts.feed(page.read_text(encoding='utf-8'))
+              if facts.meta.get('refresh') != f'0; url={destination}' or facts.hrefs != {destination} or facts.anchors != {destination}:
+                  raise SystemExit(f'VALIDATION FAILURE: /{legacy}/ must forward only to the secure Buyer Experience.')
+              if facts.scripts or facts.tags.intersection({'form', 'input', 'textarea', 'select', 'iframe', 'object', 'embed'}):
+                  raise SystemExit(f'SECURITY FAILURE: intake or external scripts found at /{legacy}/.')
+              if facts.meta.get('robots') != 'noindex, follow' or facts.meta.get('referrer') != 'no-referrer':
+                  raise SystemExit(f'VALIDATION FAILURE: /{legacy}/ must be unindexed and suppress referrers.')
 
           root = ET.parse('public/sitemap.xml').getroot()
           locs = [e.text.strip() for e in root.iter() if e.tag.endswith('loc') and e.text]
@@ -143,7 +167,10 @@ jobs:
           test ! -e public/hbeui
           test ! -e public/buyer-portal
           test ! -e public/purchaseplanningworkbook
-          test ! -e public/assessment
+          for legacy in assessment buyer-discovery; do
+            test -f "public/${legacy}/index.html"
+            grep -q "${RELEASE_ID}" "public/${legacy}/index.html"
+          done
           test ! -e public/discovery
           test ! -e public/home-dna
           test ! -e public/next-choice-listening-room
@@ -195,10 +222,23 @@ jobs:
             sleep 10
           done
 
-          for path in advisor advisor/consultation-brief.html buyers/donald-kelley clients hbeui buyer-portal purchaseplanningworkbook assessment discovery home-dna next-choice-listening-room future-listening-7c4e9 jeebs-gmail-bridge; do
+          for path in advisor advisor/consultation-brief.html buyers/donald-kelley clients hbeui buyer-portal purchaseplanningworkbook discovery home-dna next-choice-listening-room future-listening-7c4e9 jeebs-gmail-bridge; do
             code="$(curl --silent --output /dev/null --write-out '%{http_code}' --location "${BASE}/${path}/?verify=${RELEASE_ID}" || true)"
             if [ "$code" = "200" ]; then
               echo "SECURITY FAILURE: /${path}/ is still publicly served." >&2
+              exit 1
+            fi
+          done
+
+      - name: Verify legacy Buyer Discovery forwarding pages
+        run: |
+          BASE="${PAGE_URL%/}"
+          for legacy in assessment buyer-discovery; do
+            BODY="$(curl --fail --silent --show-error --location --max-time 15 "${BASE}/${legacy}/?verify=${RELEASE_ID}")"
+            printf '%s' "$BODY" | grep -q "${RELEASE_ID}"
+            printf '%s' "$BODY" | grep -Fq 'content="0; url=https://buyer.hbexperts.com/questionnaire"'
+            if printf '%s' "$BODY" | grep -Eqi '<(form|input|textarea|select)([[:space:]>])'; then
+              echo "SECURITY FAILURE: legacy intake form served at /${legacy}/." >&2
               exit 1
             fi
           done
