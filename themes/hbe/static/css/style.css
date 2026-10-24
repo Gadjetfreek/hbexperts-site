@@ -56,6 +56,19 @@ blockquote {
   font-family: var(--font-heading);
 }
 
+/* Quote-dominant review/testimonial attribution (page content) */
+.page-content blockquote > p:first-child {
+  margin-bottom: 0.75rem;
+}
+.page-content blockquote .attribution {
+  font-style: normal;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--color-text-light);
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
 strong { font-weight: 600; }
 hr { border: none; border-top: 1px solid var(--color-border); margin: 3rem 0; }
 
@@ -533,6 +546,7 @@ hr { border: none; border-top: 1px solid var(--color-border); margin: 3rem 0; }
   h1 { font-size: 2rem; }
   h2 { font-size: 1.6rem; }
   .tagline-banner blockquote { font-size: 1.25rem; }
+  .page-content blockquote { font-size: 1.1rem; padding: 1rem 1.15rem; }
   .section { padding: 3.5rem 1.5rem; }
 
   .nav-toggle {
