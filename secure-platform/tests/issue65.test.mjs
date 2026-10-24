@@ -68,32 +68,16 @@ test('refinePublicJourney wraps 17-stage map in details instead of deleting it',
   assert.equal((twice.match(/id="public-journey-stages"/g) || []).length, 1);
 });
 
-test('questionnaire skip deeper is only offered inside Parts 3–5 and jumps to Part 6', () => {
+test('five questionnaire steps use Continue for optional questions and finish with review', () => {
   const portal = read('src/portal-worker.js');
   const steps = [...portal.matchAll(/<section class="step[^"]*"[^>]*>([\s\S]*?)<\/section>/g)].map(m => m[1]);
-  assert.equal(steps.length, 8, 'expected 8 questionnaire steps');
-  assert.match(steps[0], /Part 1/);
-  assert.match(steps[1], /Part 2/);
-  assert.match(steps[2], /Part 3/);
-  assert.match(steps[5], /Part 6/);
-
-  // Parts 1–2 stay on the normal Continue path (What matters is not skipped)
-  assert.doesNotMatch(steps[0], /skip-deeper|data-skip-to=/);
-  assert.doesNotMatch(steps[1], /skip-deeper|data-skip-to=/);
-
-  // Skip only once the buyer reaches the deeper reflection block
-  for (const i of [2, 3, 4]) {
-    assert.match(steps[i], /class="btn secondary skip-deeper"/);
-    assert.match(steps[i], /data-skip-to="5"/);
-    assert.equal((steps[i].match(/data-skip-to="5"/g) || []).length, 1);
-  }
-  // Part 6+ have no skip control
-  for (const i of [5, 6, 7]) {
-    assert.doesNotMatch(steps[i], /skip-deeper|data-skip-to=/);
-  }
-
-  assert.match(portal, /const target=Number\(b\.dataset\.skipTo\|\|5\);show\(target\)/);
-  assert.match(portal, /id="review-before-send"[^>]*type="button"[^>]*>Review &amp; Send to HomeBuyer Experts/);
+  assert.equal(steps.length, 5);
+  assert.match(steps[0], /name="first_name"[^>]*required/);
+  assert.match(steps[0], /name="email"[^>]*required/);
+  for (const step of steps.slice(1)) assert.doesNotMatch(step, /\brequired\b/);
+  for (const step of steps.slice(0, -1)) assert.equal((step.match(/>Continue<\/button>/g) || []).length, 1);
+  assert.doesNotMatch(portal, /skip-deeper|data-skip-to=/);
+  assert.match(steps[4], /id="review-before-send"[^>]*type="button"[^>]*>Review &amp; Send to HomeBuyer Experts/);
 });
 
 test('every buyer-visible Review & Send control requires review before POST', () => {
@@ -260,9 +244,11 @@ test('Issue #65: write-path inferCompletedOnAdvance includes market before searc
 
 test('Issue #65: open-ended fields have example affordances; identity has no I’m not sure yet', () => {
   const portal = read('src/portal-worker.js');
-  for (const name of ['why', 'success_definition', 'non_negotiables', 'unknowns', 'saturday_morning_vision', 'consultation_success', 'notes']) {
-    assert.match(portal, new RegExp('name="' + name + '"[^>]*placeholder="Example:'));
+  for (const name of ['why', 'success_definition', 'non_negotiables', 'consultation_success', 'past_experience_detail', 'notes']) {
+    assert.match(portal, new RegExp('name="' + name + '"'));
+    assert.ok(BUYER_GUIDANCE[name].suggestions.length);
   }
+  assert.doesNotMatch(portal, /placeholder="Example:/);
   assert.ok(BUYER_GUIDANCE.why.suggestions.some(s => /not sure yet/i.test(s)));
   assert.equal(BUYER_GUIDANCE.first_name, undefined);
   assert.equal(BUYER_GUIDANCE.email, undefined);
@@ -306,7 +292,10 @@ test('Issue #65: open-ended fields have example affordances; identity has no I�
     }
   };
   installBuyerGuidance(form, doc, BUYER_GUIDANCE);
-  const chips = form.fields.why.nextSiblings.find(n => n.className === 'buyer-suggestions');
+  const examples = form.fields.why.nextSiblings.find(n => n.className === 'buyer-answer-examples');
+  assert.equal(examples.tagName, 'DETAILS');
+  assert.equal(examples.attributes.open, undefined);
+  const chips = examples.children.find(n => n.className === 'buyer-suggestions');
   assert.ok(chips);
   const labels = chips.children.map(c => c.textContent);
   assert.ok(labels.some(t => t.startsWith('Example:')));
