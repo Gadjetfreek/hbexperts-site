@@ -37,15 +37,15 @@ export const BUYER_GUIDANCE = {
     suggestions: CONCERN_CHIP_VALUES
   },
   notes: {
-    help: 'Optional. Use this only if there is something you want a human at HBE to understand before talking with you.',
+    help: 'Add anything the other answers have not covered.',
     suggestions: ['Nothing else right now', 'I’d rather discuss this live', 'I’m still figuring things out']
   },
   success_definition: {
-    help: 'A year from now, what would make this feel like a good choice? A feeling, a change in daily life, or “I’m still figuring that out” all count.',
+    help: 'Picture an ordinary day in your next home and what would feel better.',
     suggestions: ['We felt settled', 'The house still fits our life', 'Less stress about the next move', 'Room for how we actually live', 'I’m not sure yet what “right” looks like', 'We would choose it again']
   },
   non_negotiables: {
-    help: 'Name the few things that would make a home or plan wrong for you. “None yet” is a real answer.',
+    help: 'Add any firm limits you already know.',
     suggestions: ['None yet', 'Commute must work', 'Budget ceiling is real', 'Enough bedrooms for us', 'Quiet enough to rest', 'I’m still naming these']
   },
   unknowns: {
@@ -57,11 +57,11 @@ export const BUYER_GUIDANCE = {
     suggestions: ['Coffee, quiet, sunlight', 'Kids nearby, unhurried', 'Slow start, no commute rush', 'Walk to Saturday errands', 'Windows open to the yard', 'I’m still picturing it']
   },
   consultation_success: {
-    help: 'One useful outcome is enough. Answering this does not hire HBE or start a search.',
-    suggestions: ['Leave with a clear next step', 'Understand the process', 'Know if HBE is a fit', 'Get my questions named', 'See what I might be missing', 'I’m not sure what I need yet']
+    help: 'Name a question, a concern, or a next step you would like to work through.',
+    suggestions: ['Understand what I can afford', 'Understand the process', 'Know if HBE is a fit', 'Leave with a clear next step', 'See what I might be missing', 'I’m not sure what I need yet']
   },
   past_experience_detail: {
-    help: 'Optional. Share only what would help HBE treat this time differently — or say this is your first time.',
+    help: 'Share what worked well or what you would like handled differently.',
     suggestions: ['First-time buyer', 'Want less pressure this time', 'Nothing specific', 'Felt rushed before', 'Want more teaching, less selling', 'Prefer to discuss live']
   }
 };
@@ -111,6 +111,10 @@ export function installBuyerGuidance(form, doc, guide) {
   }
 
   function insertAnchor(name, first) {
+    if (typeof first.closest === 'function') {
+      const label = first.closest('label');
+      if (label) return label;
+    }
     const kind = fieldKind(first);
     if (kind === 'checkbox' || kind === 'radio') {
       if (name === 'concerns' && typeof form.querySelector === 'function') {
@@ -167,16 +171,19 @@ export function installBuyerGuidance(form, doc, guide) {
       if (!first) continue;
       if (!first.dataset) continue;
       if (first.dataset.guided === 'yes') continue;
+      const kind = fieldKind(first);
+      // Selects and choice groups already display their available answers.
+      if (kind !== 'text') continue;
       first.dataset.guided = 'yes';
       const anchor = insertAnchor(name, first);
       if (!anchor || typeof anchor.insertAdjacentElement !== 'function') continue;
-      const kind = fieldKind(first);
+      const examples = doc.createElement('details');
+      examples.className = 'buyer-answer-examples';
+      const summary = doc.createElement('summary');
+      summary.textContent = 'Need an example?';
       const help = doc.createElement('small');
       help.className = 'buyer-answer-help';
-      const exampleHint = (kind === 'text')
-        ? ' Examples below are prompts — they do not fill in until you choose one.'
-        : '';
-      help.innerHTML = '<strong>Need a starting point?</strong> ' + cfg.help + exampleHint + (cfg.allowUnsure === false ? '' : ' It is okay not to know yet.');
+      help.textContent = cfg.help + ' Choose an example to use it, or write your own answer.';
       const chips = doc.createElement('div');
       chips.className = 'buyer-suggestions';
       chips.setAttribute('aria-label', 'Answer examples');
@@ -191,8 +198,10 @@ export function installBuyerGuidance(form, doc, guide) {
         button.addEventListener('click', function () { applySuggestion(name, suggestion); });
         chips.appendChild(button);
       }
-      anchor.insertAdjacentElement('afterend', chips);
-      anchor.insertAdjacentElement('afterend', help);
+      examples.appendChild(summary);
+      examples.appendChild(help);
+      examples.appendChild(chips);
+      anchor.insertAdjacentElement('afterend', examples);
     } catch (_err) {
       /* A throw/mismatch on one field must not abort remaining fields. */
     }

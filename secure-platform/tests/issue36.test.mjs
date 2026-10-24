@@ -50,8 +50,8 @@ test('review UI does not expose invitation token values', () => {
 test('open-ended typed answers receive suggestions and explicit uncertainty permission', () => {
   const html = addBuyerFirstClarity(questionnaire, '/questionnaire');
   assert.match(html, /buyer-guided-answer-script/);
-  assert.match(html, /Need a starting point\?/);
-  assert.match(html, /It is okay not to know yet/);
+  assert.match(html, /Need an example\?/);
+  assert.match(html, /Choose an example to use it/);
   assert.match(html, /I’m not sure yet/);
   assert.match(html, /why:\{help:/);
   assert.match(html, /timeline:\{help:/);
@@ -189,8 +189,12 @@ function radioNodeList(controls) {
   return list;
 }
 
+function examplesAfter(el) {
+  return (el.nextSiblings || []).find(n => n.className === 'buyer-answer-examples') || null;
+}
+
 function chipsAfter(el) {
-  return (el.nextSiblings || []).find(n => n.className === 'buyer-suggestions') || null;
+  return examplesAfter(el)?.children.find(n => n.className === 'buyer-suggestions') || null;
 }
 
 function clickChip(el, label) {
@@ -289,10 +293,9 @@ test('injector does not throw on concerns checkbox group and still chips notes',
   assert.equal(named.dataset, undefined);
   assert.equal(typeof named.length, 'number');
   assert.doesNotThrow(() => installBuyerGuidance(form, fakeDocument(), BUYER_GUIDANCE));
-  assert.ok(chipsAfter(form.concernChoices), 'concerns group should have chips');
-  assert.equal(chipsAfter(form.concernChoices).children.length, CONCERN_CHIP_VALUES.length);
+  assert.equal(chipsAfter(form.concernChoices), null, 'concerns already display their choices');
   assert.ok(chipsAfter(form.fields.notes), 'notes must still receive chips after concerns');
-  assert.ok(chipsAfter(form.fields.timeline), 'timeline should have chips');
+  assert.equal(chipsAfter(form.fields.timeline), null, 'timeline already displays its options');
   assert.ok(chipsAfter(form.fields.why), 'why should have chips');
   assert.ok(chipsAfter(form.fields.location), 'location should have chips');
   for (const name of REMAINDER_OPEN_FIELDS) {
@@ -300,40 +303,15 @@ test('injector does not throw on concerns checkbox group and still chips notes',
   }
 });
 
-test('timeline chips match the six option values and set a real selected option', () => {
+test('native selects and checkboxes receive no duplicate answer chips or injected values', () => {
   const form = portalLikeForm();
   installBuyerGuidance(form, fakeDocument(), BUYER_GUIDANCE);
-  const timeline = form.fields.timeline;
-  const chipLabels = chipsAfter(timeline).children.map(b => b.textContent);
-  assert.deepEqual(chipLabels, TIMELINE_CHIP_VALUES);
-  assert.equal(timeline.selectedIndex, 0);
-  assert.equal(timeline.value, '');
-  clickChip(timeline, '1–3 months');
-  assert.equal(timeline.value, '1–3 months');
-  assert.equal(timeline.selectedIndex, 2);
-  assert.ok(timeline.selectedIndex > 0);
-  assert.ok(timeline.options[timeline.selectedIndex]);
-  clickChip(timeline, 'Just exploring / unsure');
-  assert.equal(timeline.value, 'Just exploring / unsure');
-  assert.equal(timeline.selectedIndex, 6);
-});
-
-test('concern chips toggle the matching checkbox rather than assigning .value on the list', () => {
-  const form = portalLikeForm();
-  const list = form.elements.namedItem('concerns');
-  Object.defineProperty(list, 'value', {
-    set() { throw new Error('must not assign .value on the checkbox NodeList'); },
-    get() { return ''; }
-  });
-  installBuyerGuidance(form, fakeDocument(), BUYER_GUIDANCE);
-  const paying = form.boxes.find(b => b.value === 'Paying too much');
-  assert.equal(paying.checked, false);
-  clickChip(form.concernChoices, 'Paying too much');
-  assert.equal(paying.checked, true);
-  clickChip(form.concernChoices, 'Paying too much');
-  assert.equal(paying.checked, false);
-  clickChip(form.concernChoices, 'I do not know what I do not know');
-  assert.equal(form.boxes.find(b => b.value === 'I do not know what I do not know').checked, true);
+  assert.equal(examplesAfter(form.fields.timeline), null);
+  assert.equal(examplesAfter(form.concernChoices), null);
+  assert.equal(form.fields.timeline.selectedIndex, 0);
+  assert.ok(form.boxes.every(box => !box.checked));
+  assert.deepEqual(form.fields.timeline.options.slice(1).map(option => option.value), TIMELINE_CHIP_VALUES);
+  assert.deepEqual(form.boxes.map(box => box.value), CONCERN_CHIP_VALUES);
 });
 
 test('identity fields still have no I do not know or guided chips', () => {
@@ -365,7 +343,7 @@ test('a throw on one field does not abort remaining fields including notes', () 
   form.elements.namedItem = (name) => name === 'why' ? broken : orig(name);
   assert.doesNotThrow(() => installBuyerGuidance(form, fakeDocument(), BUYER_GUIDANCE));
   assert.ok(chipsAfter(form.fields.notes), 'notes chips must survive an earlier field throw');
-  assert.ok(chipsAfter(form.concernChoices), 'concerns chips must survive an earlier field throw');
+  assert.equal(chipsAfter(form.concernChoices), null, 'native checkbox options stay single');
 });
 
 test('injector is type-aware for worker.js text concerns and timeline', () => {
@@ -389,10 +367,10 @@ test('live portal questionnaire option strings stay 1:1 with chips', () => {
 });
 
 function helpAfter(el) {
-  return (el.nextSiblings || []).find(n => n.className === 'buyer-answer-help') || null;
+  return examplesAfter(el)?.children.find(n => n.className === 'buyer-answer-help') || null;
 }
 
-test('remaining optional textareas each receive help and 4-6 starting-point chips', () => {
+test('text examples stay collapsed and do not fill an answer until chosen', () => {
   const form = portalLikeForm();
   installBuyerGuidance(form, fakeDocument(), BUYER_GUIDANCE);
   for (const name of REMAINDER_OPEN_FIELDS) {
@@ -400,8 +378,10 @@ test('remaining optional textareas each receive help and 4-6 starting-point chip
     const help = helpAfter(field);
     const chips = chipsAfter(field);
     assert.ok(help, name + ' should have help text');
-    assert.match(help.innerHTML, /Need a starting point\?/);
-    assert.match(help.innerHTML, /It is okay not to know yet/);
+    assert.equal(examplesAfter(field).tagName, 'DETAILS');
+    assert.equal(examplesAfter(field).attrs?.open, undefined);
+    assert.match(help.textContent, /Choose an example to use it/);
+    assert.equal(field.value, '');
     assert.ok(chips, name + ' should have chips');
     const count = chips.children.length;
     assert.ok(count >= 4 && count <= 6, name + ' should have 4-6 chips, got ' + count);
