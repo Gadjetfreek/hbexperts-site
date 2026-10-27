@@ -1,3 +1,5 @@
+import { deliverSubmissionAlert } from './submission-alerts.js';
+
 const enc = new TextEncoder();
 
 const STAGES = [
@@ -42,14 +44,15 @@ async function createBuyer(request,env,ctx){
   const form=await request.formData(), first=clean(form.get('first_name')), last=clean(form.get('last_name')), email=clean(form.get('email')).toLowerCase(), remember=form.get('remember_device')==='yes';
   if(!first||!last||!email) return html(questionnaire('Please provide your first name, last name, and email.'),400);
   if(env.SUBMIT_RATE_LIMITER){const {success}=await env.SUBMIT_RATE_LIMITER.limit({key:await sha256(`submit:${email}`)});if(!success)return html(questionnaire('Please wait a moment before submitting again.'),429)}
-  const id=crypto.randomUUID(), accessCode=readableAccessCode(), accessCodeHash=await sha256(`${email}:${normalizeAccessCode(accessCode)}`), now=new Date().toISOString();
+  const id=crypto.randomUUID(), notificationId=crypto.randomUUID(), accessCode=readableAccessCode(), accessCodeHash=await sha256(`${email}:${normalizeAccessCode(accessCode)}`), now=new Date().toISOString();
   const answers={phone:clean(form.get('phone')),why:clean(form.get('why')),timeline:clean(form.get('timeline')),location:clean(form.get('location')),financing:clean(form.get('financing')),concerns:clean(form.get('concerns')),notes:clean(form.get('notes'))};
   await env.BUYER_DB.batch([
     env.BUYER_DB.prepare(`INSERT INTO buyers (id,created_at,submitted_at,updated_at,first_name,last_name,email,phone,stage,completed_stages,answers_json,access_code_hash) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`).bind(id,now,now,now,first,last,email,answers.phone,'consultation',JSON.stringify(['buyerExperience']),JSON.stringify(answers),accessCodeHash),
-    env.BUYER_DB.prepare(`INSERT INTO notifications (id,buyer_id,type,created_at,payload_json) VALUES (?,?,?,?,?)`).bind(crypto.randomUUID(),id,'buyer_experience_submitted',now,JSON.stringify({first_name:first,last_name:last,email}))
+    env.BUYER_DB.prepare(`INSERT INTO notifications (id,buyer_id,type,created_at,payload_json) VALUES (?,?,?,?,?)`).bind(notificationId,id,'buyer_experience_submitted',now,JSON.stringify({first_name:first,last_name:last,email})),
+    env.BUYER_DB.prepare(`INSERT INTO notification_deliveries (notification_id,status,attempts,created_at) VALUES (?,'pending',0,?)`).bind(notificationId,now)
   ]);
   const session=await createBuyerSession(env,id,remember);
-  if(ctx&&env.HBE_ALERT)ctx.waitUntil(sendHbeSubmissionAlert(env,{first,last,email,created_at:now}).catch(err=>console.error('HBE alert email failed',err)));
+  if(ctx)ctx.waitUntil(deliverSubmissionAlert(env,notificationId));
   return html(welcome(first,accessCode,remember),200,sessionCookie(session.token,remember));
 }
 
@@ -76,7 +79,6 @@ async function updateStage(request,env,url){if(!isHbe(request,env))return new Re
 
 async function markNotificationRead(request,env,url){if(!isHbe(request,env))return new Response('HBE access required',{status:403,headers:securityHeaders()});const match=url.pathname.match(/^\/api\/hbe\/notification\/([^/]+)\/read$/);if(!match)return new Response('Invalid route',{status:400,headers:securityHeaders()});await env.BUYER_DB.prepare('UPDATE notifications SET read_at=? WHERE id=?').bind(new Date().toISOString(),decodeURIComponent(match[1])).run();return redirect('/hbe')}
 
-async function sendHbeSubmissionAlert(env,s){const to=env.HBE_ALERT_TO||env.HBE_ADMIN_EMAIL,from=env.HBE_ALERT_FROM||'buyer-alerts@hbexperts.com';await env.HBE_ALERT.send({to,from,subject:`New HBE Buyer Experience: ${s.first} ${s.last}`,text:`A new Buyer Experience was submitted to HomeBuyer Experts.\n\nBuyer: ${s.first} ${s.last}\nEmail: ${s.email}\nSubmitted: ${s.created_at}\n\nOpen the protected HBEUI to review the submission. The buyer's questionnaire answers are intentionally not copied into this email.`})}
 function isHbe(request,env){const email=clean(request.headers.get('Cf-Access-Authenticated-User-Email')).toLowerCase();return email&&email===String(env.HBE_ADMIN_EMAIL||'').toLowerCase()}
 
 function explorer(){return shellBody('HomeBuyer Roadmap',`<section><div class="eyebrow">HomeBuyer Experts · BuyerUI preview</div><h1>See the whole road before you share anything.</h1><p class="lede">Explore every stage below. Nothing personal is collected or stored by HBE just for viewing this map.</p><div class="status"><small>Your only active step</small><strong>Buyer Experience</strong></div>${roadmap('buyerExperience',[])}<div class="startbar"><div><strong>Ready to begin?</strong><small>Your answers stay on this device until you review and send them to HomeBuyer Experts.</small></div><a class="btn primary" href="/questionnaire">Start My Buyer Experience</a></div><a class="btn ghost" href="/login">Already submitted? Open my Buyer Portal</a></section>${stageModalScript()}`)}

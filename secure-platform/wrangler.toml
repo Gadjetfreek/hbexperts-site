@@ -11,6 +11,7 @@ custom_domain = true
 
 [vars]
 HBE_ADMIN_EMAIL = "cwhitehead@hbexperts.com"
+HBE_ALERT_PRIMARY = "buyers@hbexperts.com"
 HBE_ALERT_TO = "cwhitehead@hbexperts.com"
 HBE_ALERT_FROM = "buyer-alerts@hbexperts.com"
 # CF_ACCESS_TEAM_DOMAIN and CF_ACCESS_AUD are intentionally not stored here.
@@ -44,10 +45,12 @@ namespace_id = "82626002"
   limit = 3
   period = 60
 
-# Optional email config stays disabled until the sending domain/path is verified.
-# [[send_email]]
-# name = "HBE_ALERT"
-# destination_address = "cwhitehead@hbexperts.com"
+[[send_email]]
+name = "HBE_ALERT"
+allowed_destination_addresses = [ "buyers@hbexperts.com", "cwhitehead@hbexperts.com" ]
+
+[triggers]
+crons = [ "*/5 * * * *" ]
 
 
 # Private showing-card photo storage (HBE-auth only; no public bucket/URL).

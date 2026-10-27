@@ -74,10 +74,12 @@ try {
   node --check src/bimatrix/evaluator.js
   node --check src/bimatrix/freshness.js
   node --check src/issue33-production-worker.js
+  node --check src/submission-alerts.js
   node --test tests/issue29.test.mjs
   node --test tests/bimatrix.test.mjs
   node --test tests/issue36.test.mjs
   node --test tests/google-ads-conversion.test.mjs
+  node --test tests/submission-alerts.test.mjs
   if (Select-String -Path src/worker.js -Pattern 'donald-kelley|localStorage|buyer_token_hash' -Quiet) {
     throw 'Security/source check failed: legacy buyer-specific or browser-local journey code detected.'
   }
@@ -109,6 +111,9 @@ try {
   }
   if (-not $health.issue36 -or -not $health.issue36.buyer_first_clarity -or -not $health.issue36.pre_submit_review -or -not $health.issue36.attention_architecture -or -not $health.issue36.guided_open_answers) {
     throw 'Issue 36 health verification failed: expected buyer-first clarity, review-before-send, simplified attention architecture, and guided open answers.'
+  }
+  if (-not $health.alerts -or -not $health.alerts.binding_ready) {
+    throw 'Alert delivery verification failed: expected the production email binding.'
   }
 
   Write-Host ''
