@@ -1,12 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { writeFileSync, mkdirSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 import { STAGES, STAGE_CHECKLISTS, STAGE_COUNT, assertSeventeenStages, stageLabel, COMPENSATION_PUBLIC } from '../src/journey-stages.js';
 import { generateKeyPairSync, sign as nodeSign } from 'node:crypto';
 import { deriveWhatsNext, filterStory, defaultCompass, canSeeItem, sha256Hex, randomToken, dueDateFromOffset, completeChecklistItem, isCompletedForActor, completionScopeKey, mutationCsrfToken, assertMutationCsrf, sameOriginRequest, validStageId, loadHouseholdBundle, taskVisibleToActor, generatedActionVisibility } from '../src/household-state.js';
 import { stageMapHtml, splitHouseholdCard, storyPanel, compassPanel, whatsNextPanel, checklistPanel, modeSwitcher, thankYouHtml, compensationPublicHtml, dashboardShell, previewBanner, ISSUE29_CSS, buyerDashboardBody, previewMemberNav } from '../src/issue29-ui.js';
 import worker from '../src/issue29-convergence-worker.js';
 import consentWorker, { inviteResultHtml } from '../src/co-buyer-consent-worker.js';
+
+const EVIDENCE_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '../../docs/issue29');
 
 const RIVERA = {
   members: [
@@ -213,7 +217,7 @@ test('completing an item can create a dated action', () => {
 });
 
 test('write desktop + mobile HTML evidence from synthetic Rivera fixtures', () => {
-  mkdirSync('/workspace/hbexperts-site/docs/issue29', { recursive: true });
+  mkdirSync(EVIDENCE_DIR, { recursive: true });
   const items = [];
   let n = 0;
   for (const [id] of STAGES) {
@@ -265,11 +269,11 @@ test('write desktop + mobile HTML evidence from synthetic Rivera fixtures', () =
     body: buyer.match(/<main[\s\S]*<\/main>/)[0].replace(/<\/?main[^>]*>/g, '')
   });
   const thanks = thankYouHtml({ first: 'Alex', accessCode: 'AAAA-BBBB-CCCC-DDDD', remembered: true });
-  writeFileSync('/workspace/hbexperts-site/docs/issue29/hbe-dashboard.html', hbe);
-  writeFileSync('/workspace/hbexperts-site/docs/issue29/buyer-dashboard.html', buyer);
-  writeFileSync('/workspace/hbexperts-site/docs/issue29/hbe-preview-buyer.html', preview);
-  writeFileSync('/workspace/hbexperts-site/docs/issue29/thank-you.html', thanks);
-  writeFileSync('/workspace/hbexperts-site/docs/issue29/public-compensation.html', dashboardShell({ title: 'Public compensation', body: compensationPublicHtml() + stageMapHtml({ currentStage: 'buyerExperience', actor: { kind: 'buyer' } }) }));
+  writeFileSync(resolve(EVIDENCE_DIR, 'hbe-dashboard.html'), hbe);
+  writeFileSync(resolve(EVIDENCE_DIR, 'buyer-dashboard.html'), buyer);
+  writeFileSync(resolve(EVIDENCE_DIR, 'hbe-preview-buyer.html'), preview);
+  writeFileSync(resolve(EVIDENCE_DIR, 'thank-you.html'), thanks);
+  writeFileSync(resolve(EVIDENCE_DIR, 'public-compensation.html'), dashboardShell({ title: 'Public compensation', body: compensationPublicHtml() + stageMapHtml({ currentStage: 'buyerExperience', actor: { kind: 'buyer' } }) }));
   assert.ok(hbe.includes('After the Keys'));
   assert.ok(!buyer.includes(RIVERA.story.hbe_synthesis));
   assert.ok(!buyer.includes(RIVERA.private.sam));

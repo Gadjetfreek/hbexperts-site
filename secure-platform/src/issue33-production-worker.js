@@ -8,6 +8,7 @@ import { STAGES } from './journey-stages.js';
 import { mutationCsrfToken } from './household-state.js';
 import { BIMATRIX_CSS, buyerBimatrixPanel, handleBuyerBimatrixRefresh } from './bimatrix/freshness.js';
 import { buyerGuidanceRuntimeScript } from './buyer-guidance.js';
+import { processSubmissionAlertBacklog, submissionAlertHealth } from './submission-alerts.js';
 import {
   addGoogleAdsConversionFrame,
   allowGoogleAdsConversionFrame,
@@ -264,6 +265,8 @@ export default {
         body.issue36 = { buyer_first_clarity: true, pre_submit_review: true, attention_architecture: true, guided_open_answers: true };
         body.showingCard = body.showingCard || { enabled: true, dossier: 'brigham-v1', r2: Boolean(env.SHOWING_PHOTOS) };
         body.issue74 = { acquisition_collector: true, report: REPORT_PATH };
+        const alertHealth = await submissionAlertHealth(env);
+        body.alerts = { healthy: alertHealth.healthy, binding_ready: alertHealth.bindingReady, retry_schedule: '5m' };
         headers.set('content-type', 'application/json; charset=utf-8');
         return new Response(JSON.stringify(body), {
           status: response.status,
@@ -330,6 +333,10 @@ export default {
       headers
     });
     return afterAcquisitionSideEffects(request, env, htmlResponse, ctx);
+  },
+
+  async scheduled(_controller, env, ctx) {
+    ctx.waitUntil(processSubmissionAlertBacklog(env));
   }
 };
 

@@ -37,6 +37,19 @@ CREATE TABLE IF NOT EXISTS notifications (
   FOREIGN KEY (buyer_id) REFERENCES buyers(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS notification_deliveries (
+  notification_id TEXT PRIMARY KEY,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','sending','sent','failed')),
+  attempts INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL,
+  last_attempt_at TEXT,
+  lease_until TEXT,
+  sent_at TEXT,
+  error_code TEXT,
+  provider_message_id TEXT,
+  FOREIGN KEY (notification_id) REFERENCES notifications(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS buyer_notes (
   id TEXT PRIMARY KEY,
   buyer_id TEXT NOT NULL,
@@ -203,6 +216,7 @@ CREATE INDEX IF NOT EXISTS idx_buyers_submitted ON buyers(submitted_at DESC);
 CREATE INDEX IF NOT EXISTS idx_sessions_buyer ON buyer_sessions(buyer_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_expires ON buyer_sessions(expires_at);
 CREATE INDEX IF NOT EXISTS idx_notifications_read ON notifications(read_at, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_notification_deliveries_backlog ON notification_deliveries(status, created_at);
 CREATE INDEX IF NOT EXISTS idx_buyer_notes_buyer ON buyer_notes(buyer_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_buyer_tasks_buyer ON buyer_tasks(buyer_id, status, due_at);
 CREATE INDEX IF NOT EXISTS idx_case_members_case ON buyer_case_members(case_id, created_at);
