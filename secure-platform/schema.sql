@@ -246,3 +246,45 @@ CREATE INDEX IF NOT EXISTS idx_rep_records_status ON buyer_representation_record
 CREATE INDEX IF NOT EXISTS idx_time_case ON buyer_time_entries(case_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_time_professional ON buyer_time_entries(professional_email, ended_at, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_hbe_professionals_status ON hbe_professionals(status, workspace_status, email);
+
+-- HBE Home Screen app: owner-only Web Push (push primary, email fallback).
+CREATE TABLE IF NOT EXISTS hbe_push_subscriptions (
+  id TEXT PRIMARY KEY,
+  staff_email TEXT NOT NULL,
+  endpoint TEXT NOT NULL,
+  p256dh TEXT NOT NULL,
+  auth TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  last_success_at TEXT,
+  last_status INTEGER,
+  failures INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_hbe_push_subscriptions_staff ON hbe_push_subscriptions(staff_email);
+
+CREATE TABLE IF NOT EXISTS hbe_push_alerts (
+  id TEXT PRIMARY KEY,
+  kind TEXT NOT NULL CHECK (kind IN ('activity','intake','test')),
+  ref_id TEXT NOT NULL,
+  buyer_id TEXT,
+  action TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','sending','sent','failed','no_subscribers')),
+  attempts INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL,
+  last_attempt_at TEXT,
+  lease_until TEXT,
+  sent_at TEXT,
+  error_code TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_hbe_push_alerts_backlog ON hbe_push_alerts(status, created_at);
+
+CREATE TABLE IF NOT EXISTS hbe_push_dispatch_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  alert_id TEXT NOT NULL,
+  subscription_id TEXT NOT NULL,
+  http_status INTEGER,
+  outcome TEXT NOT NULL,
+  provider_reason TEXT,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_hbe_push_dispatch_alert ON hbe_push_dispatch_log(alert_id);
