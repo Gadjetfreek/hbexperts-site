@@ -50,6 +50,22 @@ CREATE TABLE IF NOT EXISTS notification_deliveries (
   FOREIGN KEY (notification_id) REFERENCES notifications(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS buyer_activity_alerts (
+  id TEXT PRIMARY KEY,
+  buyer_id TEXT NOT NULL,
+  action TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','sending','sent','failed')),
+  attempts INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL,
+  last_attempt_at TEXT,
+  lease_until TEXT,
+  sent_at TEXT,
+  error_code TEXT,
+  provider_message_id TEXT,
+  FOREIGN KEY (buyer_id) REFERENCES buyers(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_buyer_activity_alerts_backlog ON buyer_activity_alerts(status, created_at);
+
 CREATE TABLE IF NOT EXISTS buyer_notes (
   id TEXT PRIMARY KEY,
   buyer_id TEXT NOT NULL,
