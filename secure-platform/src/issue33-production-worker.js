@@ -9,6 +9,7 @@ import { mutationCsrfToken } from './household-state.js';
 import { BIMATRIX_CSS, buyerBimatrixPanel, handleBuyerBimatrixRefresh } from './bimatrix/freshness.js';
 import { buyerGuidanceRuntimeScript } from './buyer-guidance.js';
 import { processSubmissionAlertBacklog, submissionAlertHealth } from './submission-alerts.js';
+import { isHbeAppPath, handleHbeApp, enqueuePushAlert, deliverPushAlert, processPushBacklog, pushHealth } from './hbe-push.js';
 import { isBuyerAction, captureBuyerAction, completedStatus, enqueueBuyerActivity, deliverBuyerActivityAlert, processBuyerActivityBacklog, buyerActivityOverdue } from './buyer-activity-alerts.js';
 import {
   addGoogleAdsConversionFrame,
@@ -246,13 +247,20 @@ const productionWorker = {
     const response = await productionWorker.route(request, env, ctx, url);
     if (activity && completedStatus(response.status) && ctx) {
       ctx.waitUntil(enqueueBuyerActivity(env, activity)
-        .then(id => id ? deliverBuyerActivityAlert(env, id) : null)
+        .then(id => id ? Promise.allSettled([
+          deliverBuyerActivityAlert(env, id),
+          enqueuePushAlert(env, 'activity', id, activity.buyerId, activity.path).then(pid => pid ? deliverPushAlert(env, pid) : null)
+        ]) : null)
         .catch(() => console.error(JSON.stringify({ event: 'buyer_activity_enqueue_failed' }))));
+    }
+    if (request.method === 'POST' && url.pathname === '/api/intake' && completedStatus(response.status) && ctx) {
+      ctx.waitUntil(processPushBacklog(env).catch(() => console.error(JSON.stringify({ event: 'push_intake_sync_failed' }))));
     }
     return response;
   },
 
   async route(request, env, ctx, url) {
+    if (isHbeAppPath(url.pathname)) return handleHbeApp(request, env, url);
 
     const acq = await handleAcquisitionRoutes(request, env, ctx);
     if (acq) return acq;
@@ -281,6 +289,7 @@ const productionWorker = {
         let activityOverdue = 0;
         try { activityOverdue = await buyerActivityOverdue(env); } catch { activityOverdue = -1; }
         body.alerts = { healthy: alertHealth.healthy && activityOverdue === 0, binding_ready: alertHealth.bindingReady, retry_schedule: '5m', buyer_activity: true, activity_overdue: activityOverdue };
+        body.push = await pushHealth(env);
         headers.set('content-type', 'application/json; charset=utf-8');
         return new Response(JSON.stringify(body), {
           status: response.status,
@@ -350,7 +359,7 @@ const productionWorker = {
   },
 
   async scheduled(_controller, env, ctx) {
-    ctx.waitUntil(Promise.allSettled([processSubmissionAlertBacklog(env), processBuyerActivityBacklog(env)]));
+    ctx.waitUntil(Promise.allSettled([processSubmissionAlertBacklog(env), processBuyerActivityBacklog(env), processPushBacklog(env)]));
   }
 };
 
