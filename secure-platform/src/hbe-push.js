@@ -223,8 +223,9 @@ async function appPage(env) {
 <link rel="manifest" href="${MANIFEST_PATH}" crossorigin="use-credentials"><link rel="apple-touch-icon" sizes="180x180" href="/hbe/app-icon-180.png"><link rel="icon" href="/hbe/app-icon-192.png">
 <title>HBE</title><style>body{font:16px -apple-system,system-ui,sans-serif;margin:0;background:#f7faf8;color:#1a1a2e}header{background:#2d5a3d;color:#fff;padding:calc(env(safe-area-inset-top) + 14px) 16px 14px}h1{margin:0;font-size:1.3rem}main{padding:16px;max-width:640px;margin:auto}
 .card{background:#fff;border:1px solid #dfe8e2;border-radius:12px;padding:14px;margin-bottom:14px}button{font:inherit;font-weight:700;border-radius:10px;padding:.7rem 1rem;border:1px solid #2d5a3d;background:#2d5a3d;color:#fff;margin:4px 6px 4px 0}button.secondary{background:#fff;color:#2d5a3d}button:disabled{opacity:.5}
-#status{margin:.6rem 0 0;padding:.6rem .7rem;border-radius:8px;background:#eef3f0}#status.good{background:#e4f4e8;color:#1d5a2e}#status.bad{background:#fbe9e7;color:#8a1c12}ul{list-style:none;padding:0;margin:0}li a{display:grid;gap:2px;padding:10px 4px;border-bottom:1px solid #eee;color:inherit;text-decoration:none}li span{color:#2d5a3d}li time{color:#777;font-size:.8rem}.empty{color:#777;padding:10px 4px}small{color:#666}</style></head>
+#status{margin:.6rem 0 0;padding:.6rem .7rem;border-radius:8px;background:#eef3f0}#status.good{background:#e4f4e8;color:#1d5a2e}#status.bad{background:#fbe9e7;color:#8a1c12}ul{list-style:none;padding:0;margin:0}li a{display:grid;gap:2px;padding:10px 4px;border-bottom:1px solid #eee;color:inherit;text-decoration:none}li span{color:#2d5a3d}li time{color:#777;font-size:.8rem}.empty{color:#777;padding:10px 4px}small{color:#666}a.dash{display:block;text-align:center;font-weight:700;border-radius:10px;padding:.8rem 1rem;background:#2d5a3d;color:#fff;text-decoration:none;margin-bottom:6px}</style></head>
 <body><header><h1>HBE buyer activity</h1></header><main>
+<section class="card"><a class="dash" href="/hbe">Open HBEUI dashboard</a><br><small>Opens inside this app. Use the HBEUI back control or reopen HBE to return to alerts.</small></section>
 <section class="card" id="install" hidden><strong>Add to Home Screen first.</strong> In Safari tap Share, then Add to Home Screen, then open HBE from the new icon.</section>
 <section class="card"><strong>Notifications</strong><br><small>This device: <span id="perm">checking</span> · registered devices: <span id="devices">${esc(health.subscriptions ?? 0)}</span></small><br>
 <button id="enable">Enable notifications</button><button id="rereg" class="secondary">Re-register</button><button id="test" class="secondary">Send test notification</button>
@@ -268,6 +269,7 @@ export const MANIFEST = {
 
 export const SERVICE_WORKER = `self.addEventListener('install',()=>self.skipWaiting());
 self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));
+// No fetch handler on purpose: every HBEUI request goes to the network, nothing authenticated is cached.
 self.addEventListener('push',e=>{let d={};try{d=e.data?e.data.json():{};}catch(_){}
 const url=typeof d.url==='string'&&d.url.startsWith('/hbe')?d.url:'/hbe/app';
 e.waitUntil(self.registration.showNotification(d.title||'HBE',{body:d.body||'New buyer activity',tag:d.tag||undefined,icon:'/hbe/app-icon-192.png',badge:'/hbe/app-icon-192.png',data:{url}}));});
