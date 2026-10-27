@@ -107,5 +107,5 @@ test('portal keeps Prefer not to answer and review-before-send gate', () => {
   const portal = readSp('src/portal-worker.js');
   assert.match(portal, /Prefer not to answer/);
   assert.match(portal, /id="review-before-send"[^>]*type="button"/);
-  assert.match(portal, /Skip deeper optional questions/);
+  // 'Skip deeper optional questions' was intentionally removed by the five-section streamline (#93).
 });

@@ -75,11 +75,13 @@ try {
   node --check src/bimatrix/freshness.js
   node --check src/issue33-production-worker.js
   node --check src/submission-alerts.js
+  node --check src/buyer-activity-alerts.js
   node --test tests/issue29.test.mjs
   node --test tests/bimatrix.test.mjs
   node --test tests/issue36.test.mjs
   node --test tests/google-ads-conversion.test.mjs
   node --test tests/submission-alerts.test.mjs
+  node --test tests/buyer-activity-alerts.test.mjs
   if (Select-String -Path src/worker.js -Pattern 'donald-kelley|localStorage|buyer_token_hash' -Quiet) {
     throw 'Security/source check failed: legacy buyer-specific or browser-local journey code detected.'
   }

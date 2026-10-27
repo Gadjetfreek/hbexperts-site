@@ -9,6 +9,7 @@ import { mutationCsrfToken } from './household-state.js';
 import { BIMATRIX_CSS, buyerBimatrixPanel, handleBuyerBimatrixRefresh } from './bimatrix/freshness.js';
 import { buyerGuidanceRuntimeScript } from './buyer-guidance.js';
 import { processSubmissionAlertBacklog, submissionAlertHealth } from './submission-alerts.js';
+import { isBuyerAction, captureBuyerAction, completedStatus, enqueueBuyerActivity, deliverBuyerActivityAlert, processBuyerActivityBacklog, buyerActivityOverdue } from './buyer-activity-alerts.js';
 import {
   addGoogleAdsConversionFrame,
   allowGoogleAdsConversionFrame,
@@ -238,9 +239,20 @@ main.wrap.journey-landing>.value-context.hbe-value-public{margin-left:auto!impor
 main.wrap.journey-landing>.public-journey-stages{width:min(40rem,100%);max-width:40rem;margin-left:auto!important;margin-right:auto!important}
 </style>`;
 
-export default {
+const productionWorker = {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    const activity = isBuyerAction(request, url) ? await captureBuyerAction(request, env, url) : null;
+    const response = await productionWorker.route(request, env, ctx, url);
+    if (activity && completedStatus(response.status) && ctx) {
+      ctx.waitUntil(enqueueBuyerActivity(env, activity)
+        .then(id => id ? deliverBuyerActivityAlert(env, id) : null)
+        .catch(() => console.error(JSON.stringify({ event: 'buyer_activity_enqueue_failed' }))));
+    }
+    return response;
+  },
+
+  async route(request, env, ctx, url) {
 
     const acq = await handleAcquisitionRoutes(request, env, ctx);
     if (acq) return acq;
@@ -266,7 +278,9 @@ export default {
         body.showingCard = body.showingCard || { enabled: true, dossier: 'brigham-v1', r2: Boolean(env.SHOWING_PHOTOS) };
         body.issue74 = { acquisition_collector: true, report: REPORT_PATH };
         const alertHealth = await submissionAlertHealth(env);
-        body.alerts = { healthy: alertHealth.healthy, binding_ready: alertHealth.bindingReady, retry_schedule: '5m' };
+        let activityOverdue = 0;
+        try { activityOverdue = await buyerActivityOverdue(env); } catch { activityOverdue = -1; }
+        body.alerts = { healthy: alertHealth.healthy && activityOverdue === 0, binding_ready: alertHealth.bindingReady, retry_schedule: '5m', buyer_activity: true, activity_overdue: activityOverdue };
         headers.set('content-type', 'application/json; charset=utf-8');
         return new Response(JSON.stringify(body), {
           status: response.status,
@@ -336,9 +350,11 @@ export default {
   },
 
   async scheduled(_controller, env, ctx) {
-    ctx.waitUntil(processSubmissionAlertBacklog(env));
+    ctx.waitUntil(Promise.allSettled([processSubmissionAlertBacklog(env), processBuyerActivityBacklog(env)]));
   }
 };
+
+export default productionWorker;
 
 function injectBeforeMainEnd(text, panel) {
   const i = text.lastIndexOf('</main>');
