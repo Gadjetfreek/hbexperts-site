@@ -45,6 +45,10 @@ namespace_id = "82626002"
   limit = 3
   period = 60
 
+# Workers AI (free daily allocation on Workers Free) for owner-only buyer journey drafts; template fallback if unavailable.
+[ai]
+binding = "AI"
+
 [[send_email]]
 name = "HBE_ALERT"
 allowed_destination_addresses = [ "buyers@hbexperts.com", "cwhitehead@hbexperts.com" ]

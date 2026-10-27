@@ -9,6 +9,7 @@ import { mutationCsrfToken } from './household-state.js';
 import { BIMATRIX_CSS, buyerBimatrixPanel, handleBuyerBimatrixRefresh } from './bimatrix/freshness.js';
 import { buyerGuidanceRuntimeScript } from './buyer-guidance.js';
 import { processSubmissionAlertBacklog, submissionAlertHealth } from './submission-alerts.js';
+import { JOURNEY_PATH, handleJourney } from './buyer-journey.js';
 import { isHbeAppPath, handleHbeApp, enqueuePushAlert, deliverPushAlert, processPushBacklog, pushHealth } from './hbe-push.js';
 import { isBuyerAction, captureBuyerAction, completedStatus, enqueueBuyerActivity, deliverBuyerActivityAlert, processBuyerActivityBacklog, buyerActivityOverdue } from './buyer-activity-alerts.js';
 import {
@@ -261,6 +262,7 @@ const productionWorker = {
 
   async route(request, env, ctx, url) {
     if (isHbeAppPath(url.pathname)) return handleHbeApp(request, env, url);
+    if (url.pathname === JOURNEY_PATH) return handleJourney(request, env, url);
 
     const acq = await handleAcquisitionRoutes(request, env, ctx);
     if (acq) return acq;

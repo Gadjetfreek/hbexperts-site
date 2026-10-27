@@ -1,3 +1,4 @@
+import { journeyPanelHtml } from './buyer-journey.js';
 import appWorker from './access-code-worker.js';
 import {
   classifyAttentionItems,
@@ -166,7 +167,8 @@ function selectedBuyer(b, tasks, notes, notifications) {
   const buyerBody = `${stageContext}
     ${unreadAnchor(notifications)}
     ${decisionProfile(answers)}
-    ${experienceDetails(answers)}`;
+    ${experienceDetails(answers)}
+    ${journeyPanelHtml(b.id)}`;
 
   const roadmap = `<div class="roadmap" aria-label="Stage controls">${STAGES.map((s,i) => `<form method="post" action="/api/hbe/buyer/${encodeURIComponent(b.id)}/stage"><input type="hidden" name="stage" value="${s[0]}"><button class="stage ${s[0] === b.stage ? 'current' : stageDone(s[0], i) ? 'done' : ''}" title="Set current stage to ${esc(s[1])}"><span>${i+1}</span><em>${esc(s[1])}</em></button></form>`).join('')}</div>`;
   const hbeBody = `${roadmap}
