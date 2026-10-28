@@ -70,7 +70,7 @@ export async function submissionAlertHealth(env) {
 
 async function failDelivery(env, notificationId, code) {
   await env.BUYER_DB.prepare(`UPDATE notification_deliveries
-    SET status='failed', lease_until=NULL, error_code=? WHERE notification_id=?`).bind(code, notificationId).run();
+    SET status='failed', lease_until=NULL, error_code=?, last_error=?, last_error_at=? WHERE notification_id=?`).bind(code, code, new Date().toISOString(), notificationId).run();
   console.error(JSON.stringify({ event: 'buyer_alert_failed', notification_id: notificationId, error_code: code }));
   return { status: 'failed', code };
 }

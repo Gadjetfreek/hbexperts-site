@@ -1,3 +1,4 @@
+import { requireVerifiedProfessional } from './hbe-access-worker.js';
 import appWorker from './representation-worker.js';
 import { mlsConfigured, searchMls } from './mls-adapter.js';
 
@@ -12,14 +13,14 @@ export default {
     }
 
     if (request.method === 'POST' && url.pathname === '/api/hbe/search/profile') {
-      const gate = await appWorker.fetch(request, env, ctx);
-      if (gate.status === 403) return gate;
+      const gate = await requireVerifiedProfessional(request, env);
+      if (gate.ok !== true) return gate.response;
       return saveHbeSearchProfile(request, env);
     }
 
     if (request.method === 'POST' && url.pathname === '/api/hbe/search/run') {
-      const gate = await appWorker.fetch(request, env, ctx);
-      if (gate.status === 403) return gate;
+      const gate = await requireVerifiedProfessional(request, env);
+      if (gate.ok !== true) return gate.response;
       return runHbeSearch(request, env);
     }
 

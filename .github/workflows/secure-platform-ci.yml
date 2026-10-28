@@ -30,3 +30,6 @@ jobs:
 
       - name: Test privacy-safe Google Ads conversion boundary
         run: node --test secure-platform/tests/google-ads-conversion.test.mjs
+
+      - name: Test Oct 27 audit fixes (fail-closed auth, health, leads, intake guard)
+        run: node --test secure-platform/tests/audit-fixes-oct27.test.mjs

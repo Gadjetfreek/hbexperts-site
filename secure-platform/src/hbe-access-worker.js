@@ -13,8 +13,8 @@ export default {
       return appWorker.fetch(stripInternalProfessionalHeaders(request), env, ctx);
     }
 
-    const auth = await authenticateHbeProfessional(request, env);
-    if (!auth.ok) return auth.response;
+    const auth = await requireVerifiedProfessional(request, env);
+    if (auth.ok !== true) return auth.response;
 
     if ((url.pathname === '/hbe/admin' || url.pathname.startsWith('/api/hbe/admin/')) && auth.professional.role !== 'broker_admin') {
       return forbidden('Broker-admin access required.');
@@ -42,6 +42,23 @@ export default {
     return decorateHbeResponse(response, url, auth.professional);
   }
 };
+
+// Fail-closed wrapper: allow ONLY on an explicit, well-formed pass. Anything else
+// (thrown error, missing professional, unexpected shape, non-403 failure) denies.
+export async function requireVerifiedProfessional(request, env, authenticate = authenticateHbeProfessional) {
+  let auth;
+  try { auth = await authenticate(request, env); } catch (err) {
+    console.error('HBE professional auth threw; denying', err);
+    auth = null;
+  }
+  if (auth && auth.ok === true && auth.professional && typeof auth.professional.email === 'string' && auth.professional.email) {
+    return { ok: true, professional: auth.professional };
+  }
+  const response = auth && auth.response instanceof Response && (auth.response.status < 200 || auth.response.status >= 300)
+    ? auth.response
+    : new Response('Forbidden', { status: 403, headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex, nofollow' } });
+  return { ok: false, response };
+}
 
 export async function authenticateHbeProfessional(request, env) {
   const teamDomain = normalizedTeamDomain(env.CF_ACCESS_TEAM_DOMAIN || env.TEAM_DOMAIN);

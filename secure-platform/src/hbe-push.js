@@ -1,6 +1,6 @@
 // HBE Home Screen app (owner-only) + Web Push for buyer activity and intake alerts.
 // Push is primary; the existing email queues stay untouched as fallback/record.
-import { authenticateHbeProfessional } from './hbe-access-worker.js';
+import { authenticateHbeProfessional, requireVerifiedProfessional } from './hbe-access-worker.js';
 import { sendWebPush } from './web-push.js';
 import { BUYER_ACTIONS } from './buyer-activity-alerts.js';
 import { HBE_APP_ICONS } from './hbe-app-icons.js';
@@ -13,7 +13,7 @@ const MAX_ATTEMPTS = 12;
 const LIMIT = 20;
 const SW_PATH = '/hbe/app-sw.js';
 const MANIFEST_PATH = '/hbe/app.webmanifest';
-export const PUSH_ACTIONS = { ...BUYER_ACTIONS, '/api/intake': 'Submitted the buyer questionnaire', test: 'Test notification' };
+export const PUSH_ACTIONS = { ...BUYER_ACTIONS, '/api/intake': 'Submitted the buyer questionnaire', alert_delayed: 'Lead alert email still unsent after 15 min. Open HBE now', test: 'Test notification' };
 
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } });
 
@@ -47,8 +47,8 @@ export function validateSubscription(sub) {
 
 // ---------- auth ----------
 export async function requireOwner(request, env, { authenticate = authenticateHbeProfessional } = {}) {
-  const auth = await authenticate(request, env);
-  if (!auth.ok) return { ok: false, response: auth.response };
+  const auth = await requireVerifiedProfessional(request, env, authenticate);
+  if (auth.ok !== true) return { ok: false, response: auth.response };
   if (auth.professional.email !== ownerEmail(env)) return { ok: false, response: json({ ok: false, error: 'owner_required' }, 403) };
   return { ok: true, email: auth.professional.email };
 }

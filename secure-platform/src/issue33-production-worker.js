@@ -11,6 +11,9 @@ import { buyerGuidanceRuntimeScript } from './buyer-guidance.js';
 import { processSubmissionAlertBacklog, submissionAlertHealth } from './submission-alerts.js';
 import { JOURNEY_PATH, handleJourney } from './buyer-journey.js';
 import { isHbeAppPath, handleHbeApp, enqueuePushAlert, deliverPushAlert, processPushBacklog, pushHealth } from './hbe-push.js';
+import { processAlertEscalations, isLeadActionPath, handleLeadAction, leadPanelForRequest, leadCounts, unacknowledgedBanner, flagSuspectedSpam, LEAD_PANEL_CSS } from './lead-response.js';
+import { guardIntake, findNewLeadBuyerId, turnstileConfig, addTurnstileWidget, allowTurnstileCsp } from './intake-guard.js';
+import { requireOwner } from './hbe-push.js';
 import { isBuyerAction, captureBuyerAction, completedStatus, enqueueBuyerActivity, deliverBuyerActivityAlert, processBuyerActivityBacklog, buyerActivityOverdue } from './buyer-activity-alerts.js';
 import {
   addGoogleAdsConversionFrame,
@@ -243,7 +246,18 @@ main.wrap.journey-landing>.public-journey-stages{width:min(40rem,100%);max-width
 
 const productionWorker = {
   async fetch(request, env, ctx) {
+    const response = await productionWorker.handle(request, env, ctx);
+    return withNoIndex(response);
+  },
+
+  async handle(request, env, ctx) {
     const url = new URL(request.url);
+    let intakeGuard = null;
+    const intakeStartedAt = new Date().toISOString();
+    if (request.method === 'POST' && url.pathname === '/api/intake') {
+      intakeGuard = await guardIntake(request, env);
+      if (intakeGuard.action === 'rate_limited') return intakeGuard.response;
+    }
     const activity = isBuyerAction(request, url) ? await captureBuyerAction(request, env, url) : null;
     const response = await productionWorker.route(request, env, ctx, url);
     if (activity && completedStatus(response.status) && ctx) {
@@ -254,6 +268,14 @@ const productionWorker = {
         ]) : null)
         .catch(() => console.error(JSON.stringify({ event: 'buyer_activity_enqueue_failed' }))));
     }
+    if (intakeGuard?.spamReason && completedStatus(response.status)) {
+      try {
+        const buyerId = await findNewLeadBuyerId(env, intakeGuard.email, intakeStartedAt);
+        if (buyerId) await flagSuspectedSpam(env, buyerId, intakeGuard.spamReason);
+      } catch {
+        console.error(JSON.stringify({ event: 'intake_spam_flag_failed' }));
+      }
+    }
     if (request.method === 'POST' && url.pathname === '/api/intake' && completedStatus(response.status) && ctx) {
       ctx.waitUntil(processPushBacklog(env).catch(() => console.error(JSON.stringify({ event: 'push_intake_sync_failed' }))));
     }
@@ -261,6 +283,13 @@ const productionWorker = {
   },
 
   async route(request, env, ctx, url) {
+    if (request.method === 'GET' && url.pathname === '/health') return publicHealth(env);
+    if (url.pathname === '/api/hbe/health') return ownerHealth(request, env, ctx);
+    if (isLeadActionPath(url.pathname)) return handleLeadAction(request, env, url);
+    if (request.method === 'GET' && url.pathname === '/hbe/app') {
+      const appRes = await handleHbeApp(request, env, url);
+      return appRes.status === 200 ? injectAppCount(appRes, env) : appRes;
+    }
     if (isHbeAppPath(url.pathname)) return handleHbeApp(request, env, url);
     if (url.pathname === JOURNEY_PATH) return handleJourney(request, env, url);
 
@@ -274,34 +303,6 @@ const productionWorker = {
     const response = await appWorker.fetch(request, env, ctx);
     const headers = new Headers(response.headers);
     const type = headers.get('content-type') || '';
-
-    if (request.method === 'GET' && url.pathname === '/health') {
-      try {
-        const body = await response.clone().json();
-        body.issue29 = body.issue29 || {
-          stages: STAGES.length,
-          stage17: 'afterKeys',
-          persistence: 'd1-household-state'
-        };
-        body.issue33 = { bimatrix: true, buyer_refresh: true, canonical_review: 'monthly' };
-        body.issue36 = { buyer_first_clarity: true, pre_submit_review: true, attention_architecture: true, guided_open_answers: true };
-        body.showingCard = body.showingCard || { enabled: true, dossier: 'brigham-v1', r2: Boolean(env.SHOWING_PHOTOS) };
-        body.issue74 = { acquisition_collector: true, report: REPORT_PATH };
-        const alertHealth = await submissionAlertHealth(env);
-        let activityOverdue = 0;
-        try { activityOverdue = await buyerActivityOverdue(env); } catch { activityOverdue = -1; }
-        body.alerts = { healthy: alertHealth.healthy && activityOverdue === 0, binding_ready: alertHealth.bindingReady, retry_schedule: '5m', buyer_activity: true, activity_overdue: activityOverdue };
-        body.push = await pushHealth(env);
-        headers.set('content-type', 'application/json; charset=utf-8');
-        return new Response(JSON.stringify(body), {
-          status: response.status,
-          statusText: response.statusText,
-          headers
-        });
-      } catch {
-        return response;
-      }
-    }
 
     if (!type.includes('text/html')) {
       return afterAcquisitionSideEffects(request, env, response, ctx);
@@ -325,6 +326,20 @@ const productionWorker = {
       }
       if (url.pathname === '/questionnaire') {
         text = confineOrientationCardsToPage1(text);
+        const ts = turnstileConfig(env);
+        if (ts) { text = addTurnstileWidget(text, ts); allowTurnstileCsp(headers); }
+      }
+      if (url.pathname === '/hbe' && !url.searchParams.get('buyer')) {
+        try {
+          const owner = await requireOwner(request, env);
+          if (owner.ok === true) {
+            const panel = await leadPanelForRequest(request, env);
+            text = text.replace('</head>', `${LEAD_PANEL_CSS}</head>`);
+            text = injectAfterMainStart(text, panel);
+          }
+        } catch {
+          console.error(JSON.stringify({ event: 'lead_panel_failed' }));
+        }
       }
     }
 
@@ -361,11 +376,97 @@ const productionWorker = {
   },
 
   async scheduled(_controller, env, ctx) {
-    ctx.waitUntil(Promise.allSettled([processSubmissionAlertBacklog(env), processBuyerActivityBacklog(env), processPushBacklog(env)]));
+    ctx.waitUntil(Promise.allSettled([processSubmissionAlertBacklog(env), processBuyerActivityBacklog(env), processPushBacklog(env)])
+      .then(() => processAlertEscalations(env))
+      .catch(() => console.error(JSON.stringify({ event: 'lead_escalation_cycle_failed' }))));
   }
 };
 
 export default productionWorker;
+
+const NOINDEX = 'noindex, nofollow';
+export function withNoIndex(response) {
+  if (!response || response.status === 101 || response.headers.get('x-robots-tag') === NOINDEX) return response;
+  try {
+    response.headers.set('x-robots-tag', NOINDEX);
+    return response;
+  } catch {
+    const r = new Response(response.body, response);
+    r.headers.set('x-robots-tag', NOINDEX);
+    return r;
+  }
+}
+
+function versionId(env) {
+  return String(env.CF_VERSION_METADATA?.id || 'unknown');
+}
+
+// Public health: status + version only. ok=false (HTTP 503) when submission alerts are
+// overdue so the uptime monitor also catches a stuck alert queue. Details are owner-only.
+export async function publicHealth(env) {
+  let ok = true;
+  try { ok = (await submissionAlertHealth(env)).healthy !== false; } catch { ok = false; }
+  return new Response(JSON.stringify({ ok, version: versionId(env) }), {
+    status: ok ? 200 : 503,
+    headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': NOINDEX }
+  });
+}
+
+async function healthDetails(env, response) {
+  const headers = new Headers(response.headers);
+  try {
+        const body = await response.clone().json();
+        body.issue29 = body.issue29 || {
+          stages: STAGES.length,
+          stage17: 'afterKeys',
+          persistence: 'd1-household-state'
+        };
+        body.issue33 = { bimatrix: true, buyer_refresh: true, canonical_review: 'monthly' };
+        body.issue36 = { buyer_first_clarity: true, pre_submit_review: true, attention_architecture: true, guided_open_answers: true };
+        body.showingCard = body.showingCard || { enabled: true, dossier: 'brigham-v1', r2: Boolean(env.SHOWING_PHOTOS) };
+        body.issue74 = { acquisition_collector: true, report: REPORT_PATH };
+        const alertHealth = await submissionAlertHealth(env);
+        let activityOverdue = 0;
+        try { activityOverdue = await buyerActivityOverdue(env); } catch { activityOverdue = -1; }
+        body.alerts = { healthy: alertHealth.healthy && activityOverdue === 0, binding_ready: alertHealth.bindingReady, retry_schedule: '5m', buyer_activity: true, activity_overdue: activityOverdue };
+        body.push = await pushHealth(env);
+        headers.set('content-type', 'application/json; charset=utf-8');
+        return new Response(JSON.stringify(body), {
+          status: response.status,
+          statusText: response.statusText,
+          headers
+        });
+  } catch {
+    return response;
+  }
+}
+
+async function ownerHealth(request, env, ctx) {
+  const owner = await requireOwner(request, env);
+  if (owner.ok !== true) return owner.response;
+  const inner = await healthDetails(env, await appWorker.fetch(new Request(new URL('/health', request.url), { method: 'GET' }), env, ctx));
+  let body = {};
+  try { body = await inner.json(); } catch { body = { ok: false, error: 'details_unavailable' }; }
+  try { body.leads = await leadCounts(env); } catch { body.leads = { error: 'unavailable' }; }
+  body.version = versionId(env);
+  return new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': NOINDEX } });
+}
+
+async function injectAppCount(res, env) {
+  let counts;
+  try { counts = await leadCounts(env); } catch { return res; }
+  const text = await res.text();
+  const banner = `<section class="card" style="border-left:5px solid ${counts.unacknowledged ? '#8a1c12' : '#2d5a3d'}"><strong style="font-size:1.15rem">Unacknowledged leads: ${counts.unacknowledged}</strong>${counts.alertDelayed ? `<br><strong style="color:#8a1c12">Alert delayed: ${counts.alertDelayed}</strong>` : ''}<br><a href="/hbe#lead-response">Review leads in HBEUI</a></section>`;
+  const out = text.includes('<main>') ? text.replace('<main>', `<main>${banner}`) : text;
+  return new Response(out, { status: res.status, headers: res.headers });
+}
+
+function injectAfterMainStart(text, panel) {
+  const i = text.indexOf('<main');
+  if (i < 0) return text.replace(/<body[^>]*>/, m => `${m}${panel}`);
+  const j = text.indexOf('>', i);
+  return `${text.slice(0, j + 1)}${panel}${text.slice(j + 1)}`;
+}
 
 function injectBeforeMainEnd(text, panel) {
   const i = text.lastIndexOf('</main>');

@@ -1,4 +1,4 @@
-import { authenticateHbeProfessional } from '../hbe-access-worker.js';
+import { requireVerifiedProfessional } from '../hbe-access-worker.js';
 import { mutationCsrfToken, assertMutationCsrf, caseIdForBuyer } from '../household-state.js';
 import {
   ensureSteinbergerSeed, listPropertiesForCase, getProperty, loadAnswers, saveAnswer,
@@ -48,8 +48,8 @@ function clean(v, max = 10000) {
 }
 
 async function requireHbe(request, env) {
-  const auth = await authenticateHbeProfessional(request, env);
-  if (!auth.ok) return { ok: false, response: auth.response };
+  const auth = await requireVerifiedProfessional(request, env);
+  if (auth.ok !== true) return { ok: false, response: auth.response };
   return { ok: true, professional: auth.professional };
 }
 
@@ -90,7 +90,7 @@ export async function handleShowingCardRoutes(request, env, ctx) {
 
 async function renderShowingCard(request, env, url) {
   const auth = await requireHbe(request, env);
-  if (!auth.ok) return auth.response;
+  if (auth?.ok !== true) return auth.response;
   if (!env.BUYER_DB) return unavailable();
 
   await ensureSteinbergerSeed(env);
@@ -128,7 +128,7 @@ async function renderShowingCard(request, env, url) {
 
 async function apiSaveAnswer(request, env) {
   const auth = await requireHbe(request, env);
-  if (!auth.ok) return auth.response;
+  if (auth?.ok !== true) return auth.response;
   if (!env.BUYER_DB) return unavailable();
   let body;
   try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
@@ -158,7 +158,7 @@ async function apiSaveAnswer(request, env) {
 
 async function apiAddObservation(request, env) {
   const auth = await requireHbe(request, env);
-  if (!auth.ok) return auth.response;
+  if (auth?.ok !== true) return auth.response;
   if (!env.BUYER_DB) return unavailable();
   let body;
   try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
@@ -185,7 +185,7 @@ async function apiAddObservation(request, env) {
 
 async function apiUploadPhoto(request, env) {
   const auth = await requireHbe(request, env);
-  if (!auth.ok) return auth.response;
+  if (auth?.ok !== true) return auth.response;
   if (!env.BUYER_DB) return unavailable();
   if (!r2Available(env)) {
     return json({
@@ -226,7 +226,7 @@ async function apiUploadPhoto(request, env) {
 
 async function apiGetPhoto(request, env, path) {
   const auth = await requireHbe(request, env);
-  if (!auth.ok) return auth.response;
+  if (auth?.ok !== true) return auth.response;
   if (!env.BUYER_DB) return unavailable();
   const photoId = decodeURIComponent(path.match(/^\/api\/hbe\/showing\/photo\/([^/]+)$/)[1]);
   const meta = await getPhotoMeta(env, photoId);

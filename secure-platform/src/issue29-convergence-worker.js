@@ -1,5 +1,5 @@
 import appWorker from './value-brand-worker.js';
-import { authenticateHbeProfessional } from './hbe-access-worker.js';
+import { requireVerifiedProfessional } from './hbe-access-worker.js';
 import { STAGES, STAGE_CHECKLISTS, assertSeventeenStages, normalizeCompletedList } from './journey-stages.js';
 import {
   ensureHouseholdState, loadHouseholdBundle, completeChecklistItem, saveStory, saveCompass,
@@ -92,14 +92,19 @@ export default {
 };
 
 async function requireHbeProfessional(request, env, ctx) {
-  const auth = await authenticateHbeProfessional(request, env);
-  if (!auth.ok) return { ok: false, response: auth.response };
+  const auth = await requireVerifiedProfessional(request, env);
+  if (auth.ok !== true) return { ok: false, response: auth.response };
+  let gate;
   try {
     const probe = new Request(new URL('/hbe', request.url), { method: 'GET', headers: request.headers });
-    const gate = await appWorker.fetch(probe, env, ctx);
-    if (gate.status === 403) return { ok: false, response: gate };
+    gate = await appWorker.fetch(probe, env, ctx);
   } catch (err) {
-    console.error('HBE /hbe probe failed after JWT verification', err);
+    console.error('HBE /hbe probe failed after JWT verification; denying', err);
+    return { ok: false, response: new Response('Forbidden', { status: 403, headers: { 'cache-control': 'no-store' } }) };
+  }
+  // Explicit pass only: the HBE dashboard must render (200). Any other status denies.
+  if (!gate || gate.status !== 200) {
+    return { ok: false, response: gate && gate.status >= 400 ? gate : new Response('Forbidden', { status: 403, headers: { 'cache-control': 'no-store' } }) };
   }
   return { ok: true, professional: auth.professional };
 }
@@ -112,7 +117,7 @@ async function csrfFieldFor(secret) {
 async function handleChecklistToggle(request, env, ctx, expectedKind) {
   if (expectedKind === 'hbe') {
     const auth = await requireHbeProfessional(request, env, ctx);
-    if (!auth.ok) return auth.response;
+    if (auth?.ok !== true) return auth.response;
     if (!env.BUYER_DB) return unavailable();
     const jwt = String(request.headers.get('Cf-Access-Jwt-Assertion') || '');
     const form = await request.formData();
@@ -160,7 +165,7 @@ async function handleChecklistToggle(request, env, ctx, expectedKind) {
 
 async function handleStorySave(request, env, ctx) {
   const auth = await requireHbeProfessional(request, env, ctx);
-  if (!auth.ok) return auth.response;
+  if (auth?.ok !== true) return auth.response;
   if (!env.BUYER_DB) return unavailable();
   const jwt = String(request.headers.get('Cf-Access-Jwt-Assertion') || '');
   const form = await request.formData();
@@ -189,7 +194,7 @@ async function handleStorySave(request, env, ctx) {
 
 async function handleCompassSave(request, env, ctx) {
   const auth = await requireHbeProfessional(request, env, ctx);
-  if (!auth.ok) return auth.response;
+  if (auth?.ok !== true) return auth.response;
   if (!env.BUYER_DB) return unavailable();
   const jwt = String(request.headers.get('Cf-Access-Jwt-Assertion') || '');
   const form = await request.formData();
@@ -213,7 +218,7 @@ async function handleCompassSave(request, env, ctx) {
 
 async function hbeBuyerPreview(request, env, ctx, url) {
   const auth = await requireHbeProfessional(request, env, ctx);
-  if (!auth.ok) return auth.response;
+  if (auth?.ok !== true) return auth.response;
   const buyerId = clean(url.searchParams.get('buyer'));
   if (!buyerId) return redirect('/hbe');
   const mode = url.searchParams.get('view') === 'shared' ? 'shared' : 'mine';
