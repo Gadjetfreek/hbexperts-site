@@ -1,0 +1,74 @@
+name: Buyer platform uptime monitor
+
+# Free uptime check for https://buyer.hbexperts.com/health (fix 1, Oct 27 2026 audit).
+# On failure: opens ONE issue labelled "uptime-monitor" and assigned to the repo owner
+# (GitHub emails the assignee). While it stays down the issue body is edited silently,
+# so there are no duplicate issues or comment spam. On recovery: comments + closes it.
+# /health returns {"ok":true,"version":"..."}; HTTP 503 / ok:false means the site is up
+# but intake alert emails are overdue, which also counts as a failure here.
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: health-monitor
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Probe /health (3 tries, 20s apart)
+        id: probe
+        run: |
+          state=down; detail=""
+          for i in 1 2 3; do
+            code=$(curl -sS -o body.json -w '%{http_code}' --max-time 15 -H 'User-Agent: hbe-uptime-monitor' https://buyer.hbexperts.com/health || echo 000)
+            ok=$(jq -r '.ok // empty' body.json 2>/dev/null || true)
+            detail="HTTP ${code}, ok=${ok:-missing}"
+            if [ "$code" = "200" ] && [ "$ok" = "true" ]; then state=up; break; fi
+            [ $i -lt 3 ] && sleep 20
+          done
+          echo "state=$state" >> "$GITHUB_OUTPUT"
+          echo "detail=$detail" >> "$GITHUB_OUTPUT"
+          echo "Result: $state ($detail)"
+
+      - name: Open, update or close the monitor issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          STATE: ${{ steps.probe.outputs.state }}
+          DETAIL: ${{ steps.probe.outputs.detail }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          now=$(TZ=America/New_York date '+%b %-d %Y %-I:%M %p %Z')
+          gh label create uptime-monitor --color B60205 --description 'Automated buyer.hbexperts.com health monitor' 2>/dev/null || true
+          num=$(gh issue list --label uptime-monitor --state open --json number --jq '.[0].number // empty')
+          body="buyer.hbexperts.com/health is failing.
+
+          Last check: ${now} — ${DETAIL}
+
+          - HTTP 503 / ok=false: site is up but intake alert emails are overdue (check /api/hbe/health while signed in).
+          - HTTP 000/5xx: the Worker or site is down.
+          Rollback: \`npx wrangler rollback <version-id>\` from secure-platform.
+
+          This issue closes automatically when /health recovers."
+          if [ "$STATE" = "down" ]; then
+            if [ -z "$num" ]; then
+              gh issue create --title "buyer.hbexperts.com health check failing" --label uptime-monitor --assignee "$OWNER" --body "$body"
+            else
+              gh issue edit "$num" --body "$body"
+            fi
+            # Not failing the job on purpose: the issue is the single notification channel
+            # (a failed scheduled run would also email on every 10-minute run).
+          elif [ -n "$num" ]; then
+            gh issue comment "$num" --body "Recovered at ${now} — ${DETAIL}. Closing."
+            gh issue close "$num"
+          fi

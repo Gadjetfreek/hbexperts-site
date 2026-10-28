@@ -100,11 +100,14 @@ test('/hbe without Access JWT fails closed', async () => {
   assert.doesNotMatch(body, /CF_ACCESS|jwt|secret|token=/i);
 });
 
-test('/health reports ok', async () => {
-  const res = await get('/health');
+test('/health is trimmed to ok + version (details are owner-only)', async () => {
+  const e = { ...env(), HBE_ALERT: { send: async () => ({}) }, CF_VERSION_METADATA: { id: 'v-test' } };
+  const res = await worker.fetch(new Request('https://buyer.hbexperts.com/health'), e, {});
   assert.equal(res.status, 200);
+  assert.equal(res.headers.get('x-robots-tag'), 'noindex, nofollow');
   const body = await res.json();
-  assert.equal(body.ok, true);
-  assert.equal(body.service, 'hbe-buyer-platform');
-  assert.equal(body.issue29?.stages, 17);
+  assert.deepEqual(body, { ok: true, version: 'v-test' });
+  const unbound = await get('/health');
+  assert.equal(unbound.status, 503, 'missing alert binding reports not ok');
+  assert.deepEqual(Object.keys(await unbound.json()).sort(), ['ok', 'version']);
 });

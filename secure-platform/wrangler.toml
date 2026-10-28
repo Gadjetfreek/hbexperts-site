@@ -14,6 +14,12 @@ HBE_ADMIN_EMAIL = "cwhitehead@hbexperts.com"
 HBE_ALERT_PRIMARY = "buyers@hbexperts.com"
 HBE_ALERT_TO = "cwhitehead@hbexperts.com"
 HBE_ALERT_FROM = "buyer-alerts@hbexperts.com"
+HBE_LEAD_DEFAULT_ASSIGNEE = "cwhitehead@hbexperts.com"
+# Turnstile stays OFF until the widget exists: set TURNSTILE_SITE_KEY (public) here,
+# run `wrangler secret put TURNSTILE_SECRET`, then flip TURNSTILE_ENABLED to "true".
+TURNSTILE_ENABLED = "false"
+TURNSTILE_SITE_KEY = ""
+TURNSTILE_HOSTNAMES = "buyer.hbexperts.com"
 # CF_ACCESS_TEAM_DOMAIN and CF_ACCESS_AUD are intentionally not stored here.
 # They are live, non-secret dashboard variables and keep_vars=true preserves them.
 # hbe-access-worker.js fails closed if either value is missing or invalid.
@@ -65,3 +71,6 @@ crons = [ "*/5 * * * *" ]
 binding = "SHOWING_PHOTOS"
 bucket_name = "hbe-showing-photos"
 # preview_bucket_name = "hbe-showing-photos-preview"
+
+[version_metadata]
+binding = "CF_VERSION_METADATA"

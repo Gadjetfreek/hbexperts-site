@@ -1,3 +1,4 @@
+import { requireVerifiedProfessional } from './hbe-access-worker.js';
 import appWorker from './hbe-access-worker.js';
 
 export default {
@@ -5,8 +6,8 @@ export default {
     const url = new URL(request.url);
 
     if (request.method === 'POST' && url.pathname === '/api/hbe/consultation') {
-      const gate = await appWorker.fetch(request, env, ctx);
-      if (gate.status === 403) return gate;
+      const gate = await requireVerifiedProfessional(request, env);
+      if (gate.ok !== true) return gate.response;
       return saveConsultation(request, env);
     }
 

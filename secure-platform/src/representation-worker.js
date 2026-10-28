@@ -1,3 +1,4 @@
+import { requireVerifiedProfessional } from './hbe-access-worker.js';
 import appWorker from './consultation-worker.js';
 
 const enc = new TextEncoder();
@@ -11,8 +12,8 @@ export default {
     }
 
     if (request.method === 'POST' && url.pathname === '/api/hbe/representation') {
-      const gate = await appWorker.fetch(request, env, ctx);
-      if (gate.status === 403) return gate;
+      const gate = await requireVerifiedProfessional(request, env);
+      if (gate.ok !== true) return gate.response;
       return saveHbeRepresentation(request, env);
     }
 
