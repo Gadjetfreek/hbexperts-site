@@ -14,6 +14,7 @@ import { isHbeAppPath, handleHbeApp, enqueuePushAlert, deliverPushAlert, process
 import { processAlertEscalations, isLeadActionPath, handleLeadAction, leadPanelForRequest, leadCounts, unacknowledgedBanner, flagSuspectedSpam, LEAD_PANEL_CSS } from './lead-response.js';
 import { guardIntake, findNewLeadBuyerId, turnstileConfig, addTurnstileWidget, allowTurnstileCsp } from './intake-guard.js';
 import { requireOwner } from './hbe-push.js';
+import { DESKTOP_MANIFEST_PATH, desktopManifestResponse, addDesktopApp } from './hbe-desktop.js';
 import { isBuyerAction, captureBuyerAction, completedStatus, enqueueBuyerActivity, deliverBuyerActivityAlert, processBuyerActivityBacklog, buyerActivityOverdue } from './buyer-activity-alerts.js';
 import {
   addGoogleAdsConversionFrame,
@@ -290,6 +291,7 @@ const productionWorker = {
       const appRes = await handleHbeApp(request, env, url);
       return appRes.status === 200 ? injectAppCount(appRes, env) : appRes;
     }
+    if (request.method === 'GET' && url.pathname === DESKTOP_MANIFEST_PATH) return desktopManifestResponse();
     if (isHbeAppPath(url.pathname)) return handleHbeApp(request, env, url);
     if (url.pathname === JOURNEY_PATH) return handleJourney(request, env, url);
 
@@ -329,6 +331,7 @@ const productionWorker = {
         const ts = turnstileConfig(env);
         if (ts) { text = addTurnstileWidget(text, ts); allowTurnstileCsp(headers); }
       }
+      if (url.pathname === '/hbe') text = addDesktopApp(text);
       if (url.pathname === '/hbe' && !url.searchParams.get('buyer')) {
         try {
           const owner = await requireOwner(request, env);
