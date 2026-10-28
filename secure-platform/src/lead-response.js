@@ -102,7 +102,7 @@ export const LEAD_PANEL_CSS = `<style id="hbe-lead-response-css">
 .hbe-leads h2{margin:0 0 .4rem;font-size:1.15rem}.hbe-leads .counts{display:flex;gap:.6rem;flex-wrap:wrap;margin:.2rem 0 .8rem}
 .hbe-leads .pill{display:inline-block;padding:.25rem .65rem;border-radius:999px;background:#eef3f0;font-weight:700}.hbe-leads .pill.warn{background:#fbe9e7;color:#8a1c12}
 .hbe-leads table{width:100%;border-collapse:collapse}.hbe-leads td,.hbe-leads th{padding:.45rem .35rem;border-top:1px solid #eef1ef;text-align:left;vertical-align:top;font-size:.9rem}
-.hbe-leads form{display:inline-flex;gap:.25rem;margin:.1rem .2rem .1rem 0}.hbe-leads button{font:inherit;font-size:.82rem;font-weight:700;border-radius:8px;padding:.3rem .6rem;border:1px solid #2d5a3d;background:#2d5a3d;color:#fff;cursor:pointer}
+.hbe-leads .lead-msg{min-height:1.2em;margin:.3rem 0;font-weight:600;color:#2d5a3d}.hbe-leads .lead-msg.bad{color:#8a1c12}.hbe-leads form{display:inline-flex;gap:.25rem;margin:.1rem .2rem .1rem 0}.hbe-leads button{font:inherit;font-size:.82rem;font-weight:700;border-radius:8px;padding:.3rem .6rem;border:1px solid #2d5a3d;background:#2d5a3d;color:#fff;cursor:pointer}
 .hbe-leads button.secondary{background:#fff;color:#2d5a3d}.hbe-leads input[type=email]{font:inherit;font-size:.82rem;width:13rem;max-width:100%}
 .hbe-leads .tag{display:inline-block;font-size:.75rem;font-weight:700;padding:.1rem .45rem;border-radius:6px;margin:.1rem .2rem 0 0}.hbe-leads .tag.delayed{background:#fbe9e7;color:#8a1c12}.hbe-leads .tag.ok{background:#e4f4e8;color:#1d5a2e}.hbe-leads .tag.spam{background:#fff4d6;color:#7a5600}
 @media(max-width:700px){.hbe-leads thead{display:none}.hbe-leads tr{display:block;border-top:1px solid #eef1ef;padding:.4rem 0}.hbe-leads td{display:block;border:0;padding:.15rem 0}}
@@ -126,30 +126,58 @@ export function leadPanelHtml(leads, counts, csrf, env, now = Date.now()) {
     const hidden = `<input type="hidden" name="csrf" value="${esc(csrf)}"><input type="hidden" name="buyer_id" value="${esc(l.buyer_id)}">`;
     const ack = l.acknowledged_at
       ? `<span class="tag ok">Acknowledged ${esc(fmt(l.acknowledged_at))}</span>`
-      : `<form method="post" action="${LEAD_ACTION_PREFIX}acknowledge">${hidden}<button type="submit">Acknowledge</button></form>`;
+      : `<form method="post" action="${LEAD_ACTION_PREFIX}acknowledge" data-lead-action="acknowledge">${hidden}<button type="submit">Acknowledge</button></form>`;
     const responded = l.first_response_at
       ? `<span class="tag ok">Responded ${esc(fmt(l.first_response_at))}</span>`
-      : `<form method="post" action="${LEAD_ACTION_PREFIX}responded">${hidden}<button type="submit" class="secondary">Mark responded</button></form>`;
-    const assign = `<form method="post" action="${LEAD_ACTION_PREFIX}assign">${hidden}<input type="email" name="assigned_to" aria-label="Assignee for ${esc(name)}" value="${esc(l.assigned_to || defaultAssignee(env))}" required><button type="submit" class="secondary">Assign</button></form>`;
+      : `<form method="post" action="${LEAD_ACTION_PREFIX}responded" data-lead-action="responded">${hidden}<button type="submit" class="secondary">Mark responded</button></form>`;
+    const assign = `<form method="post" action="${LEAD_ACTION_PREFIX}assign" data-lead-action="assign">${hidden}<input type="email" name="assigned_to" aria-label="Assignee for ${esc(name)}" value="${esc(l.assigned_to || defaultAssignee(env))}" required><button type="submit" class="secondary">Assign</button></form>`;
     return `<tr><td><a href="/hbe?buyer=${encodeURIComponent(l.buyer_id)}"><strong>${esc(name)}</strong></a><br><small>${esc(fmt(l.submitted_at))}</small></td><td>${tags}</td><td>${ack} ${responded}</td><td>${assign}</td></tr>`;
   }).join('');
   return `<section class="hbe-leads" id="lead-response" aria-label="Lead response"><h2>Lead response</h2>${unacknowledgedBanner(counts)}
+<p class="lead-msg" id="lead-msg" role="status" aria-live="polite"></p>
 <table><thead><tr><th>Lead</th><th>Alert</th><th>Status</th><th>Assignee</th></tr></thead><tbody>${rows || '<tr><td colspan="4">No leads yet.</td></tr>'}</tbody></table></section>`;
 }
 
-export async function leadPanelForRequest(request, env) {
+// Lead actions submit in-page with fetch. A plain form POST to /api/hbe/* leaves the
+// Home Screen app's /hbe scope, so iOS opens it in a Safari sheet that has its own
+// Access session. Its JWT differs from the one that minted the token, so CSRF fails.
+export const LEAD_PANEL_SCRIPT = `<script>(()=>{if(window.__hbeLeadPanel)return;window.__hbeLeadPanel=1;
+const MSG={csrf:'Your session refreshed. Tap the button again.',lead_not_found:'That lead no longer exists.',bad_assignee:'Enter a valid email address.',assignee_not_active_professional:'That person is not an active HBE professional.',forbidden:'Only the owner can do this.'};
+const say=(t,bad)=>{const m=document.getElementById('lead-msg');if(m){m.textContent=t;m.className='lead-msg'+(bad?' bad':'')}};
+const refresh=async()=>{const r=await fetch('${LEAD_ACTION_PREFIX}panel',{credentials:'same-origin',headers:{accept:'application/json'},cache:'no-store'});const d=await r.json().catch(()=>({}));if(!r.ok||!d.ok)throw new Error(d.error||'refresh');const cur=document.getElementById('lead-response');if(cur)cur.outerHTML=d.html;return d;};
+document.addEventListener('submit',async e=>{const f=e.target;if(!f||!f.matches||!f.matches('form[data-lead-action]'))return;e.preventDefault();const btn=f.querySelector('button');if(btn)btn.disabled=true;say('Saving…');
+try{const r=await fetch(f.action,{method:'POST',body:new FormData(f),credentials:'same-origin',headers:{accept:'application/json'}});const d=await r.json().catch(()=>({}));
+if(r.ok&&d.ok){await refresh();say('Saved.');return}
+if(d.error==='csrf'){try{await refresh()}catch{}say(MSG.csrf,true);return}
+say(MSG[d.error]||('Could not save ('+(d.error||'HTTP '+r.status)+'). Pull down to refresh and try again.'),true)}
+catch{say('Network problem. Check your connection and try again.',true)}finally{if(btn&&btn.isConnected)btn.disabled=false}});})();</script>`;
+
+async function panelFor(request, env) {
   const jwt = String(request.headers.get('Cf-Access-Jwt-Assertion') || '');
   const [leads, counts] = await Promise.all([listLeads(env), leadCounts(env)]);
-  return leadPanelHtml(leads, counts, await mutationCsrfToken(jwt), env);
+  return { html: leadPanelHtml(leads, counts, await mutationCsrfToken(jwt), env), counts };
+}
+
+export async function leadPanelForRequest(request, env) {
+  return (await panelFor(request, env)).html + LEAD_PANEL_SCRIPT;
 }
 
 // ---------- actions ----------
 export function isLeadActionPath(pathname) {
-  return pathname.startsWith(LEAD_ACTION_PREFIX) && ACTIONS.has(pathname.slice(LEAD_ACTION_PREFIX.length));
+  if (!pathname.startsWith(LEAD_ACTION_PREFIX)) return false;
+  const a = pathname.slice(LEAD_ACTION_PREFIX.length);
+  return a === 'panel' || ACTIONS.has(a);
 }
 
 export async function handleLeadAction(request, env, url, opts = {}) {
   const action = url.pathname.slice(LEAD_ACTION_PREFIX.length);
+  if (action === 'panel') {
+    if (request.method !== 'GET') return json({ ok: false, error: 'method_not_allowed' }, 405);
+    const owner = await requireOwner(request, env, opts);
+    if (owner.ok !== true) return owner.response;
+    const { html, counts } = await panelFor(request, env);
+    return json({ ok: true, html, counts });
+  }
   if (!ACTIONS.has(action)) return json({ ok: false, error: 'not_found' }, 404);
   if (request.method !== 'POST') return json({ ok: false, error: 'method_not_allowed' }, 405);
   const owner = await requireOwner(request, env, opts);
