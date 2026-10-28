@@ -108,18 +108,11 @@ try {
   if (-not $health.ok) {
     throw 'Health verification failed.'
   }
-  if (-not $health.issue29 -or $health.issue29.stages -ne 17) {
-    throw 'Issue 29 health verification failed: expected the 17-stage convergence layer.'
+  if (-not $health.version) {
+    throw 'Health verification failed: expected the deployed version id.'
   }
-  if (-not $health.issue33 -or -not $health.issue33.bimatrix -or -not $health.issue33.buyer_refresh) {
-    throw 'Issue 33 health verification failed: expected BIMatrix and buyer refresh support.'
-  }
-  if (-not $health.issue36 -or -not $health.issue36.buyer_first_clarity -or -not $health.issue36.pre_submit_review -or -not $health.issue36.attention_architecture -or -not $health.issue36.guided_open_answers) {
-    throw 'Issue 36 health verification failed: expected buyer-first clarity, review-before-send, simplified attention architecture, and guided open answers.'
-  }
-  if (-not $health.alerts -or -not $health.alerts.binding_ready) {
-    throw 'Alert delivery verification failed: expected the production email binding.'
-  }
+  # Detailed checks (stages, BIMatrix, alerts) moved to the owner-only /api/hbe/health route.
+  Write-Host "Live version: $($health.version)"
 
   Write-Host ''
   Write-Host 'LIVE' -ForegroundColor Green
