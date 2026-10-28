@@ -249,7 +249,7 @@ $('enable').onclick=()=>run($('enable'),async()=>{st('Asking for permission…')
 const r=await register(false);st('Notifications enabled on this device at '+new Date(r.registered_at).toLocaleTimeString()+'. Registered devices: '+r.devices+'.','good');});
 $('rereg').onclick=()=>run($('rereg'),async()=>{st('Re-registering…');const r=await register(true);st('Re-registered successfully at '+new Date(r.registered_at).toLocaleTimeString()+'. Registered devices: '+r.devices+'.','good');});
 $('test').onclick=()=>run($('test'),async()=>{st('Sending test…');const r=await api('/api/hbe/push/test',{});
-if(r.status==='sent')st('Test accepted by Apple for '+r.results.filter(x=>x.outcome==='accepted').length+' device(s). It should appear within a few seconds. If it does not, tap Re-register.','good');
+if(r.status==='sent')st('Test accepted by the push service for '+r.results.filter(x=>x.outcome==='accepted').length+' device(s). It should appear within a few seconds. If it does not, tap Re-register.','good');
 else if(r.status==='no_subscribers')st('No registered devices. Tap Enable notifications first.','bad');
 else st('Test failed: '+(r.results||[]).map(x=>x.outcome+' '+x.http_status+(x.reason?' '+x.reason:'')).join(', '),'bad');});
 if(supported&&standalone&&Notification.permission==='granted')register(false).then(r=>st('Notifications active. Registered devices: '+r.devices+'.','good')).catch(e=>st('Notifications need attention: '+e.message+'. Tap Re-register.','bad'));
