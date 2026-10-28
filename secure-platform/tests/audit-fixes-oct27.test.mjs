@@ -234,3 +234,45 @@ test('Turnstile widget + CSP are added only when configured', () => {
   assert.match(csp, /frame-src 'self' https:\/\/challenges\.cloudflare\.com/);
   assert.match(csp, /frame-ancestors 'none'/);
 });
+
+// ---------- regression: Acknowledge from the Home Screen app failed CSRF (Oct 27) ----------
+function panelDb() {
+  const db = leadDb();
+  const base = db.prepare.bind(db);
+  db.prepare = sql => { const st = base(sql); st.all = async () => ({ results: sql.includes('hbe_lead_status') || sql.includes('notifications') ? [{ buyer_id: 'synthetic-buyer', first_name: 'Test', last_name: 'Buyer', submitted_at: '2026-01-01T11:00:00Z', alert_status: 'sent', alert_created_at: '2026-01-01T11:00:00Z' }] : [] }); const f = st.first; st.first = async () => (await f()) ?? { unacknowledged: 1, alertDelayed: 0, n: 1 }; return st; };
+  return db;
+}
+
+test('rendered HBEUI lead panel carries a CSRF token the handler accepts, and submits in-page', async () => {
+  const { leadPanelForRequest } = await import('../src/lead-response.js');
+  const jwt = 'synthetic.jwt.token';
+  const env = { BUYER_DB: panelDb(), HBE_ADMIN_EMAIL: OWNER };
+  const html = await leadPanelForRequest(new Request(`${ORIGIN}/hbe`, { headers: { 'Cf-Access-Jwt-Assertion': jwt } }), env);
+  for (const a of ['acknowledge', 'responded', 'assign']) assert.match(html, new RegExp(`data-lead-action="${a}"`));
+  assert.match(html, /addEventListener\('submit'/);
+  assert.match(html, /e\.preventDefault\(\)/);
+  assert.match(html, /\/api\/hbe\/lead\/panel/);
+  const tokens = [...html.matchAll(/name="csrf" value="([^"]+)"/g)].map(m => m[1]);
+  assert.ok(tokens.length >= 3 && tokens.every(t => t && t === tokens[0]));
+  // In-page fetch: same origin, same Access JWT, Accept JSON.
+  for (const [action, extra] of [['acknowledge', {}], ['responded', {}], ['assign', { assigned_to: 'agent@hbexperts.com' }]]) {
+    const r = await leadPost(action, { buyer_id: 'synthetic-buyer', csrf: tokens[0], ...extra }, asOwner, { accept: 'application/json' });
+    assert.equal(r.res.status, 200, action);
+    assert.deepEqual(await r.res.json(), { ok: true, action });
+  }
+  // A different Access session (the Safari sheet the plain form POST opened) is rejected as JSON, not a redirect.
+  const other = await leadPost('acknowledge', { buyer_id: 'synthetic-buyer', csrf: await mutationCsrfToken('another.session.jwt') }, asOwner, { accept: 'application/json' });
+  assert.equal(other.res.status, 403); assert.equal((await other.res.json()).error, 'csrf');
+});
+
+test('lead panel refresh route is owner-only and returns fresh HTML and counts', async () => {
+  const env = { BUYER_DB: panelDb(), HBE_ADMIN_EMAIL: OWNER };
+  const mk = () => new Request(`${ORIGIN}/api/hbe/lead/panel`, { headers: { 'Cf-Access-Jwt-Assertion': 'synthetic.jwt.token', accept: 'application/json' } });
+  let res = await handleLeadAction(mk(), env, new URL(`${ORIGIN}/api/hbe/lead/panel`), asStaff);
+  assert.equal(res.status, 403);
+  res = await handleLeadAction(mk(), env, new URL(`${ORIGIN}/api/hbe/lead/panel`), asOwner);
+  assert.equal(res.status, 200);
+  const d = await res.json();
+  assert.equal(d.ok, true); assert.match(d.html, /id="lead-response"/); assert.match(d.html, /Unacknowledged leads:/);
+  assert.match(d.html, new RegExp(await mutationCsrfToken('synthetic.jwt.token')));
+});
