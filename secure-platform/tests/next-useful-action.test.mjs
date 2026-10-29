@@ -66,3 +66,20 @@ test('no next action and no dead link when there are no buyers', async () => {
   const res = await hbeWorker.fetch(new Request('https://buyer.hbexperts.com/hbe', { headers: { 'Cf-Access-Authenticated-User-Email': ADMIN } }), e, {});
   assert.doesNotMatch(await res.text(), /priority-bubble" href/);
 });
+
+for (const [name, tasks] of Object.entries(variants)) {
+  test(`compact mobile sticky bar carries the "${name}" next useful action with a real target`, async () => {
+    const html = await render('?buyer=b-new', tasks);
+    const bar = html.slice(html.indexOf('class="hbe-mbar"'), html.indexOf('</div></div>', html.indexOf('class="hbe-mbar"')));
+    const m = bar.match(/<a class="hbe-mbar-next" href="([^"]+)" data-hbe-target="([^"]+)">Next: /);
+    assert.ok(m, 'mobile bar has the Next useful action link');
+    const { href, target } = bubble(html);
+    assert.equal(m[2], target);
+    assert.equal(m[1], href.pathname + href.search + href.hash);
+    const dest = await render(href.search, tasks);
+    assert.match(dest, new RegExp(`id="${target}"`));
+    // target sits inside a <details> chip that the reveal script opens
+    const i = dest.indexOf(`id="${target}"`);
+    assert.ok(dest.lastIndexOf('<details class="hbe-chip-panel', i) > dest.lastIndexOf('</details>', i), `#${target} is inside a chip`);
+  });
+}
