@@ -1,5 +1,6 @@
 import { requireVerifiedProfessional } from './hbe-access-worker.js';
 import appWorker from './hbe-access-worker.js';
+import { chipPanelHtml } from './hbeui-lanes.js';
 
 export default {
   async fetch(request, env, ctx) {
@@ -24,7 +25,7 @@ export default {
       if (selectedBuyerId) {
         const caseId = await ensureCaseForBuyer(env, selectedBuyerId);
         const data = await consultationData(env, caseId, selectedBuyerId);
-        text = injectBeforeMainEnd(text, consultationWorkspace(data));
+        text = injectBeforeMainEnd(text, chipPanelHtml({ id: 'consult', label: 'Consultation', body: consultationWorkspace(data) }));
       }
     } catch (err) {
       console.error('Consultation workspace render failed', err);

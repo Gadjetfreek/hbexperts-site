@@ -1,6 +1,7 @@
 import { requireVerifiedProfessional } from './hbe-access-worker.js';
 import appWorker from './representation-worker.js';
 import { mlsConfigured, searchMls } from './mls-adapter.js';
+import { chipPanelHtml } from './hbeui-lanes.js';
 
 const enc = new TextEncoder();
 
@@ -46,7 +47,7 @@ export default {
         if (selectedBuyerId) {
           const caseId = await ensureCaseForBuyer(env, selectedBuyerId);
           const data = await searchData(env, caseId, selectedBuyerId);
-          text = injectBeforeMainEnd(text, hbeSearchPanel(data, env));
+          text = injectBeforeMainEnd(text, chipPanelHtml({ id: 'search', label: 'Home search', body: hbeSearchPanel(data, env) }));
         }
       }
     } catch (err) {

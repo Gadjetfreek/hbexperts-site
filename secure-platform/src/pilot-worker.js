@@ -1,4 +1,5 @@
 import appWorker from './hbe-portal-sync-worker.js';
+import { chipPanelHtml } from './hbeui-lanes.js';
 
 const enc = new TextEncoder();
 const TIME_CATEGORIES = [
@@ -34,7 +35,7 @@ export default {
         if (selectedBuyerId) {
           const caseId = await ensureCaseForBuyer(env, selectedBuyerId);
           const data = await hbePilotData(env, caseId, selectedBuyerId);
-          text = injectBeforeMainEnd(text, hbePilotPanel(data));
+          text = injectBeforeMainEnd(text, chipPanelHtml({ id: 'pilot', label: 'Pilot ops', body: hbePilotPanel(data) }));
         }
       }
 
