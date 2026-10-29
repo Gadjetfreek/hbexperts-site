@@ -150,11 +150,11 @@ function dashboardHtml(buyers, selected, tasks, notes, notifications) {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive"><title>HBE Workspace</title>${CSS}</head><body>
   <header class="site-header"><div class="header-inner"><a class="brand" href="https://hbexperts.com/">HomeBuyer Experts</a><div class="header-actions"><a href="/" target="_blank" rel="noopener">Buyer Journey</a><span>HBE Workspace</span></div></div></header>
   <main class="shell${selected ? ' has-selected' : ''}">
-    ${selected ? mobileBar(selected, tasks.filter(t => t.buyer_id === selected.id)) : ''}
+    ${selected ? mobileBar(selected, nextUsefulAction(buyers, tasks)) : ''}
     <section class="top"><div><div class="eyebrow">HBE WORKSPACE</div><h1>What needs our attention?</h1><p>One shared buyer journey. HBE sees the work; buyers see the parts that help them choose wisely.</p></div>${priorityBubble(buyers, tasks)}</section>
     <section class="buyer-strip" aria-label="Active buyers">${cards || '<div class="empty">No submitted buyers yet.</div>'}</section>
     ${selected ? selectedBuyer(selected, tasks.filter(t => t.buyer_id === selected.id), notes.filter(n => n.buyer_id === selected.id), notifications.filter(n => n.buyer_id === selected.id)) : '<section class="empty main-empty">A submitted Buyer Experience will appear here.</section>'}
-  </main>${HBEUI_COMPACT_JS}</body></html>`;
+  </main>${HBEUI_COMPACT_JS}${NEXT_ACTION_JS}</body></html>`;
 }
 
 function selectedBuyer(b, tasks, notes, notifications) {
@@ -212,13 +212,13 @@ function selectedBuyer(b, tasks, notes, notifications) {
 }
 
 /** Phone-only sticky header: who, Stage N of 17, next action, ☰ menu. */
-function mobileBar(b, tasks) {
+function mobileBar(b, action) {
   const i = CANONICAL_STAGES.findIndex(s => s[0] === b.stage);
   const stage = b.stage === 'complete' ? 'Journey complete' : `Stage ${i + 1} of ${CANONICAL_STAGES.length} · ${stageLabel(b.stage)}`;
-  const top = chooseTopTask(tasks.filter(t => t.status === 'open'));
   const nextStage = b.stage === 'complete' ? null : CANONICAL_STAGES[i + 1];
-  const next = top ? `Next: ${top.title}` : nextStage ? `Next: ${nextStage[1]}` : '';
-  return `<div class="hbe-mbar" role="banner" aria-label="Selected buyer"><span class="hbe-mbar-initials" aria-hidden="true">${esc(initials(b))}</span><div class="hbe-mbar-who"><strong>${esc(b.first_name)} ${esc(String(b.last_name || '').slice(0, 1))}${b.last_name ? '.' : ''}</strong><small>${esc(stage)}</small>${next ? `<small><a href="#hbe-tasks">${esc(next)}</a></small>` : ''}</div><details class="hbe-menu"><summary aria-label="Menu">☰</summary><nav class="hbe-menu-links" aria-label="HBE menu"></nav></details></div>`;
+  // Phones hide .top (and its Next useful action card) once a buyer is selected; surface the same action here.
+  const next = action ? `<a class="hbe-mbar-next" href="${nextActionHref(action)}" data-hbe-target="${action.target}">Next: ${esc(action.title)}</a>` : nextStage ? `Next: ${esc(nextStage[1])}` : '';
+  return `<div class="hbe-mbar" role="banner" aria-label="Selected buyer"><span class="hbe-mbar-initials" aria-hidden="true">${esc(initials(b))}</span><div class="hbe-mbar-who"><strong>${esc(b.first_name)} ${esc(String(b.last_name || '').slice(0, 1))}${b.last_name ? '.' : ''}</strong><small>${esc(stage)}</small>${next ? `<small>${next}</small>` : ''}</div><details class="hbe-menu"><summary aria-label="Menu">☰</summary><nav class="hbe-menu-links" aria-label="HBE menu"></nav></details></div>`;
 }
 
 function unreadAnchor(notifications) {
@@ -229,7 +229,7 @@ function unreadAnchor(notifications) {
 
 function decisionProfile(a) {
   const co = a.co_buyer;
-  return `<article class="panel"><div class="panel-head"><div><div class="eyebrow">BUYER DECISION PROFILE</div><h3>How this buyer chooses</h3></div></div>
+  return `<article class="panel" id="${NEXT_ACTION_TARGETS.review}"><div class="panel-head"><div><div class="eyebrow">BUYER DECISION PROFILE</div><h3>How this buyer chooses</h3></div></div>
     <div class="profile-grid">
       ${profileItem('WHY', a.why)}${profileItem('Definition of success', a.success_definition)}${profileItem('Decision style', a.decision_style)}${profileItem('Information style', a.info_preference)}${profileItem('Uncertainty', a.uncertainty_style)}${profileItem('Under time pressure', a.offer_pressure)}${profileItem('Head vs. heart', a.head_heart)}${profileItem('Useful guidance', a.advisor_preference)}
     </div>
@@ -258,15 +258,36 @@ function notesPanel(b, notes) {
   </article>`;
 }
 
-function priorityBubble(buyers, tasks) {
-  const open = tasks.filter(t => t.status === 'open');
-  const task = chooseTopTask(open);
+// Every Next-useful-action variant must point at an element id rendered by selectedBuyer().
+export const NEXT_ACTION_TARGETS = Object.freeze({ task: 'hbe-tasks', review: 'buyer-experience' });
+
+// Opens any collapsed <details> (e.g. HBEUI chips) around the target, then scrolls to it.
+// Same-page taps (already on that buyer, hash unchanged) would otherwise do nothing.
+const NEXT_ACTION_JS = `<script id="hbe-next-action-js">(()=>{function reveal(id){const t=id&&document.getElementById(id);if(!t)return false;
+for(let d=t;d;d=d.parentElement){if(d.tagName==='DETAILS'&&!d.open)d.open=true;}
+requestAnimationFrame(()=>t.scrollIntoView({behavior:'smooth',block:'start'}));return true;}
+document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a[data-hbe-target]');if(!a)return;const u=new URL(a.href,location.href);
+if(u.pathname===location.pathname&&u.search===location.search&&document.getElementById(a.dataset.hbeTarget)){e.preventDefault();history.replaceState(null,'',u.hash);reveal(a.dataset.hbeTarget);}});
+const go=()=>reveal(decodeURIComponent(location.hash.slice(1)));addEventListener('hashchange',go);
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',go);else go();})();</script>`;
+
+export function nextUsefulAction(buyers, tasks) {
+  const task = chooseTopTask(tasks.filter(t => t.status === 'open'));
   if (task) {
     const buyer = buyers.find(b => b.id === task.buyer_id);
-    return `<a class="priority-bubble" href="/hbe?buyer=${encodeURIComponent(task.buyer_id)}"><small>Highest priority</small><strong>${esc(task.title)}</strong><span>${buyer ? `${esc(buyer.first_name)} ${esc(buyer.last_name)}` : ''}${task.due_at ? ` · ${fmtDate(task.due_at)}` : ''}</span></a>`;
+    return { kind: 'task', buyerId: task.buyer_id, target: NEXT_ACTION_TARGETS.task, kicker: 'Highest priority', title: task.title,
+      sub: `${buyer ? `${buyer.first_name} ${buyer.last_name}` : ''}${task.due_at ? ` · ${fmtDate(task.due_at)}` : ''}` };
   }
   const newest = buyers[0];
-  return newest ? `<a class="priority-bubble" href="/hbe?buyer=${encodeURIComponent(newest.id)}"><small>Next useful action</small><strong>Review ${esc(newest.first_name)}’s Buyer Experience</strong><span>Turn answers into understanding</span></a>` : '';
+  return newest ? { kind: 'review', buyerId: newest.id, target: NEXT_ACTION_TARGETS.review, kicker: 'Next useful action',
+    title: `Review ${newest.first_name}’s Buyer Experience`, sub: 'Turn answers into understanding' } : null;
+}
+
+function nextActionHref(a) { return `/hbe?buyer=${encodeURIComponent(a.buyerId)}#${a.target}`; }
+
+function priorityBubble(buyers, tasks) {
+  const a = nextUsefulAction(buyers, tasks);
+  return a ? `<a class="priority-bubble" href="${nextActionHref(a)}" data-hbe-target="${a.target}"><small>${esc(a.kicker)}</small><strong>${esc(a.title)}</strong><span>${esc(a.sub)}</span></a>` : '';
 }
 
 function chooseTopTask(tasks) {
