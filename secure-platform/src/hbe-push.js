@@ -223,20 +223,21 @@ async function appPage(env) {
 <link rel="manifest" href="${MANIFEST_PATH}" crossorigin="use-credentials"><link rel="apple-touch-icon" sizes="180x180" href="/hbe/app-icon-180.png"><link rel="icon" href="/hbe/app-icon-192.png">
 <title>HBE</title><style>body{font:16px -apple-system,system-ui,sans-serif;margin:0;background:#f7faf8;color:#1a1a2e}header{background:#2d5a3d;color:#fff;padding:calc(env(safe-area-inset-top) + 14px) 16px 14px}h1{margin:0;font-size:1.3rem}main{padding:16px;max-width:640px;margin:auto}
 .card{background:#fff;border:1px solid #dfe8e2;border-radius:12px;padding:14px;margin-bottom:14px}button{font:inherit;font-weight:700;border-radius:10px;padding:.7rem 1rem;border:1px solid #2d5a3d;background:#2d5a3d;color:#fff;margin:4px 6px 4px 0}button.secondary{background:#fff;color:#2d5a3d}button:disabled{opacity:.5}
-#status{margin:.6rem 0 0;padding:.6rem .7rem;border-radius:8px;background:#eef3f0}#status.good{background:#e4f4e8;color:#1d5a2e}#status.bad{background:#fbe9e7;color:#8a1c12}ul{list-style:none;padding:0;margin:0}li a{display:grid;gap:2px;padding:10px 4px;border-bottom:1px solid #eee;color:inherit;text-decoration:none}li span{color:#2d5a3d}li time{color:#777;font-size:.8rem}.empty{color:#777;padding:10px 4px}small{color:#666}a.dash{display:block;text-align:center;font-weight:700;border-radius:10px;padding:.8rem 1rem;background:#2d5a3d;color:#fff;text-decoration:none;margin-bottom:6px}</style></head>
+#status{margin:.6rem 0 0;padding:.6rem .7rem;border-radius:8px;background:#eef3f0}#status.good{background:#e4f4e8;color:#1d5a2e}#status.bad{background:#fbe9e7;color:#8a1c12}ul{list-style:none;padding:0;margin:0}li a{display:grid;gap:2px;padding:10px 4px;border-bottom:1px solid #eee;color:inherit;text-decoration:none}li span{color:#2d5a3d}li time{color:#777;font-size:.8rem}.empty{color:#777;padding:10px 4px}small{color:#666}main{display:flex;flex-direction:column}main>.card{order:1}main>.notif.notif-prompt{order:-1;border:2px solid #b8860b;background:#fffaf0}main>.notif.notif-quiet{order:99;background:transparent;border:0;padding:4px 0;margin:6px 0 0}.notif summary{cursor:pointer;list-style:none}.notif summary::-webkit-details-marker{display:none}.notif.notif-prompt summary{pointer-events:none}.notif.notif-quiet summary{display:inline-block;font-size:.85rem;color:#666;padding:.35rem .7rem;border:1px solid #dfe8e2;border-radius:999px;background:#fff}.notif.notif-quiet #notif-title{display:none}.notif.notif-prompt #notif-chip{display:none}.notif.notif-denied{border-color:#8a1c12;background:#fdf2f0}a.dash{display:block;text-align:center;font-weight:700;border-radius:10px;padding:.8rem 1rem;background:#2d5a3d;color:#fff;text-decoration:none;margin-bottom:6px}</style></head>
 <body><header><h1>HBE buyer activity</h1></header><main>
 <section class="card"><a class="dash" href="/hbe">Open HBEUI dashboard</a><br><small>Opens inside this app. Use the HBEUI back control or reopen HBE to return to alerts.</small></section>
 <section class="card" id="install" hidden><strong>Add to Home Screen first.</strong> In Safari tap Share, then Add to Home Screen, then open HBE from the new icon.</section>
-<section class="card"><strong>Notifications</strong><br><small>This device: <span id="perm">checking</span> · registered devices: <span id="devices">${esc(health.subscriptions ?? 0)}</span></small><br>
+<section class="card"><strong>Recent buyer activity</strong><ul>${feed}</ul></section>
+<section class="card notif notif-prompt" id="notif" data-state="checking"><details id="notif-details" open><summary id="notif-summary"><strong id="notif-title">Notifications</strong> <span id="notif-chip">checking…</span></summary>
+<p id="notif-help"><small>This device: <span id="perm">checking</span> · registered devices: <span id="devices">${esc(health.subscriptions ?? 0)}</span></small></p>
+<p id="notif-denied" hidden><strong>Notifications are blocked on this device.</strong> To turn them back on: open iPhone <b>Settings</b> › <b>Notifications</b> › <b>HBE</b> › turn on <b>Allow Notifications</b>, then reopen HBE from the Home Screen icon.</p>
 <button id="enable">Enable notifications</button><button id="rereg" class="secondary">Re-register</button><button id="test" class="secondary">Send test notification</button>
-<p id="status" role="status" aria-live="polite">Ready.</p></section>
-<section class="card"><strong>Recent buyer activity</strong><ul>${feed}</ul></section></main>
+<p id="status" role="status" aria-live="polite">Ready.</p></details></section></main>
 <script>
 (()=>{const $=id=>document.getElementById(id);const st=(t,c)=>{const e=$('status');e.textContent=t;e.className=c||'';};
 const standalone=navigator.standalone===true||matchMedia('(display-mode: standalone)').matches;
 if(!standalone&&/iPhone|iPad/.test(navigator.userAgent))$('install').hidden=false;
 const supported='serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
-$('perm').textContent=supported?Notification.permission:'not supported here';
 async function api(path,body){const r=await fetch(path,{method:body?'POST':'GET',credentials:'same-origin',headers:body?{'content-type':'application/json'}:{},body:body?JSON.stringify(body):undefined});const j=await r.json().catch(()=>({}));if(!r.ok&&!('status' in j))throw new Error(j.error||('HTTP '+r.status));return j;}
 function key(b){const s=atob((b+'='.repeat((4-b.length%4)%4)).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from(s,c=>c.charCodeAt(0));}
 async function register(force){if(!supported)throw new Error(standalone?'Push is not supported on this device':'Open HBE from the Home Screen icon first');
@@ -244,7 +245,7 @@ const cfg=await api('/api/hbe/push/config');const reg=await navigator.serviceWor
 let sub=await reg.pushManager.getSubscription();if(sub&&force){await api('/api/hbe/push/unsubscribe',{endpoint:sub.endpoint}).catch(()=>{});await sub.unsubscribe().catch(()=>{});sub=null;}
 if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:key(cfg.publicKey)});
 const r=await api('/api/hbe/push/subscribe',{subscription:sub.toJSON()});$('devices').textContent=r.devices;return r;}
-async function run(btn,fn){btn.disabled=true;try{await fn();}catch(e){st('Problem: '+e.message,'bad');}finally{btn.disabled=false;$('perm').textContent=supported?Notification.permission:'not supported here';}}
+async function run(btn,fn){btn.disabled=true;try{await fn();}catch(e){st('Problem: '+e.message,'bad');}finally{btn.disabled=false;check(true);}}
 $('enable').onclick=()=>run($('enable'),async()=>{st('Asking for permission…');const p=await Notification.requestPermission();if(p!=='granted')throw new Error('Notifications were not allowed ('+p+'). Allow them in Settings > Notifications > HBE.');
 const r=await register(false);st('Notifications enabled on this device at '+new Date(r.registered_at).toLocaleTimeString()+'. Registered devices: '+r.devices+'.','good');});
 $('rereg').onclick=()=>run($('rereg'),async()=>{st('Re-registering…');const r=await register(true);st('Re-registered successfully at '+new Date(r.registered_at).toLocaleTimeString()+'. Registered devices: '+r.devices+'.','good');});
@@ -252,7 +253,17 @@ $('test').onclick=()=>run($('test'),async()=>{st('Sending test…');const r=awai
 if(r.status==='sent')st('Test accepted by the push service for '+r.results.filter(x=>x.outcome==='accepted').length+' device(s). It should appear within a few seconds. If it does not, tap Re-register.','good');
 else if(r.status==='no_subscribers')st('No registered devices. Tap Enable notifications first.','bad');
 else st('Test failed: '+(r.results||[]).map(x=>x.outcome+' '+x.http_status+(x.reason?' '+x.reason:'')).join(', '),'bad');});
-if(supported&&standalone&&Notification.permission==='granted')register(false).then(r=>st('Notifications active. Registered devices: '+r.devices+'.','good')).catch(e=>st('Notifications need attention: '+e.message+'. Tap Re-register.','bad'));
+function show(state,devices){const c=$('notif'),d=$('notif-details');c.dataset.state=state;c.className='card notif '+(state==='quiet'?'notif-quiet':'notif-prompt'+(state==='denied'?' notif-denied':''));
+$('notif-denied').hidden=state!=='denied';$('enable').hidden=state==='quiet'||state==='denied';
+if(state==='quiet'){$('notif-chip').textContent='\u{1F514} Notifications on \u00b7 '+devices+' device'+(devices==1?'':'s');if(c.dataset.was!=='quiet')d.open=false;}else d.open=true;c.dataset.was=state;}
+let checking=false;async function check(light){if(checking)return;checking=true;try{$('perm').textContent=supported?Notification.permission:'not supported here';
+if(!supported||!standalone)return show('prompt');const p=Notification.permission;if(p==='denied')return show('denied');if(p!=='granted')return show('prompt');
+const reg=await navigator.serviceWorker.getRegistration('/hbe');const sub=reg&&await reg.pushManager.getSubscription();
+if(!sub||(sub.expirationTime&&sub.expirationTime<Date.now()))return show('prompt');
+if(light){const n=Number($('devices').textContent)||0;return show(n>0?'quiet':'prompt',n);}
+const r=await register(false);st('Notifications active. Registered devices: '+r.devices+'.','good');show(r.devices>0?'quiet':'prompt',r.devices);}
+catch(e){st('Notifications need attention: '+e.message+'. Tap Re-register.','bad');show('prompt');}finally{checking=false;}}
+window.hbeNotifCheck=check;check();document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')check();});
 })();
 </script></body></html>`;
 }
