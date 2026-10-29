@@ -331,3 +331,128 @@ export const HBEUI_LANES_CSS = `<style id="hbeui-lanes-css">
   .buyer-main{padding-top:clamp(1rem,2vw,1.5rem)}
 }
 </style>`;
+
+/* ------------------------------------------------------------------ *
+ * Compact mobile HBEUI (phones <=720px): tappable chip panels.
+ * Every buyer-detail section is a <details class="hbe-chip-panel">,
+ * rendered `open` so desktop is unchanged (the chip <summary> is hidden
+ * at >=721px). On phones the summaries become pills and a small script
+ * keeps one panel open at a time. HBE-only markup; never used by BuyerUI.
+ * ------------------------------------------------------------------ */
+
+/** Marker inside the Stage chip where the stage map is merged on phones. */
+export const HBE_STAGE_MERGE_ANCHOR = '<!--hbe-stage-merge-anchor-->';
+
+function chipAttr(v) {
+  return String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[c]));
+}
+
+/**
+ * Wrap one section as a chip panel. `label` and `badge` are escaped.
+ * `mobileOnly` panels are hidden on desktop; `mergeInto` panels are moved
+ * inside another chip's body on phones (e.g. stage map -> Stage chip).
+ */
+export function chipPanelHtml({ id, label, badge = '', lane = LANE.HBE, body = '', mobileOnly = false, mergeInto = '', note = '' }) {
+  const cls = ['hbe-chip-panel', `hbe-chip-panel--${lane === LANE.BUYER ? 'buyer' : 'hbe'}`];
+  if (mobileOnly) cls.push('hbe-mobile-only');
+  const b = badge === '' || badge == null ? '' : `<span class="hbe-chip-badge">${chipAttr(badge)}</span>`;
+  const n = note ? `<span class="hbe-chip-note">${chipAttr(note)}</span>` : '';
+  return `<details class="${cls.join(' ')}" id="chip-${chipAttr(id)}" data-hbe-chip="${chipAttr(id)}" data-hbeui-lane="${lane}"${mergeInto ? ` data-hbe-merge-into="${chipAttr(mergeInto)}"` : ''} open><summary class="hbe-chip"><span class="hbe-chip-label">${chipAttr(label)}</span>${n}${b}<span class="hbe-chip-close" aria-hidden="true">Close ✕</span></summary><div class="hbe-chip-body">${body}</div></details>`;
+}
+
+/** Compact-mobile CSS. Desktop (>=721px): summaries and mobile-only pieces hidden. */
+export const HBEUI_COMPACT_CSS = `<style id="hbeui-compact-css">
+.hbe-chip-panel{display:block}
+.hbe-chip-panel[hidden]{display:none!important}
+.hbe-mbar,.hbe-mobile-only{display:none}
+@media(min-width:721px){
+  .hbe-chip-panel>summary.hbe-chip{display:none}
+  .hbe-chip-panel:not([open])>.hbe-chip-body{display:block}
+}
+@media(max-width:720px){
+  .site-header{position:static}
+  .site-header .header-actions,.site-header .hbe-admin-nav{display:none}
+  .header-inner{padding:.55rem 1rem}
+  .shell{padding:.5rem .75rem 3rem}
+  .shell.has-selected>.top{display:none}
+  .hbe-mobile-only{display:block}
+  .hbe-desk-only{display:none!important}
+  .hbe-mbar{display:flex;position:sticky;top:0;z-index:60;align-items:center;gap:.6rem;min-height:56px;max-height:64px;margin:0 -.75rem .5rem;padding:.4rem .75rem;background:rgba(255,255,255,.97);border-bottom:1px solid #e8e5e0;backdrop-filter:blur(10px)}
+  .hbe-mbar-who{flex:1;min-width:0;line-height:1.2}
+  .hbe-mbar-who strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.98rem;color:#1a1a2e}
+  .hbe-mbar-who small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#6b6b6b;font-size:.76rem}
+  .hbe-mbar-initials{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:#2d5a3d;color:#fff;font-weight:800;font-size:.85rem}
+  .hbe-menu{position:relative;flex:none}
+  .hbe-menu>summary{list-style:none;cursor:pointer;width:40px;height:40px;display:grid;place-items:center;border:1px solid #e8e5e0;border-radius:10px;font-size:1.2rem;background:#fff}
+  .hbe-menu>summary::-webkit-details-marker{display:none}
+  .hbe-menu-links{position:absolute;right:0;top:46px;min-width:200px;background:#fff;border:1px solid #e8e5e0;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.12);padding:.4rem;display:flex;flex-direction:column}
+  .hbe-menu-links a{padding:.65rem .75rem;color:#2d5a3d;text-decoration:none;border-radius:8px;font-weight:600}
+  .buyer-strip{display:flex!important;gap:.45rem;overflow-x:auto;padding:.1rem 0 .5rem;margin:0 0 .4rem;scroll-snap-type:x proximity;grid-template-columns:none!important}
+  .buyer-strip>.i29-split-card{position:relative;flex:none;min-width:0;max-width:62vw;padding:.4rem .8rem!important;border-radius:999px!important;scroll-snap-align:start;min-height:0!important;margin:0!important}
+  .buyer-strip>.i29-split-card header{display:flex;align-items:center;gap:.35rem;margin:0!important;padding:0!important}
+  .buyer-strip>.i29-split-card header>*:not(strong):not(.card-top),.buyer-strip>.i29-split-card .card-meta,.buyer-strip>.i29-split-card a span,.buyer-strip>.i29-split-card a+a{display:none!important}
+  .buyer-strip>.i29-split-card strong{font-size:.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .buyer-strip>.i29-split-card a{position:absolute;inset:0;font-size:0;color:transparent;border:0!important;background:none!important;padding:0!important;margin:0!important}
+  .buyer-strip>.i29-split-card.selected{outline:2px solid #2d5a3d}
+  .buyer-main>.buyer-heading,.buyer-main>#needs-me,#buyer-stage-context.hbe-desk-stage,#needs-unread{display:none}
+  .shell.has-selected{display:flex;flex-wrap:wrap;gap:.45rem;align-items:flex-start;align-content:flex-start}
+  .shell.has-selected>*{flex-basis:100%;min-width:0}
+  .shell.has-selected>:not(details){order:-1}
+  .shell.has-selected>.buyer-main,.shell.has-selected .hbe-chip-deck{display:contents}
+  .shell.has-selected>details.hbe-chip-panel{flex-basis:auto}
+  .shell.has-selected>details.hbe-chip-panel[open]{order:100;flex-basis:100%}
+  .shell.has-selected>.value-hbe-strip{order:200}
+  .hbe-chip-deck .hbeui-lane,.hbe-chip-deck .hbeui-lane-body,.hbe-chip-deck .hbeui-ops-slot,.hbe-chip-deck .workspace-grid,.hbe-chip-deck .column{display:contents}
+  .hbe-chip-deck .hbeui-lane-head,.hbe-chip-deck .roadmap-legacy-hidden{display:none}
+  .hbe-chip-deck>*:not(details),.hbe-chip-deck .hbeui-lane-body>*:not(details):not(.workspace-grid):not(.hbeui-ops-slot):not(script),.hbe-chip-deck .hbeui-ops-slot>*:not(details):not(script){flex-basis:100%}
+  .hbe-chip-panel{flex:none;max-width:100%;margin:0!important}
+  .hbe-chip-panel>summary.hbe-chip{list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:.35rem;min-height:40px;padding:.45rem .85rem;border-radius:999px;background:#fff;border:1px solid #d9d5cd;font-weight:700;font-size:.86rem;color:#1a1a2e;user-select:none}
+  .hbe-chip-panel>summary.hbe-chip::-webkit-details-marker{display:none}
+  .hbe-chip-panel--buyer>summary.hbe-chip{border-left:4px solid #2d5a3d}
+  .hbe-chip-panel--hbe>summary.hbe-chip{border-style:dashed;border-left:4px dashed #c9a84c}
+  .hbe-chip-badge{min-width:1.35rem;padding:0 .4rem;border-radius:999px;background:#2d5a3d;color:#fff;font-size:.72rem;line-height:1.35rem;text-align:center}
+  .hbe-chip-badge.hbe-chip-badge--alert,[data-hbe-chip="needs"] .hbe-chip-badge{background:#9b3434}
+  .hbe-chip-note{font-size:.7rem;font-weight:800;letter-spacing:.06em;color:#9b3434;text-transform:uppercase}
+  .hbe-chip-close{display:none;margin-left:auto;font-size:.78rem;color:#6b6b6b;font-weight:600}
+  .hbe-chip-panel[open]{order:100;flex-basis:100%;width:100%}
+  .hbe-chip-panel[open]>summary.hbe-chip{display:flex;width:100%;background:#1a1a2e;color:#fff;border-color:#1a1a2e;border-radius:12px 12px 0 0}
+  .hbe-chip-panel[open]>summary .hbe-chip-close{display:inline;color:#ddd}
+  .hbe-chip-panel[open]>.hbe-chip-body{border:1px solid #e8e5e0;border-top:0;border-radius:0 0 12px 12px;background:#fff;padding:.75rem;scroll-margin-top:72px}
+  .hbe-chip-body .panel{margin:0;box-shadow:none;border:0;padding:0}
+  .hbe-chip-panel{scroll-margin-top:72px}
+  [data-hbe-chip="needs"]{order:1}[data-hbe-chip="stage"]{order:2}[data-hbe-chip="next"]{order:3}[data-hbe-chip="tasks"]{order:4}[data-hbe-chip="notes"]{order:5}[data-hbe-chip="profile"]{order:6}[data-hbe-chip="matters"]{order:7}[data-hbe-chip="story"]{order:8}[data-hbe-chip="journey"]{order:9}[data-hbe-chip="compass"]{order:10}[data-hbe-chip="checklist"]{order:11}[data-hbe-chip="showings"]{order:12}[data-hbe-chip="compensation"]{order:13}[data-hbe-chip="consult"]{order:14}[data-hbe-chip="hire"]{order:15}[data-hbe-chip="search"]{order:16}[data-hbe-chip="pilot"]{order:17}[data-hbe-chip="contact"]{order:18}[data-hbe-chip="stage-map"]{order:19}
+  .hbe-stage-panel .roadmap{display:grid!important;grid-template-columns:1fr!important;gap:.3rem!important}
+  .hbe-stage-panel .roadmap form{margin:0}
+  .hbe-stage-panel .roadmap .stage{width:100%;display:flex!important;align-items:center;gap:.6rem;text-align:left;min-height:40px}
+  .hbe-stage-hint{font-size:.8rem;color:#6b6b6b;margin:.6rem 0 .4rem}
+  .hbe-stage-panel .hbe-stage-merged{margin-top:.8rem}
+}
+</style>`;
+
+/**
+ * Compact-mobile behaviour (inline, same CSP pattern as the journey panel).
+ * Phones: one chip open at a time, deep links open their chip, stage map merged
+ * into the Stage chip, ☰ menu filled from header links, confirm before a stage
+ * change saves. Desktop: everything open, nothing moved.
+ */
+export const HBEUI_COMPACT_JS = `<script id="hbeui-compact-js">(()=>{
+const mq=matchMedia('(max-width:720px)');const KEY='hbe-open-chip';
+const panels=()=>[...document.querySelectorAll('details.hbe-chip-panel')];
+const chipFor=el=>el&&el.closest?el.closest('details.hbe-chip-panel'):null;
+const merges=[];
+function mergeStage(on){document.querySelectorAll('[data-hbe-merge-into]').forEach(src=>{const dest=document.querySelector('#chip-'+src.dataset.hbeMergeInto+' .hbe-chip-body');if(!dest)return;const body=src.querySelector(':scope>.hbe-chip-body');if(!body)return;
+ if(on&&!src.dataset.merged){const ph=document.createComment('hbe-merge-home');body.before(ph);merges.push([ph,body]);body.classList.add('hbe-stage-merged');dest.appendChild(body);src.dataset.merged='1';src.hidden=true}
+ else if(!on&&src.dataset.merged){const m=merges.find(x=>x[1]===body)||merges.find(x=>src.contains(x[0]));if(m){m[0].after(m[1]);m[0].remove();merges.splice(merges.indexOf(m),1)}delete src.dataset.merged;src.hidden=false}});}
+function fillMenu(){const box=document.querySelector('.hbe-menu-links');if(!box||box.dataset.filled)return;const seen=new Set();document.querySelectorAll('.site-header a:not(.brand)').forEach(a=>{const k=a.getAttribute('href')+'|'+a.textContent.trim();if(seen.has(k)||!a.textContent.trim())return;seen.add(k);const c=a.cloneNode(true);c.removeAttribute('id');box.appendChild(c)});box.dataset.filled='1';}
+function openOnly(d,scroll){panels().forEach(p=>{if(p!==d)p.open=false});if(d){d.open=true;try{sessionStorage.setItem(KEY,d.id)}catch{}if(scroll)requestAnimationFrame(()=>d.scrollIntoView({block:'start',behavior:'smooth'}))}}
+function targetChip(){const h=decodeURIComponent(location.hash.slice(1));if(h){if(h==='needs-me'||h==='needs-unread')return document.getElementById('chip-needs');if(h.startsWith('stage-'))return document.getElementById('chip-stage');const el=document.getElementById(h);const c=chipFor(el)||(el&&el.matches&&el.matches('details.hbe-chip-panel')?el:null);if(c&&!c.hidden)return c}
+ try{const s=sessionStorage.getItem(KEY);const d=s&&document.getElementById(s);if(d)return d}catch{}
+ const needs=document.getElementById('chip-needs');if(needs&&needs.dataset.count>0)return needs;return document.getElementById('chip-next')||document.getElementById('chip-tasks')||panels()[0];}
+function apply(){if(mq.matches){fillMenu();mergeStage(true);panels().forEach(p=>p.setAttribute('name','hbe-buyer-panels'));openOnly(targetChip(),!!location.hash)}else{mergeStage(false);panels().forEach(p=>{p.removeAttribute('name');p.open=true})}}
+document.addEventListener('toggle',e=>{const d=e.target;if(!mq.matches||!(d instanceof HTMLDetailsElement)||!d.classList.contains('hbe-chip-panel')||!d.open)return;openOnly(d,false)},true);
+document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a[href^="#"]');if(!a||!mq.matches)return;const el=document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));const c=chipFor(el)||(a.getAttribute('href').startsWith('#stage-')?document.getElementById('chip-stage'):null);if(c){openOnly(c,false);requestAnimationFrame(()=>(el||c).scrollIntoView({block:'start'}))}});
+document.addEventListener('submit',e=>{const f=e.target;if(!mq.matches||!f.closest||!f.closest('.roadmap'))return;const c=f.closest('details.hbe-chip-panel');if(c)try{sessionStorage.setItem(KEY,c.id)}catch{}const label=f.dataset.stageLabel||'this stage';if(!confirm('Set current stage to '+label+'? This updates the whole household.'))e.preventDefault()},true);
+document.addEventListener('submit',e=>{if(!mq.matches)return;const c=e.target.closest&&e.target.closest('details.hbe-chip-panel');if(c)try{sessionStorage.setItem(KEY,c.id)}catch{}});
+const go=()=>{apply();(mq.addEventListener?mq.addEventListener('change',apply):mq.addListener(apply))};
+document.readyState==='loading'?document.addEventListener('DOMContentLoaded',go):go();
+})();</script>`;

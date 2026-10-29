@@ -7,8 +7,13 @@ import {
   hbeOpsSlotHtml,
   attentionClassForTask,
   HBEUI_LANES_CSS,
-  LANE
+  LANE,
+  chipPanelHtml,
+  HBE_STAGE_MERGE_ANCHOR,
+  HBEUI_COMPACT_CSS,
+  HBEUI_COMPACT_JS
 } from './hbeui-lanes.js';
+import { STAGES as CANONICAL_STAGES } from './journey-stages.js';
 
 const STAGES = [
   ['buyerExperience','Buyer Experience'],['consultation','Consultation'],['representation','Hire HBE'],['market','Learn the Market'],['search','Build Your Home Search'],['possibilities','Discover Possibilities'],['evaluation','Evaluate Homes'],['offer','Ready to Offer?'],['terms','Build the Offer'],['negotiation','Negotiate Wisely'],['diligence','Learn What We Did Not Know'],['inspection','Inspection Decision'],['value','Value Check'],['loan','Final Financing'],['commitment','Final Decision'],['closing','Get the Keys'],['afterKeys','After the Keys']
@@ -144,11 +149,12 @@ function dashboardHtml(buyers, selected, tasks, notes, notifications) {
 
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive"><title>HBE Workspace</title>${CSS}</head><body>
   <header class="site-header"><div class="header-inner"><a class="brand" href="https://hbexperts.com/">HomeBuyer Experts</a><div class="header-actions"><a href="/" target="_blank" rel="noopener">Buyer Journey</a><span>HBE Workspace</span></div></div></header>
-  <main class="shell">
+  <main class="shell${selected ? ' has-selected' : ''}">
+    ${selected ? mobileBar(selected, tasks.filter(t => t.buyer_id === selected.id)) : ''}
     <section class="top"><div><div class="eyebrow">HBE WORKSPACE</div><h1>What needs our attention?</h1><p>One shared buyer journey. HBE sees the work; buyers see the parts that help them choose wisely.</p></div>${priorityBubble(buyers, tasks)}</section>
     <section class="buyer-strip" aria-label="Active buyers">${cards || '<div class="empty">No submitted buyers yet.</div>'}</section>
     ${selected ? selectedBuyer(selected, tasks.filter(t => t.buyer_id === selected.id), notes.filter(n => n.buyer_id === selected.id), notifications.filter(n => n.buyer_id === selected.id)) : '<section class="empty main-empty">A submitted Buyer Experience will appear here.</section>'}
-  </main></body></html>`;
+  </main>${HBEUI_COMPACT_JS}</body></html>`;
 }
 
 function selectedBuyer(b, tasks, notes, notifications) {
@@ -164,26 +170,55 @@ function selectedBuyer(b, tasks, notes, notifications) {
   const rail = needsMeRailHtml(attention, { esc });
 
   const stageContext = `<div class="stage-summary" id="buyer-stage-context"><small>Current</small><strong>${esc(stageLabel(b.stage))}</strong>${next ? `<small>Next</small><strong>${esc(next[1])}</strong>` : ''}</div>`;
-  const buyerBody = `${stageContext}
-    ${unreadAnchor(notifications)}
-    ${decisionProfile(answers)}
-    ${experienceDetails(answers)}
-    ${journeyPanelHtml(b.id)}`;
+  const roadmap = `<div class="roadmap" aria-label="Stage controls">${CANONICAL_STAGES.map((s,i) => `<form method="post" action="/api/hbe/buyer/${encodeURIComponent(b.id)}/stage" data-stage-label="${esc(s[1])}"><input type="hidden" name="stage" value="${s[0]}"><button class="stage ${s[0] === b.stage ? 'current' : stageDone(s[0], i) ? 'done' : ''}" title="Set current stage to ${esc(s[1])}"><span>${i+1}</span><em>${esc(s[1])}</em></button></form>`).join('')}</div>`;
+  const openTasks = tasks.filter(t => t.status === 'open');
+  const unread = (notifications || []).filter(n => !n.read_at);
+  const needsCount = attention.length;
+  const stageNo = b.stage === 'complete' ? CANONICAL_STAGES.length : stageIndex + 1;
+  const stageChipLabel = b.stage === 'complete' ? 'Journey complete' : `Stage ${stageNo > 0 ? stageNo : '?'} of ${CANONICAL_STAGES.length}`;
 
-  const roadmap = `<div class="roadmap" aria-label="Stage controls">${STAGES.map((s,i) => `<form method="post" action="/api/hbe/buyer/${encodeURIComponent(b.id)}/stage"><input type="hidden" name="stage" value="${s[0]}"><button class="stage ${s[0] === b.stage ? 'current' : stageDone(s[0], i) ? 'done' : ''}" title="Set current stage to ${esc(s[1])}"><span>${i+1}</span><em>${esc(s[1])}</em></button></form>`).join('')}</div>`;
-  const hbeBody = `${roadmap}
+  // Phone-only chips (copies with distinct ids; desktop keeps the originals in place).
+  const needsChip = chipPanelHtml({ id: 'needs', label: 'Needs me', badge: needsCount || '', lane: LANE.HBE, mobileOnly: true,
+    body: `${needsMeRailHtml(attention, { esc }).replace('id="needs-me"', 'id="needs-me-m"')}${unread.length ? `<p class="hbeui-attn hbeui-attn--critical"><strong>Unread buyer updates</strong> ${unread.length} item${unread.length === 1 ? '' : 's'} need review</p>` : ''}` })
+    .replace('data-hbe-chip="needs"', `data-hbe-chip="needs" data-count="${needsCount}"`);
+  const contactChip = chipPanelHtml({ id: 'contact', label: 'Contact', lane: LANE.BUYER, mobileOnly: true,
+    body: `<p><a href="mailto:${esc(b.email)}">${esc(b.email)}</a>${b.phone ? `<br><a href="tel:${esc(b.phone)}">${esc(b.phone)}</a>` : ''}${answers.co_buyer?.name ? `<br>With ${esc(answers.co_buyer.name)}` : ''}</p>` });
+
+  const buyerBody = `${stageContext.replace('class="stage-summary"', 'class="stage-summary hbe-desk-stage"')}
+    ${unreadAnchor(notifications)}
+    ${chipPanelHtml({ id: 'profile', label: 'Profile', lane: LANE.BUYER, body: decisionProfile(answers) })}
+    ${chipPanelHtml({ id: 'matters', label: 'What matters', lane: LANE.BUYER, body: experienceDetails(answers) })}
+    ${chipPanelHtml({ id: 'journey', label: 'Journey draft', note: 'Private', lane: LANE.BUYER, body: journeyPanelHtml(b.id) })}
+    ${contactChip}`;
+
+  const stagePanel = chipPanelHtml({ id: 'stage', label: stageChipLabel, lane: LANE.HBE,
+    body: `<div class="hbe-stage-panel"><div class="hbe-mobile-only">${stageContext.replace(' id="buyer-stage-context"', '')}<p class="hbe-stage-hint">Tap a stage to set it as current — you’ll be asked to confirm.</p></div>${roadmap}${HBE_STAGE_MERGE_ANCHOR}</div>` });
+  const hbeBody = `${needsChip}
+    ${stagePanel}
     <div class="workspace-grid">
-      <div class="column">${taskPanel(b, tasks)}</div>
-      <div class="column">${notesPanel(b, notes)}</div>
+      <div class="column">${chipPanelHtml({ id: 'tasks', label: 'Tasks', badge: openTasks.length || '', body: taskPanel(b, tasks) })}</div>
+      <div class="column">${chipPanelHtml({ id: 'notes', label: 'Notes', badge: notes.length || '', body: notesPanel(b, notes) })}</div>
     </div>
     ${hbeOpsSlotHtml()}`;
 
   return `<section class="buyer-main">
     <div class="buyer-heading"><div><div class="eyebrow">SELECTED BUYER</div><h2>${esc(b.first_name)} ${esc(b.last_name)}</h2><p><a href="mailto:${esc(b.email)}">${esc(b.email)}</a>${b.phone ? ` · <a href="tel:${esc(b.phone)}">${esc(b.phone)}</a>` : ''}${answers.co_buyer?.name ? ` · With ${esc(answers.co_buyer.name)}` : ''}</p></div></div>
     ${rail}
+    <div class="hbe-chip-deck">
     ${laneBandHtml({ lane: LANE.BUYER, title: 'Buyer context', subtitle: 'Facts, decision profile, and what matters — context, not a to-do list.', body: buyerBody, id: 'lane-buyer' })}
     ${laneBandHtml({ lane: LANE.HBE, title: 'HBE workspace', subtitle: 'Tasks, notes, stage controls, research, and internal ops.', body: hbeBody, id: 'lane-hbe' })}
+    </div>
   </section>`;
+}
+
+/** Phone-only sticky header: who, Stage N of 17, next action, ☰ menu. */
+function mobileBar(b, tasks) {
+  const i = CANONICAL_STAGES.findIndex(s => s[0] === b.stage);
+  const stage = b.stage === 'complete' ? 'Journey complete' : `Stage ${i + 1} of ${CANONICAL_STAGES.length} · ${stageLabel(b.stage)}`;
+  const top = chooseTopTask(tasks.filter(t => t.status === 'open'));
+  const nextStage = b.stage === 'complete' ? null : CANONICAL_STAGES[i + 1];
+  const next = top ? `Next: ${top.title}` : nextStage ? `Next: ${nextStage[1]}` : '';
+  return `<div class="hbe-mbar" role="banner" aria-label="Selected buyer"><span class="hbe-mbar-initials" aria-hidden="true">${esc(initials(b))}</span><div class="hbe-mbar-who"><strong>${esc(b.first_name)} ${esc(String(b.last_name || '').slice(0, 1))}${b.last_name ? '.' : ''}</strong><small>${esc(stage)}</small>${next ? `<small><a href="#hbe-tasks">${esc(next)}</a></small>` : ''}</div><details class="hbe-menu"><summary aria-label="Menu">☰</summary><nav class="hbe-menu-links" aria-label="HBE menu"></nav></details></div>`;
 }
 
 function unreadAnchor(notifications) {
@@ -244,7 +279,7 @@ function chooseTopTask(tasks) {
 function sortDue(a,b){if(!a.due_at&&!b.due_at)return 0;if(!a.due_at)return 1;if(!b.due_at)return -1;return String(a.due_at).localeCompare(String(b.due_at))}
 function isDueSoon(v){if(!v)return false;const d=new Date(v+'T23:59:59');return d.getTime()-Date.now() <= 3*86400000}
 function allowedPriority(v){return ['normal','high','critical'].includes(String(v)) ? String(v) : 'normal'}
-function stageLabel(id){return STAGES.find(s=>s[0]===id)?.[1] || (id==='complete'?'Journey complete':id)}
+function stageLabel(id){return CANONICAL_STAGES.find(s=>s[0]===id)?.[1] || (id==='complete'?'Journey complete':id)}
 function profileItem(k,v){return v ? `<div class="profile-item"><small>${esc(k)}</small><strong>${esc(v)}</strong></div>` : ''}
 function detail(k,v){return v ? `<div class="detail"><strong>${esc(k)}</strong><p>${esc(v)}</p></div>` : ''}
 function arrayText(v){return Array.isArray(v)?v.join(' · '):String(v||'')}
@@ -262,4 +297,4 @@ function securityHeaders(){return new Headers({'Cache-Control':'no-store','Refer
 
 const CSS=`${HBEUI_LANES_CSS}<style>
 :root{--navy:#1a1a2e;--green:#2d5a3d;--green2:#3a7a52;--gold:#c9a84c;--text:#2c2c2c;--muted:#6b6b6b;--warm:#faf9f6;--section:#f5f3ef;--border:#e8e5e0;--red:#9b3434}*{box-sizing:border-box}body{margin:0;background:#f8f8f7;color:var(--text);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.55}.site-header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}.header-inner{max-width:1440px;margin:auto;padding:1rem 1.5rem;display:flex;justify-content:space-between;align-items:center}.brand{font:700 1.3rem Georgia,serif;color:var(--navy);text-decoration:none}.header-actions{display:flex;gap:1rem;align-items:center;font-size:.9rem}.header-actions a{color:var(--green);text-decoration:none}.header-actions span{color:var(--muted)}.shell{max-width:1440px;margin:auto;padding:2rem 1.5rem 4rem}.top{display:flex;justify-content:space-between;gap:2rem;align-items:flex-start;margin-bottom:1.5rem}.eyebrow{color:var(--green);font-size:.74rem;letter-spacing:.14em;font-weight:800}.top h1{font:600 clamp(2rem,4vw,3rem)/1.05 Georgia,serif;color:var(--navy);margin:.35rem 0}.top p{color:var(--muted);margin:.3rem 0}.priority-bubble{display:flex;flex-direction:column;min-width:300px;max-width:440px;padding:1rem 1.15rem;border:1px solid var(--border);border-left:4px solid var(--gold);background:#fff;border-radius:12px;text-decoration:none;color:var(--text);box-shadow:0 4px 20px rgba(26,26,46,.04)}.priority-bubble small{color:var(--muted);text-transform:uppercase;font-weight:700}.priority-bubble strong{font:600 1.2rem Georgia,serif;color:var(--navy);margin:.15rem 0}.priority-bubble span{font-size:.88rem;color:var(--muted)}.buyer-strip{display:flex;gap:.9rem;overflow:auto;padding:.25rem 0 1.25rem}.buyer-card{flex:0 0 235px;display:block;background:#fff;border:1px solid var(--border);border-radius:12px;padding:1rem;color:var(--text);text-decoration:none;transition:.15s}.buyer-card:hover,.buyer-card.selected{border-color:var(--green);box-shadow:0 7px 24px rgba(45,90,61,.09);transform:translateY(-1px)}.card-top{display:flex;justify-content:space-between;align-items:center}.initials{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--green);color:#fff;font-weight:800;font-size:.8rem}.badge{font-size:.72rem;padding:.2rem .45rem;border-radius:999px;background:#edf6f0;color:var(--green);font-weight:800}.buyer-card>strong{display:block;font:600 1.08rem Georgia,serif;color:var(--navy);margin:.65rem 0 .1rem}.buyer-card>small{color:var(--muted)}.card-meta{display:flex;justify-content:space-between;gap:.5rem;margin-top:.7rem;font-size:.72rem;color:var(--muted)}.urgent{color:var(--red);font-weight:800}.buyer-main{background:#fff;border:1px solid var(--border);border-radius:16px;padding:clamp(1rem,2.5vw,2rem);box-shadow:0 12px 40px rgba(26,26,46,.04)}.buyer-heading{display:flex;justify-content:space-between;gap:2rem;align-items:flex-start}.buyer-heading h2{font:600 2.2rem Georgia,serif;color:var(--navy);margin:.25rem 0}.buyer-heading p{color:var(--muted)}.buyer-heading a{color:var(--green)}.stage-summary{display:grid;grid-template-columns:auto auto;gap:.2rem .7rem;align-items:baseline;background:var(--warm);padding:.8rem 1rem;border-radius:10px;border:1px solid var(--border)}.stage-summary small{color:var(--muted);text-transform:uppercase;font-size:.7rem;font-weight:700}.stage-summary strong{color:var(--navy)}.critical-bar{display:flex;gap:.8rem;align-items:center;flex-wrap:wrap;background:#fff5f5;border:1px solid #ead0d0;color:#6f2828;padding:.75rem 1rem;border-radius:10px;margin:1rem 0}.critical-bar span{font-size:.85rem}.priority-task{display:inline-flex;flex-direction:column;background:var(--warm);border-left:3px solid var(--gold);padding:.65rem .9rem;border-radius:8px;margin:.6rem 0 1rem}.priority-task small{color:var(--muted)}.priority-task strong{color:var(--navy)}.roadmap{display:flex;gap:.45rem;flex-wrap:wrap;padding:1.25rem 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin:1rem 0 1.5rem}.roadmap form{margin:0}.stage{display:inline-flex;gap:.35rem;align-items:center;background:#f4f4f2;border:1px solid var(--border);border-radius:999px;padding:.38rem .65rem;color:var(--muted);cursor:pointer}.stage span{font-size:.72rem}.stage em{font-style:normal;font-size:.76rem}.stage.done{background:#edf4ef;color:var(--green)}.stage.current{background:var(--green);color:#fff;border-color:var(--green)}.workspace-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(330px,.8fr);gap:1.25rem}.column{display:grid;gap:1.25rem;align-content:start}.panel{border:1px solid var(--border);border-radius:12px;padding:1.25rem;background:#fff}.panel h3{font:600 1.45rem Georgia,serif;color:var(--navy);margin:.25rem 0 1rem}.profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}.profile-item{padding:.75rem;background:var(--warm);border-radius:8px}.profile-item small{display:block;color:var(--muted);font-size:.72rem;text-transform:uppercase;font-weight:700}.profile-item strong{display:block;margin-top:.2rem;font-size:.92rem}.co-buyer{margin-top:1rem;padding:.75rem;border-top:1px solid var(--border);font-size:.9rem}.detail{border-top:1px solid var(--border);padding:.75rem 0}.detail:first-of-type{border-top:0}.detail strong{font-size:.85rem;color:var(--navy)}.detail p{margin:.2rem 0 0;color:var(--text)}.task-list,.note-list{display:grid;gap:.65rem}.task{display:grid;grid-template-columns:32px 1fr;gap:.5rem;align-items:start;padding:.65rem;background:var(--warm);border-radius:8px}.task.critical{border-left:3px solid var(--red)}.task.done{opacity:.55}.task.done strong{text-decoration:line-through}.task small{display:block;color:var(--muted);font-size:.77rem}.checkbtn{border:0;background:transparent;color:var(--green);font-size:1.3rem;cursor:pointer;padding:0}.note{padding:.75rem;background:var(--warm);border-radius:8px}.note>div{display:flex;justify-content:space-between;gap:.5rem}.note small{color:var(--muted)}.note p{margin:.35rem 0 0;white-space:pre-wrap}.composer{margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)}.composer input,.composer textarea,.composer select{width:100%;padding:.7rem;border:1px solid var(--border);border-radius:7px;font:inherit;background:#fff}.composer textarea{min-height:90px;resize:vertical}.composer-row{display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:.5rem;margin:.5rem 0}.inline-check{display:flex;gap:.45rem;align-items:center;font-size:.85rem;color:var(--muted);margin:.5rem 0}.inline-check input{width:auto}.btn{border:0;background:var(--green);color:#fff;border-radius:6px;padding:.65rem 1rem;font-weight:700;cursor:pointer}.muted,.empty{color:var(--muted)}.main-empty{background:#fff;border:1px solid var(--border);padding:2rem;border-radius:12px}@media(max-width:1000px){.workspace-grid{grid-template-columns:1fr}.top,.buyer-heading{display:block}.priority-bubble{margin-top:1rem;min-width:0}.stage-summary{margin-top:1rem;width:max-content}.profile-grid{grid-template-columns:1fr 1fr}}@media(max-width:620px){.shell{padding:1rem}.header-actions span{display:none}.profile-grid{grid-template-columns:1fr}.composer-row{grid-template-columns:1fr}.buyer-card{flex-basis:210px}.stage-summary{width:100%}.roadmap{gap:.35rem}.stage em{display:none}}
-</style>`;
+</style>${HBEUI_COMPACT_CSS}`;

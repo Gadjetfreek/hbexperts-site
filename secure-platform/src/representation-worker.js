@@ -1,5 +1,6 @@
 import { requireVerifiedProfessional } from './hbe-access-worker.js';
 import appWorker from './consultation-worker.js';
+import { chipPanelHtml } from './hbeui-lanes.js';
 
 const enc = new TextEncoder();
 
@@ -39,7 +40,7 @@ export default {
         if (selectedBuyerId) {
           const caseId = await ensureCaseForBuyer(env, selectedBuyerId);
           const data = await representationData(env, caseId, selectedBuyerId);
-          text = injectBeforeMainEnd(text, hbeRepresentationPanel(data));
+          text = injectBeforeMainEnd(text, chipPanelHtml({ id: 'hire', label: 'Hire HBE', body: hbeRepresentationPanel(data) }));
         }
       }
     } catch (err) {

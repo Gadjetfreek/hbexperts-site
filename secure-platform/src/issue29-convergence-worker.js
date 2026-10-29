@@ -11,7 +11,7 @@ import {
   compensationPublicHtml, compensationPostHireHtml, dashboardShell, buyerDashboardBody, previewMemberNav, esc
 } from './issue29-ui.js';
 import { handleShowingCardRoutes, enhanceHbeWithProperties } from './showing-card/index.js';
-import { injectHbeOps } from './hbeui-lanes.js';
+import { injectHbeOps, chipPanelHtml } from './hbeui-lanes.js';
 
 assertSeventeenStages();
 
@@ -316,18 +316,14 @@ async function enhanceHbeDashboard(request, env, url, text) {
   const csrfField = await csrfFieldFor(jwt);
   const ids = `<input type="hidden" name="buyer_id" value="${esc(buyerId)}"><input type="hidden" name="case_id" value="${esc(caseId||'')}">`;
 
-  const panel = `
-    ${stageMapHtml({
+  const stageMap = stageMapHtml({
       currentStage,
       selectedStage,
       completed,
       actor,
       hrefFor: id => `/hbe?buyer=${encodeURIComponent(buyerId)}&stage=${encodeURIComponent(id)}#stage-${encodeURIComponent(id)}`
-    })}
-    ${whatsNextPanel({ stage: currentStage, checklistItems: bundle.items, completions: bundle.completions, tasks: bundle.tasks, actor })}
-    ${storyPanel({ ...bundle.story, case_id: caseId, selected_buyer_id: buyerId }, { mode: 'hbe', actor, csrfField })}
-    ${compassPanel(bundle.compass, { editable: true, hiddenFields: ids, csrfField })}
-    ${checklistPanel({
+    });
+  const checklist = checklistPanel({
       stageId: selectedStage,
       items: bundle.items,
       completions: bundle.completions,
@@ -336,8 +332,16 @@ async function enhanceHbeDashboard(request, env, url, text) {
       hiddenFields: ids,
       csrfField,
       members: bundle.members
-    })}
-    ${hired ? compensationPostHireHtml(await compensationSummary(env, caseId)) : compensationPublicHtml()}
+    });
+  const compensation = hired ? compensationPostHireHtml(await compensationSummary(env, caseId)) : compensationPublicHtml();
+  // Compact mobile HBEUI: each ops panel is a chip; the stage map merges into the Stage chip on phones.
+  const panel = `
+    ${chipPanelHtml({ id: 'stage-map', label: 'Stage map', body: stageMap, mergeInto: 'stage' })}
+    ${chipPanelHtml({ id: 'next', label: 'What’s Next', body: whatsNextPanel({ stage: currentStage, checklistItems: bundle.items, completions: bundle.completions, tasks: bundle.tasks, actor }) })}
+    ${chipPanelHtml({ id: 'story', label: 'Story', body: storyPanel({ ...bundle.story, case_id: caseId, selected_buyer_id: buyerId }, { mode: 'hbe', actor, csrfField }) })}
+    ${chipPanelHtml({ id: 'compass', label: 'Compass', body: compassPanel(bundle.compass, { editable: true, hiddenFields: ids, csrfField }) })}
+    ${chipPanelHtml({ id: 'checklist', label: 'Checklist', body: checklist })}
+    ${chipPanelHtml({ id: 'compensation', label: 'Compensation', body: compensation })}
     ${ISSUE29_JS}`;
 
   text = text.replace('No tasks yet.', 'What’s Next is never empty — see the dedicated panel.');
