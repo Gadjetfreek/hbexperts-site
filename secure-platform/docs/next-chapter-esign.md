@@ -190,3 +190,14 @@ Decisions added: (8) approve adding the Google IdP to Access (policy unchanged) 
 - Template is now `hbe-buyer-agency-v6` (`src/agreement-template-v6.js`), from owner draft v6. It adds the ORC 4735.55(C)(7) fees statement, verbatim, in a boxed bold-caps paragraph before the §5 fee bullets. It also adds "as amended" to §12, a blockbusting statement using the state model-form wording, and an Equal Housing Opportunity mark. The mark is drawn here as a stand-in; replace it with the official HUD artwork before approval. Fields are unchanged (term_end, price_max, retainer_option, additional_provisions). It is still SAMPLE-locked: `approved` stays 0 and has no setter.
 - The Consumer Guide receipt is its own step, after e-records consent and before the agreement. The buyer reads the Ohio Consumer Guide to Agency Relationships (Exclusive Buyer Agency Only model policy, Effective 10/24/2024), with "(brokerage)" filled in as HomeBuyer Experts. The buyer can also open the official state PDF at `/portal/consumer-guide.pdf`, served unmodified and public. The buyer then acknowledges receipt with a passkey (UV required) on a `guide_ack` challenge bound to the PDF SHA-256 (c9448026…). That writes the `guide_*` columns on `agreement_signers` and the hash-chained events `consumer_guide_viewed` and `consumer_guide_acknowledged`. Reading or signing the agreement returns `consumer_guide_first` / `review_incomplete` until the receipt is recorded.
 - FLAG FOR COUNSEL: the guide must be given at first substantive contact. This portal step records receipt for the e-sign flow; it does not replace giving the guide earlier.
+
+## Hosted staging (test site for this PR)
+
+- URL: https://hbe-buyer-platform-staging.hbe-home-buyers-expert.workers.dev (workers.dev only, no custom domain/routes)
+- Config: `wrangler.staging.toml` (separate file, so it inherits nothing from production). Entry `src/staging-entry.js` re-exports only the default handler (the issue33 module's helper named exports block deploy).
+- Resources: D1 `hbe-buyer-journey-staging` (full schema + all migrations incl. `agreements-esign.sql`), private R2 `hbe-agreements-staging` and `hbe-showing-photos-staging`.
+- No `send_email` binding and no crons, so staging cannot send mail. Because of that, `/health` reports `ok:false` (503) on purpose, since alert delivery is "not ready".
+- Secrets (staging-only, generated fresh, not in git): VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, WEBAUTHN_USER_SALT. Passkey RP ID = the staging host.
+- Cloudflare Access app "HBE STAGING buyer platform /hbe" covers `/hbe`, `/hbe/*`, `/api/hbe*`, using the same reusable "HBE admin only" policy as production (attached by reference, not modified).
+- Data: synthetic only. Test Buyer A / Test Buyer B (`test.buyer.a@example.com`, `test.buyer.b@example.com`) share case `stg-case-1` at stage `consultation`. Access codes are kept out of git.
+- Deploy: `CLOUDFLARE_API_TOKEN=... npx wrangler deploy -c wrangler.staging.toml`
