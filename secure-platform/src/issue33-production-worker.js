@@ -14,6 +14,7 @@ import { isHbeAppPath, handleHbeApp, enqueuePushAlert, deliverPushAlert, process
 import { processAlertEscalations, isLeadActionPath, handleLeadAction, leadPanelForRequest, leadCounts, unacknowledgedBanner, flagSuspectedSpam, LEAD_PANEL_CSS } from './lead-response.js';
 import { guardIntake, findNewLeadBuyerId, turnstileConfig, addTurnstileWidget, allowTurnstileCsp } from './intake-guard.js';
 import { requireOwner } from './hbe-push.js';
+import { isAgreementPath, handleAgreements, agreementBanner } from './agreement-esign.js';
 import { DESKTOP_MANIFEST_PATH, desktopManifestResponse, addDesktopApp } from './hbe-desktop.js';
 import { isBuyerAction, captureBuyerAction, completedStatus, enqueueBuyerActivity, deliverBuyerActivityAlert, processBuyerActivityBacklog, buyerActivityOverdue } from './buyer-activity-alerts.js';
 import {
@@ -294,6 +295,7 @@ const productionWorker = {
     if (request.method === 'GET' && url.pathname === DESKTOP_MANIFEST_PATH) return desktopManifestResponse();
     if (isHbeAppPath(url.pathname)) return handleHbeApp(request, env, url);
     if (url.pathname === JOURNEY_PATH) return handleJourney(request, env, url);
+    if (isAgreementPath(url.pathname)) return handleAgreements(request, env, url);
 
     const acq = await handleAcquisitionRoutes(request, env, ctx);
     if (acq) return acq;
@@ -319,6 +321,8 @@ const productionWorker = {
       if (panel && !text.includes('id="possible-assistance"')) {
         text = injectBeforeMainEnd(text, panel);
       }
+      const agreementCard = await agreementBanner(request, env);
+      if (agreementCard && !text.includes('id="agreement-banner"')) text = text.replace(/(<main[^>]*>)/, `$1${agreementCard}`);
     }
 
     if (request.method === 'GET' && response.status === 200) {

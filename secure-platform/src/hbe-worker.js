@@ -170,7 +170,7 @@ function selectedBuyer(b, tasks, notes, notifications) {
   const rail = needsMeRailHtml(attention, { esc });
 
   const stageContext = `<div class="stage-summary" id="buyer-stage-context"><small>Current</small><strong>${esc(stageLabel(b.stage))}</strong>${next ? `<small>Next</small><strong>${esc(next[1])}</strong>` : ''}</div>`;
-  const roadmap = `<div class="roadmap" aria-label="Stage controls">${CANONICAL_STAGES.map((s,i) => `<form method="post" action="/api/hbe/buyer/${encodeURIComponent(b.id)}/stage" data-stage-label="${esc(s[1])}"><input type="hidden" name="stage" value="${s[0]}"><button class="stage ${s[0] === b.stage ? 'current' : stageDone(s[0], i) ? 'done' : ''}" title="Set current stage to ${esc(s[1])}"><span>${i+1}</span><em>${esc(s[1])}</em></button></form>`).join('')}</div>`;
+  const roadmap = `<div class="roadmap" aria-label="Stage controls">${CANONICAL_STAGES.map((s,i) => `<form method="post" action="/api/hbe/buyer/${encodeURIComponent(b.id)}/stage" data-stage-label="${esc(s[1])}"><input type="hidden" name="stage" value="${s[0]}"><button class="stage ${s[0] === b.stage ? 'current' : stageDone(s[0], i) ? 'done' : ''}" title="Set current stage to ${esc(s[1])}"><span>${i+1}</span><em>${esc(s[1])}</em></button></form>`).join('')}</div>${b.stage === 'consultation' ? `<p class="next-chapter" id="open-next-chapter"><a class="btn" href="/hbe/agreements/new?buyer=${encodeURIComponent(b.id)}">Open the next chapter</a> <small class="muted">Prepare the buyer agency agreement (SAMPLE until counsel approves)</small></p>` : ''}`;
   const openTasks = tasks.filter(t => t.status === 'open');
   const unread = (notifications || []).filter(n => !n.read_at);
   const needsCount = attention.length;
