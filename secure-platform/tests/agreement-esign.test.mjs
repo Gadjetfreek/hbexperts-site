@@ -7,6 +7,8 @@ import { makeAuthenticator } from './helpers/fake-authenticator.mjs';
 import { handleAgreements, isAgreementPath, agreementBanner, templateApproved, verifyEventChain, BUYER_PUSH_PAYLOAD, STAFF_PUSH_PAYLOAD, SAMPLE_WATERMARK } from '../src/agreement-esign.js';
 import { mutationCsrfToken } from '../src/household-state.js';
 import { readFileSync } from 'node:fs';
+import { GUIDE_PDF_SHA256, GUIDE_PARAGRAPHS } from '../src/consumer-guide.js';
+import { V6_PARAGRAPHS } from '../src/agreement-template-v6.js';
 const R = f => new URL('../' + f, import.meta.url).pathname;
 
 const ORIGIN = 'https://buyer.example.test';
@@ -47,9 +49,18 @@ async function buyerPasskey(call, buyer) {
   assert.equal(v.status, 200, JSON.stringify(v.body));
   return { auth, cookie, csrf };
 }
+async function guideAck(call, id, who) {
+  const { auth, cookie, csrf } = who;
+  assert.equal((await call('POST', `/api/portal/agreements/${id}/guide/viewed`, { csrf, viewed: true }, { cookie })).status, 200);
+  const o = await call('POST', `/api/portal/agreements/${id}/guide/options`, { csrf }, { cookie });
+  assert.equal(o.status, 200, JSON.stringify(o.body)); assert.equal(o.body.guide_sha256, GUIDE_PDF_SHA256);
+  const a = await call('POST', `/api/portal/agreements/${id}/guide/ack`, { csrf, challenge_id: o.body.challenge_id, credential: await auth.get(o.body.publicKey), acknowledge: true }, { cookie });
+  assert.equal(a.status, 200, JSON.stringify(a.body));
+}
 async function buyerSigns(call, id, who, kind = 'typed') {
   const { auth, cookie, csrf } = who;
   assert.equal((await call('POST', `/api/portal/agreements/${id}/consent`, { csrf, ersd: true }, { cookie })).status, 200);
+  await guideAck(call, id, who);
   assert.equal((await call('POST', `/api/portal/agreements/${id}/viewed`, { csrf, scrolled: true }, { cookie })).status, 200);
   const o = await call('POST', `/api/portal/agreements/${id}/sign/options`, { csrf }, { cookie });
   assert.equal(o.status, 200, JSON.stringify(o.body));
@@ -124,14 +135,17 @@ test('passkey is required: no passkey, no UV, wrong origin, replayed challenge, 
   await call('POST', `/api/hbe/agreements/${id}/send`, {});
   const cookie = 'tok-buyer-a', csrf = await mutationCsrfToken(cookie);
   await call('POST', `/api/portal/agreements/${id}/consent`, { csrf, ersd: true }, { cookie });
-  // sign options before scroll is refused
+  // sign options before guide + scroll is refused
   assert.equal((await call('POST', `/api/portal/agreements/${id}/sign/options`, { csrf }, { cookie })).body.error, 'review_incomplete');
-  await call('POST', `/api/portal/agreements/${id}/viewed`, { csrf, scrolled: true }, { cookie });
-  const none = await call('POST', `/api/portal/agreements/${id}/sign/options`, { csrf }, { cookie });
+  await call('POST', `/api/portal/agreements/${id}/guide/viewed`, { csrf, viewed: true }, { cookie });
+  const none = await call('POST', `/api/portal/agreements/${id}/guide/options`, { csrf }, { cookie });
   assert.equal(none.body.error, 'no_passkey'); assert.match(none.body.message, /paper/);
   // signing without any credential
-  assert.equal((await call('POST', `/api/portal/agreements/${id}/sign`, { csrf, initials: 'TB', signature_kind: 'typed', signature_text: 'Test Buyer' }, { cookie })).status, 400);
-  const { auth } = await buyerPasskey(call, 'buyer-a');
+  assert.equal((await call('POST', `/api/portal/agreements/${id}/sign`, { csrf, initials: 'TB', signature_kind: 'typed', signature_text: 'Test Buyer' }, { cookie })).status, 409);
+  const pk = await buyerPasskey(call, 'buyer-a'); const { auth } = pk;
+  await guideAck(call, id, pk);
+  await call('POST', `/api/portal/agreements/${id}/viewed`, { csrf, scrolled: true }, { cookie });
+  assert.equal((await call('POST', `/api/portal/agreements/${id}/sign`, { csrf, initials: 'TB', signature_kind: 'typed', signature_text: 'Test Buyer' }, { cookie })).body.error, 'challenge_invalid');
   const base = { csrf, initials: 'TB', signature_kind: 'typed', signature_text: 'Test Buyer' };
   // no user verification
   let o = await call('POST', `/api/portal/agreements/${id}/sign/options`, { csrf }, { cookie });
@@ -172,4 +186,48 @@ test('buyer passkey sign-in creates a session', async () => {
   const v = await call('POST', '/api/portal/passkey/login/verify', { challenge_id: o.body.challenge_id, credential: await auth.get(o.body.publicKey) });
   assert.equal(v.status, 200); assert.match(v.res.headers.get('set-cookie'), /^hbe_session=.*HttpOnly; Secure; SameSite=Lax/);
   const n = await db.prepare(`SELECT COUNT(*) n FROM buyer_sessions WHERE buyer_id='buyer-a'`).first(); assert.equal(n.n, 2);
+});
+
+test('Consumer Guide: separate passkey receipt, required first, bound to guide PDF hash, audited', async () => {
+  const { db, call } = await setup();
+  const id = (await call('POST', '/api/hbe/agreements', { buyer_id: 'buyer-a', fields: FIELDS() })).body.id;
+  await call('POST', `/api/hbe/agreements/${id}/send`, {});
+  const who = await buyerPasskey(call, 'buyer-a'); const { auth, cookie, csrf } = who;
+  // official state PDF is served unmodified, no session needed
+  const pdf = await call('GET', '/portal/consumer-guide.pdf');
+  assert.equal(pdf.status, 200); assert.equal(pdf.res.headers.get('content-type'), 'application/pdf');
+  assert.equal(createHash('sha256').update(Buffer.from(pdf.body)).digest('hex'), GUIDE_PDF_SHA256);
+  // guide requires e-records consent; agreement requires the guide receipt
+  assert.equal((await call('POST', `/api/portal/agreements/${id}/guide/viewed`, { csrf, viewed: true }, { cookie })).body.error, 'consent_first');
+  await call('POST', `/api/portal/agreements/${id}/consent`, { csrf, ersd: true }, { cookie });
+  assert.equal((await call('POST', `/api/portal/agreements/${id}/viewed`, { csrf, scrolled: true }, { cookie })).body.error, 'consumer_guide_first');
+  assert.equal((await call('POST', `/api/portal/agreements/${id}/guide/options`, { csrf }, { cookie })).body.error, 'guide_not_viewed');
+  // page shows guide as its own step with the filled brokerage name
+  const pageHtml = (await call('GET', `/portal/agreements?id=${id}`, null, { cookie })).body;
+  assert.match(pageHtml, /2\. Ohio Consumer Guide to Agency Relationships/); assert.match(pageHtml, /HomeBuyer Experts only represents buyers/);
+  assert.ok(!GUIDE_PARAGRAPHS.join(' ').includes('(brokerage)'));
+  await call('POST', `/api/portal/agreements/${id}/guide/viewed`, { csrf, viewed: true }, { cookie });
+  // an agreement-signing challenge cannot be used for the guide, and no UV fails
+  let o = await call('POST', `/api/portal/agreements/${id}/guide/options`, { csrf }, { cookie });
+  assert.equal((await call('POST', `/api/portal/agreements/${id}/guide/ack`, { csrf, challenge_id: o.body.challenge_id, credential: await auth.get(o.body.publicKey) }, { cookie })).body.error, 'acknowledge_required');
+  auth.setUv(false);
+  assert.equal((await call('POST', `/api/portal/agreements/${id}/guide/ack`, { csrf, challenge_id: o.body.challenge_id, credential: await auth.get(o.body.publicKey), acknowledge: true }, { cookie })).body.error, 'passkey_failed');
+  auth.setUv(true);
+  o = await call('POST', `/api/portal/agreements/${id}/guide/options`, { csrf }, { cookie });
+  assert.equal((await call('POST', `/api/portal/agreements/${id}/guide/ack`, { csrf, challenge_id: o.body.challenge_id, credential: await auth.get(o.body.publicKey), acknowledge: true }, { cookie })).status, 200);
+  assert.equal((await call('POST', `/api/portal/agreements/${id}/guide/options`, { csrf }, { cookie })).body.error, 'already_acknowledged');
+  const s = await db.prepare(`SELECT guide_sha256, guide_version, guide_ack_at, guide_passkey_credential_id FROM agreement_signers WHERE instance_id=? AND role='buyer'`).bind(id).first();
+  assert.equal(s.guide_sha256, GUIDE_PDF_SHA256); assert.equal(s.guide_version, 'ohio-effective-2024-10-24'); assert.ok(s.guide_ack_at && s.guide_passkey_credential_id);
+  const ev = ((await db.prepare(`SELECT event, doc_sha256 FROM agreement_events WHERE instance_id=? ORDER BY rowid`).bind(id).all()).results).map(e => e.event);
+  assert.ok(ev.indexOf('ersd_consented') < ev.indexOf('consumer_guide_viewed') && ev.indexOf('consumer_guide_viewed') < ev.indexOf('consumer_guide_acknowledged'));
+  assert.ok(await verifyEventChain({ BUYER_DB: db }, id));
+  // now the agreement can be read
+  assert.equal((await call('POST', `/api/portal/agreements/${id}/viewed`, { csrf, scrolled: true }, { cookie })).status, 200);
+});
+
+test('template v6 carries the Ohio 4735.55 statements', () => {
+  const t = V6_PARAGRAPHS.join('\n');
+  assert.ok(t.includes('BROKER FEES AND COMMISSIONS ARE NOT SET BY LAW, ARE FULLY NEGOTIABLE, AND MAY BE PAID BY THE SELLER, THE BUYER, THE LANDLORD, THE TENANT, OR A THIRD PARTY, OR BY SHARING OR SPLITTING THE FEES AND COMMISSIONS BETWEEN BROKERS.'));
+  assert.match(t, /Blockbusting is illegal and defined as/); assert.match(t, /42 U\.S\.C\.A\. 3601, as amended/);
+  assert.match(t, /\[\[EHO\]\]EQUAL HOUSING OPPORTUNITY/);
 });

@@ -2,6 +2,8 @@
 // - Staff (HBEUI, Cloudflare Access) prepares and sends; broker countersigns.
 // - Buyers (BuyerUI, hbe_session) consent to e-records, scroll the full text, initial, sign (typed or drawn)
 //   and MUST complete a passkey assertion (user verification required) bound to the document SHA-256.
+// - Before the agreement, the buyer receives the Ohio Consumer Guide to Agency Relationships (a separate document)
+//   and acknowledges receipt in its own passkey step bound to the guide PDF SHA-256 (audit events consumer_guide_*).
 // - No non-passkey buyer signing path. Devices without passkeys are told to contact HBE for paper signing.
 // - Until agreement_templates.approved = 1 (set manually by the owner; NO code path sets it), every document is
 //   watermarked "SAMPLE — NOT FOR SIGNATURE" and flagged is_sample = 1.
@@ -9,15 +11,16 @@ import { authenticateHbeProfessional, requireVerifiedProfessional } from './hbe-
 import { ownerEmail, vapidConfig, validateSubscription } from './hbe-push.js';
 import { sendWebPush } from './web-push.js';
 import { assertMutationCsrf, mutationCsrfToken, sameOriginRequest } from './household-state.js';
-import { V5_PARAGRAPHS } from './agreement-template-v5.js';
+import { V6_PARAGRAPHS } from './agreement-template-v6.js';
+import { GUIDE_ID, GUIDE_VERSION, GUIDE_PDF_PATH, GUIDE_PDF_SHA256, GUIDE_PDF_B64, GUIDE_PARAGRAPHS, GUIDE_ACK_TEXT } from './consumer-guide.js';
 import { buildPdf } from './agreement-pdf.js';
 import {
   b64uEncode, sha256Hex, randomChallenge, registrationOptions, assertionOptions,
   verifyRegistration, verifyAssertion, boundChallenge, WEBAUTHN_BROWSER_JS
 } from './webauthn.js';
 
-export const TEMPLATE_ID = 'hbe-buyer-agency-v5';
-export const TEMPLATE_VERSION = 'v5-draft-2026-10-30';
+export const TEMPLATE_ID = 'hbe-buyer-agency-v6';
+export const TEMPLATE_VERSION = 'v6-draft-2026-10-30';
 export const SAMPLE_WATERMARK = 'SAMPLE \u2014 NOT FOR SIGNATURE';
 export const ERSD_VERSION = 'ersd-2026-10-30';
 const CHALLENGE_MS = 5 * 60 * 1000;
@@ -46,7 +49,7 @@ function getCookie(request, name) {
 function rp(env, url) { return { rpId: env.WEBAUTHN_RP_ID || url.hostname, origin: env.WEBAUTHN_ORIGIN || url.origin, rpName: 'HomeBuyer Experts' }; }
 
 // ---------------- template + rendering ----------------
-export async function templateBodySha() { return sha256Hex(V5_PARAGRAPHS.join('\n')); }
+export async function templateBodySha() { return sha256Hex(V6_PARAGRAPHS.join('\n')); }
 export async function ensureTemplate(env) {
   await db(env).prepare(`INSERT OR IGNORE INTO agreement_templates (id,name,version,body_sha256,approved,created_at) VALUES (?,?,?,?,0,?)`)
     .bind(TEMPLATE_ID, 'Exclusive Buyer\u2019s Agency Agreement', TEMPLATE_VERSION, await templateBodySha(), nowIso()).run();
@@ -76,7 +79,7 @@ export function validateFields(input) {
 function fmtDate(d) { try { return new Date(d + 'T12:00:00Z').toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }); } catch { return d; } }
 export function renderParagraphs(fields) {
   const money = n => '$' + Number(n).toLocaleString('en-US');
-  return V5_PARAGRAPHS.map(p => p
+  return V6_PARAGRAPHS.map(p => p
     .replace('{{term_end}}', fields.term_end ? fmtDate(fields.term_end) : '________')
     .replace('{{price_max}}', fields.price_max ? money(fields.price_max) : '________')
     .replace('{{additional_provisions}}', fields.additional_provisions || 'None.'))
@@ -182,7 +185,9 @@ async function notifyOwner(env, send = sendWebPush) {
 // ---------------- PDF ----------------
 export function agreementPdf(bundle, { certificate = null } = {}) {
   const { inst, fields, signers } = bundle;
-  const blocks = renderParagraphs(fields).map((t, i) => ({ text: t, bold: i < 2, size: i < 2 ? 12 : 9.5 }));
+  const blocks = renderParagraphs(fields).map((t, i) => t.startsWith('[[BOX]]') ? { text: t.slice(7), bold: true, box: true, size: 9.5 } : t.startsWith('[[EHO]]') ? { text: t.slice(7), eho: true, bold: true, size: 10 } : ({ text: t, bold: i < 2, size: i < 2 ? 12 : 9.5 }));
+  const g = signers.filter(s => s.role === 'buyer' && s.guide_ack_at);
+  if (g.length) blocks.push({ text: `Ohio Consumer Guide to Agency Relationships (${GUIDE_VERSION}, PDF SHA-256 ${GUIDE_PDF_SHA256.slice(0, 16)}...) receipt acknowledged separately with passkey by: ${g.map(s => `${signerName(s)} ${s.guide_ack_at} (UTC)`).join('; ')}.`, size: 8, gap: 8 });
   for (const s of signers) {
     if (s.signed_at) {
       blocks.push({ signature: { kind: s.signature_kind, text: s.signature_text, strokes: s.signature_strokes ? JSON.parse(s.signature_strokes) : null }, label: `${s.role === 'broker' ? 'BROKER' : 'BUYER'}: ${signerName(s)}${s.initials ? '  (initials ' + s.initials + ')' : ''}` });
@@ -193,7 +198,7 @@ export function agreementPdf(bundle, { certificate = null } = {}) {
     blocks.push({ text: 'CERTIFICATE OF COMPLETION', bold: true, size: 12, gap: 6 });
     blocks.push({ text: `Agreement ID ${inst.id}. Template ${inst.template_id} ${inst.template_version}. Document SHA-256 ${inst.doc_sha256}.`, size: 8.5 });
     for (const e of certificate) blocks.push({ text: `${e.at}  ${e.event}${e.signer_label ? '  ' + e.signer_label : ''}${e.doc_sha256 ? '  doc ' + e.doc_sha256.slice(0, 16) + '...' : ''}`, size: 8 });
-    blocks.push({ text: 'Each signer consented to electronic records, scrolled the full agreement, and (buyers) completed a device passkey check bound to this document hash. Events are hash-chained.', size: 8 });
+    blocks.push({ text: 'Each signer consented to electronic records, buyers separately acknowledged receipt of the Ohio Consumer Guide to Agency Relationships with a passkey, each signer scrolled the full agreement, and (buyers) completed a device passkey check bound to this document hash. Events are hash-chained.', size: 8 });
   }
   const sample = Number(inst.is_sample) === 1;
   return buildPdf(blocks, { watermark: sample ? SAMPLE_WATERMARK : '', footer: `${sample ? 'SAMPLE \u2014 ' : ''}HBE agreement ${inst.id.slice(0, 8)}` });
@@ -202,7 +207,13 @@ export function agreementPdf(bundle, { certificate = null } = {}) {
 // ---------------- page shell ----------------
 const CSS = `body{font:16px/1.55 system-ui,-apple-system,Segoe UI,sans-serif;margin:0;background:#f7faf8;color:#1a1a2e}main{max-width:46rem;margin:0 auto;padding:1.2rem}h1{font:600 1.7rem Georgia,serif}.card{background:#fff;border:1px solid #dfe8e2;border-radius:14px;padding:1rem 1.2rem;margin:1rem 0}.btn{display:inline-block;background:#2d5a3d;color:#fff;border:0;border-radius:10px;padding:.75rem 1.1rem;font-weight:700;text-decoration:none;cursor:pointer}.btn[disabled]{opacity:.45;cursor:not-allowed}.sample{background:#fff4f4;border:2px dashed #b42318;color:#b42318;font-weight:800;padding:.6rem;border-radius:10px;text-align:center}.doc{max-height:55vh;overflow:auto;border:1px solid #ccc;border-radius:10px;padding:1rem;background:#fff;position:relative}.doc p{margin:.5rem 0}.wm{position:sticky;top:40%;text-align:center;color:rgba(180,35,24,.25);font:800 2rem system-ui;transform:rotate(-20deg);pointer-events:none;height:0}label{display:block;margin:.7rem 0 .2rem;font-weight:650}input,select,textarea{width:100%;padding:.6rem;border:1px solid #bbb;border-radius:8px;font:inherit;box-sizing:border-box}canvas{border:1px solid #888;border-radius:8px;touch-action:none;background:#fff;width:100%;max-width:520px;height:160px}.muted{color:#555;font-size:.92rem}.err{color:#b42318;font-weight:700}`;
 const page = (title, body, script = '') => `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>${esc(title)}</title><link rel="manifest" href="/portal/app.webmanifest"><style>${CSS}</style></head><body><main>${body}</main>${script ? `<script>${script}</script>` : ''}</body></html>`;
-const docHtml = (fields, sample) => `<div class="doc" id="doc">${sample ? `<div class="wm">${esc(SAMPLE_WATERMARK)}</div>` : ''}${renderParagraphs(fields).map(p => `<p>${esc(p)}</p>`).join('')}<p id="doc-end" class="muted">\u2014 End of agreement \u2014</p></div>`;
+export const EHO_SVG = '<svg width="34" height="30" viewBox="0 0 34 30" aria-hidden="true"><path d="M17 1 1 12h4v17h24V12h4z" fill="#000"/><rect x="10" y="15" width="14" height="3" fill="#fff"/><rect x="10" y="21" width="14" height="3" fill="#fff"/></svg>';
+export function paraHtml(p) {
+  if (p.startsWith('[[BOX]]')) return `<p class="fees" style="border:2px solid #000;padding:.5rem;font-weight:800">${esc(p.slice(7))}</p>`;
+  if (p.startsWith('[[EHO]]')) return `<p class="eho" style="display:flex;gap:.5rem;align-items:center;font-weight:800">${EHO_SVG}${esc(p.slice(7))}</p>`;
+  return `<p>${esc(p)}</p>`;
+}
+const docHtml = (fields, sample) => `<div class="doc" id="doc">${sample ? `<div class="wm">${esc(SAMPLE_WATERMARK)}</div>` : ''}${renderParagraphs(fields).map(paraHtml).join('')}<p id="doc-end" class="muted">\u2014 End of agreement \u2014</p></div>`;
 
 // ---------------- staff (HBEUI) ----------------
 async function staffAuth(request, env, opts) {
@@ -218,7 +229,7 @@ async function staffNewForm(env, url) {
   if (b.stage !== 'consultation') return html(page('Not available', `<h1>Not at Consultation</h1><p>The agreement is opened from the Consultation stage.</p>`), 409);
   const approved = await templateApproved(env);
   const f = FIELD_DEFS.map(d => `<label for="${d.key}">${esc(d.label)}</label>` + (d.type === 'select' ? `<select id="${d.key}" name="${d.key}">${d.options.map(o => `<option value="${o[0]}">${esc(o[1])}</option>`).join('')}</select>` : d.type === 'textarea' ? `<textarea id="${d.key}" name="${d.key}" rows="3"></textarea>` : `<input id="${d.key}" name="${d.key}" type="${d.type}" ${d.required ? 'required' : ''}>`)).join('');
-  const body = `<h1>Open the next chapter</h1><p>Exclusive Buyer\u2019s Agency Agreement for <strong>${esc(b.first_name)} ${esc(b.last_name)}</strong>.</p>${approved ? '' : `<div class="sample">${esc(SAMPLE_WATERMARK)} \u2014 template pending counsel approval</div>`}<form id="f" class="card">${f}<p><button class="btn" type="submit">Preview</button></p><p class="err" id="e"></p></form><p class="muted">Before this agreement, give the buyer the Ohio Consumer Guide to Agency Relationships and get its acknowledgement as a separate step (OAC 1301:5-6-05(D)).</p>`;
+  const body = `<h1>Open the next chapter</h1><p>Exclusive Buyer\u2019s Agency Agreement for <strong>${esc(b.first_name)} ${esc(b.last_name)}</strong>.</p>${approved ? '' : `<div class="sample">${esc(SAMPLE_WATERMARK)} \u2014 template pending counsel approval</div>`}<form id="f" class="card">${f}<p><button class="btn" type="submit">Preview</button></p><p class="err" id="e"></p></form><p class="muted">Before this agreement, the buyer receives the Ohio Consumer Guide to Agency Relationships and acknowledges it with a passkey in its own step; the portal enforces this before the agreement can be read or signed.</p>`;
   const js = `document.getElementById('f').onsubmit=async e=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.target));const r=await fetch('/api/hbe/agreements',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({buyer_id:${JSON.stringify(b.id)},fields:d})});const j=await r.json();if(j.ok)location='/hbe/agreements/'+j.id;else document.getElementById('e').textContent='Please check: '+(j.errors||[j.error]).join(', ')}`;
   return html(page('Open the next chapter', body, js));
 }
@@ -411,15 +422,18 @@ async function buyerSignPage(env, session, url) {
   if (!['sent', 'partially_signed'].includes(b.inst.status)) return html(page('Not available', '<h1>Not available for signing</h1>'), 409);
   const body = `<h1>Something to review and sign</h1>${sample ? `<div class="sample">${esc(SAMPLE_WATERMARK)}</div>` : ''}
 <section class="card" id="s1"><h2>1. Electronic records</h2><p>${esc(ERSD_TEXT)}</p><label><input type="checkbox" id="ersd" style="width:auto"> I agree</label><p><button class="btn" id="c1">Continue</button> <a href="/portal/agreements/${esc(id)}/agreement.pdf">Download PDF</a></p></section>
-<section class="card" id="s2" hidden><h2>2. Read the whole agreement</h2><p class="muted">Scroll to the end to continue.</p>${docHtml(b.fields, sample)}
+<section class="card" id="sg" hidden><h2>2. Ohio Consumer Guide to Agency Relationships</h2><p class="muted">This is a separate state guide, not your agreement. Please read it, then confirm you received it.</p><div class="doc" id="guide">${GUIDE_PARAGRAPHS.map(p => `<p>${esc(p)}</p>`).join('')}<p class="muted">\u2014 End of guide \u2014</p></div><p><a href="${GUIDE_PDF_PATH}" target="_blank" rel="noopener" id="gpdf">Open the official guide (PDF)</a></p><p>${esc(GUIDE_ACK_TEXT)}</p><p><button class="btn" id="gack" disabled>Acknowledge receipt with Face ID / passkey</button></p></section>
+<section class="card" id="s2" hidden><h2>3. Read the whole agreement</h2><p class="muted">Scroll to the end to continue.</p>${docHtml(b.fields, sample)}
 <label for="initials">Your initials</label><input id="initials" maxlength="4" autocomplete="off">
-<h2>3. Your signature</h2><label><input type="radio" name="kind" value="typed" checked style="width:auto"> Type</label><label><input type="radio" name="kind" value="drawn" style="width:auto"> Draw</label>
+<h2>4. Your signature</h2><label><input type="radio" name="kind" value="typed" checked style="width:auto"> Type</label><label><input type="radio" name="kind" value="drawn" style="width:auto"> Draw</label>
 <input id="typed" placeholder="Type your full name" autocomplete="off"><canvas id="pad" width="520" height="160" hidden></canvas><p><button type="button" id="clear" hidden>Clear</button></p>
 <p><button class="btn" id="sign" disabled>Sign with Face ID / passkey</button></p><p class="muted">Your device will ask for Face ID, Touch ID or your PIN. This links your signature to this exact document.</p></section><p class="err" id="e"></p>`;
-  const js = `${WEBAUTHN_BROWSER_JS}const id=${JSON.stringify(id)},csrf=${JSON.stringify(csrf)},NOPK=${JSON.stringify(NO_PASSKEY_MESSAGE)};const $=x=>document.getElementById(x),E=t=>$('e').textContent=t;
+  const js = `${WEBAUTHN_BROWSER_JS}const id=${JSON.stringify(id)},csrf=${JSON.stringify(csrf)},NOPK=${JSON.stringify(NO_PASSKEY_MESSAGE)},GACK=${JSON.stringify(!!b.signer.guide_ack_at)};const $=x=>document.getElementById(x),E=t=>$('e').textContent=t;
 const post=(u,b)=>fetch(u,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({csrf,...b})}).then(r=>r.json());
 let scrolled=false,strokes=[],cur=null;
-$('c1').onclick=async()=>{if(!$('ersd').checked)return E('Please agree to electronic records, or contact HBE to sign on paper.');if(!await hbePasskeySupported())return E(NOPK);const j=await post('/api/portal/agreements/'+id+'/consent',{ersd:true});if(!j.ok)return E(j.error);$('s1').hidden=true;$('s2').hidden=false;E('')};
+$('c1').onclick=async()=>{if(!$('ersd').checked)return E('Please agree to electronic records, or contact HBE to sign on paper.');if(!await hbePasskeySupported())return E(NOPK);const j=await post('/api/portal/agreements/'+id+'/consent',{ersd:true});if(!j.ok)return E(j.error);$('s1').hidden=true;if(GACK){$('s2').hidden=false}else{$('sg').hidden=false}E('')};
+let gseen=false;const gd=$('guide');const gok=()=>{$('gack').disabled=!gseen};gd.addEventListener('scroll',async()=>{if(!gseen&&gd.scrollTop+gd.clientHeight>=gd.scrollHeight-8){gseen=true;await post('/api/portal/agreements/'+id+'/guide/viewed',{viewed:true});gok()}});
+$('gack').onclick=async()=>{$('gack').disabled=true;const o=await post('/api/portal/agreements/'+id+'/guide/options',{});if(!o.ok){E(o.error==='no_passkey'?'Set up Face ID / passkey first: /portal/passkey':o.error);return gok()}let cred;try{cred=await hbePasskeyGet(o.publicKey)}catch(x){E('Face ID / passkey check was cancelled.');return gok()}const j=await post('/api/portal/agreements/'+id+'/guide/ack',{challenge_id:o.challenge_id,credential:cred,acknowledge:true});if(!j.ok){E(j.error);return gok()}$('sg').hidden=true;$('s2').hidden=false;E('')};
 const d=$('doc');d.addEventListener('scroll',async()=>{if(!scrolled&&d.scrollTop+d.clientHeight>=d.scrollHeight-8){scrolled=true;await post('/api/portal/agreements/'+id+'/viewed',{scrolled:true});ready()}});
 const ready=()=>{$('sign').disabled=!(scrolled&&$('initials').value.trim().length>=2&&(kind()==='typed'?$('typed').value.trim().length>=2:strokes.length>0))};
 const kind=()=>document.querySelector('input[name=kind]:checked').value;
@@ -445,6 +459,7 @@ export async function buyerConsent(env, session, id, body, request) {
 export async function buyerViewed(env, session, id, body, request) {
   const b = await buyerSigner(env, session, id); if (!b) return { status: 404, error: 'not_found' };
   if (!b.signer.ersd_consent_at) return { status: 409, error: 'consent_first' };
+  if (!b.signer.guide_ack_at) return { status: 409, error: 'consumer_guide_first' };
   if (body.scrolled !== true) return { status: 400, error: 'scroll_required' };
   await db(env).prepare(`UPDATE agreement_signers SET scrolled_at=COALESCE(scrolled_at,?) WHERE id=?`).bind(nowIso(), b.signer.id).run();
   await addEvent(env, id, 'scrolled_to_end', { signerId: b.signer.id, actor: 'buyer', request, docSha: b.inst.doc_sha256 });
@@ -453,12 +468,55 @@ export async function buyerViewed(env, session, id, body, request) {
 export async function buyerSignOptions(env, session, id, url) {
   const b = await buyerSigner(env, session, id); if (!b) return { status: 404, error: 'not_found' };
   if (!['sent', 'partially_signed'].includes(b.inst.status) || b.signer.signed_at) return { status: 409, error: 'not_signable' };
-  if (!b.signer.ersd_consent_at || !b.signer.scrolled_at) return { status: 409, error: 'review_incomplete' };
+  if (!b.signer.ersd_consent_at || !b.signer.guide_ack_at || !b.signer.scrolled_at) return { status: 409, error: 'review_incomplete' };
   const creds = await credentialsFor(env, 'buyer', session.buyer_id);
   if (!creds.length) return { status: 409, error: 'no_passkey', message: NO_PASSKEY_MESSAGE };
   const nonce = randomChallenge(); const challenge = await boundChallenge(b.inst.doc_sha256, b.signer.id, nonce);
   const ch = await newChallenge(env, 'sign', 'buyer', session.buyer_id, b.inst.doc_sha256, challenge);
   return { status: 200, ok: true, challenge_id: ch.id, doc_sha256: b.inst.doc_sha256, publicKey: assertionOptions({ rpId: rp(env, url).rpId, challenge, allowIds: creds.map(c => c.credential_id) }) };
+}
+// ---------------- Ohio Consumer Guide receipt (separate passkey step) ----------------
+export function guidePdfBytes() { return Uint8Array.from(atob(GUIDE_PDF_B64), c => c.charCodeAt(0)); }
+async function guideSigner(env, session, id) {
+  const b = await buyerSigner(env, session, id); if (!b) return { error: { status: 404, error: 'not_found' } };
+  if (!['sent', 'partially_signed'].includes(b.inst.status) || b.signer.signed_at) return { error: { status: 409, error: 'not_signable' } };
+  if (!b.signer.ersd_consent_at) return { error: { status: 409, error: 'consent_first' } };
+  return { b };
+}
+export async function guideViewed(env, session, id, body, request) {
+  const { b, error } = await guideSigner(env, session, id); if (error) return error;
+  if (body.viewed !== true) return { status: 400, error: 'view_required' };
+  await db(env).prepare(`UPDATE agreement_signers SET guide_viewed_at=COALESCE(guide_viewed_at,?) WHERE id=?`).bind(nowIso(), b.signer.id).run();
+  await addEvent(env, id, 'consumer_guide_viewed', { signerId: b.signer.id, actor: 'buyer', request, docSha: GUIDE_PDF_SHA256, detail: { guide: GUIDE_ID, version: GUIDE_VERSION } });
+  return { status: 200, ok: true };
+}
+export async function guideAckOptions(env, session, id, url) {
+  const { b, error } = await guideSigner(env, session, id); if (error) return error;
+  if (!b.signer.guide_viewed_at) return { status: 409, error: 'guide_not_viewed' };
+  if (b.signer.guide_ack_at) return { status: 409, error: 'already_acknowledged' };
+  const creds = await credentialsFor(env, 'buyer', session.buyer_id);
+  if (!creds.length) return { status: 409, error: 'no_passkey', message: NO_PASSKEY_MESSAGE };
+  const challenge = await boundChallenge(GUIDE_PDF_SHA256, b.signer.id, randomChallenge());
+  const ch = await newChallenge(env, 'guide_ack', 'buyer', session.buyer_id, GUIDE_PDF_SHA256, challenge);
+  return { status: 200, ok: true, challenge_id: ch.id, guide_sha256: GUIDE_PDF_SHA256, publicKey: assertionOptions({ rpId: rp(env, url).rpId, challenge, allowIds: creds.map(c => c.credential_id) }) };
+}
+export async function guideAck(env, session, id, body, request, url) {
+  const { b, error } = await guideSigner(env, session, id); if (error) return error;
+  if (!b.signer.guide_viewed_at) return { status: 409, error: 'guide_not_viewed' };
+  if (body.acknowledge !== true) return { status: 400, error: 'acknowledge_required' };
+  const ch = await takeChallenge(env, String(body.challenge_id || ''), 'guide_ack', 'buyer', session.buyer_id);
+  if (!ch) return { status: 400, error: 'challenge_invalid' };
+  if (ch.bound_sha256 !== GUIDE_PDF_SHA256) return { status: 409, error: 'document_changed' };
+  const creds = await credentialsFor(env, 'buyer', session.buyer_id);
+  const cred = creds.find(c => c.credential_id === body.credential?.rawId || c.credential_id === body.credential?.id);
+  if (!cred || !body.credential?.response) return { status: 400, error: 'passkey_required' };
+  try { await useCredential(env, cred, body.credential.response, ch.challenge, rp(env, url)); }
+  catch (e) { await addEvent(env, id, 'passkey_failed', { signerId: b.signer.id, actor: 'buyer', request, detail: { step: 'consumer_guide', reason: e.message } }); return { status: 400, error: 'passkey_failed' }; }
+  const upd = await db(env).prepare(`UPDATE agreement_signers SET guide_version=?, guide_sha256=?, guide_ack_at=?, guide_passkey_credential_id=? WHERE id=? AND guide_ack_at IS NULL`)
+    .bind(GUIDE_VERSION, GUIDE_PDF_SHA256, nowIso(), cred.credential_id, b.signer.id).run();
+  if (!upd?.meta?.changes) return { status: 409, error: 'already_acknowledged' };
+  await addEvent(env, id, 'consumer_guide_acknowledged', { signerId: b.signer.id, actor: 'buyer', request, docSha: GUIDE_PDF_SHA256, detail: { guide: GUIDE_ID, version: GUIDE_VERSION, passkey: cred.credential_id.slice(0, 12), uv: true } });
+  return { status: 200, ok: true };
 }
 function cleanStrokes(v) {
   if (!Array.isArray(v)) return null;
@@ -468,7 +526,7 @@ function cleanStrokes(v) {
 export async function buyerSign(env, session, id, body, request, url, send = sendWebPush) {
   const b = await buyerSigner(env, session, id); if (!b) return { status: 404, error: 'not_found' };
   if (!['sent', 'partially_signed'].includes(b.inst.status) || b.signer.signed_at) return { status: 409, error: 'not_signable' };
-  if (!b.signer.ersd_consent_at || !b.signer.scrolled_at) return { status: 409, error: 'review_incomplete' };
+  if (!b.signer.ersd_consent_at || !b.signer.guide_ack_at || !b.signer.scrolled_at) return { status: 409, error: 'review_incomplete' };
   const initials = String(body.initials || '').trim().slice(0, 4);
   const kind = body.signature_kind === 'drawn' ? 'drawn' : body.signature_kind === 'typed' ? 'typed' : null;
   const text = String(body.signature_text || '').trim().slice(0, 80);
@@ -532,6 +590,7 @@ async function handleBuyer(request, env, url, opts) {
     if (p.endsWith('/options')) return out(await passkeyLoginOptions(env, url));
     if (p.endsWith('/verify')) { const r = await passkeyLoginVerify(env, await readJson(request), url); if (r.status !== 200) return out(r); return new Response(JSON.stringify({ ok: true }), { headers: { 'content-type': 'application/json', 'set-cookie': r.cookie, ...SEC } }); }
   }
+  if (request.method === 'GET' && p === GUIDE_PDF_PATH) return new Response(guidePdfBytes(), { headers: { 'content-type': 'application/pdf', 'content-disposition': 'inline; filename="Ohio-Consumer-Guide-to-Agency-Relationships.pdf"', 'cache-control': 'public, max-age=86400', 'x-content-type-options': 'nosniff' } });
   const session = await buyerSession(request, env);
   if (!session) return request.method === 'GET' ? Response.redirect(new URL('/login', url).toString(), 302) : json({ ok: false, error: 'auth_required' }, 401);
   let m;
@@ -553,9 +612,12 @@ async function handleBuyer(request, env, url, opts) {
       .bind(uid(), session.buyer_id, sub.endpoint, sub.keys.p256dh, sub.keys.auth, nowIso()).run();
     return json({ ok: true });
   }
-  if ((m = p.match(/^\/api\/portal\/agreements\/([0-9a-f-]{36})\/(consent|viewed|sign\/options|sign)$/))) {
+  if ((m = p.match(/^\/api\/portal\/agreements\/([0-9a-f-]{36})\/(consent|viewed|guide\/viewed|guide\/options|guide\/ack|sign\/options|sign)$/))) {
     const [, id, action] = m;
     if (action === 'consent') return out(await buyerConsent(env, session, id, body, request));
+    if (action === 'guide/viewed') return out(await guideViewed(env, session, id, body, request));
+    if (action === 'guide/options') return out(await guideAckOptions(env, session, id, url));
+    if (action === 'guide/ack') return out(await guideAck(env, session, id, body, request, url));
     if (action === 'viewed') return out(await buyerViewed(env, session, id, body, request));
     if (action === 'sign/options') return out(await buyerSignOptions(env, session, id, url));
     return out(await buyerSign(env, session, id, body, request, url, opts.send));
@@ -565,7 +627,7 @@ async function handleBuyer(request, env, url, opts) {
 
 export function isAgreementPath(pathname) {
   return pathname.startsWith('/hbe/agreements') || pathname === '/hbe/passkey' || pathname.startsWith('/api/hbe/agreements') || pathname.startsWith('/api/hbe/passkey/')
-    || pathname.startsWith('/portal/agreements') || pathname === '/portal/passkey' || pathname === '/portal/app.webmanifest' || pathname === '/portal/app-sw.js'
+    || pathname.startsWith('/portal/agreements') || pathname === '/portal/passkey' || pathname === GUIDE_PDF_PATH || pathname === '/portal/app.webmanifest' || pathname === '/portal/app-sw.js'
     || pathname.startsWith('/api/portal/agreements/') || pathname.startsWith('/api/portal/passkey/') || pathname === '/api/portal/push/subscribe';
 }
 

@@ -46,6 +46,19 @@ export function buildPdf(blocks, { watermark = '', footer = '' } = {}) {
     }
     const size = b.size || 9.5; const lh = size * 1.3; const font = b.bold ? 'F2' : 'F1';
     const lines = wrap(b.text, Math.floor(96 * 9.5 / size));
+    if (b.eho) { // Equal Housing Opportunity mark (drawn house + bars) and caption
+      need(34); const x = 54, top = y + 8;
+      ops.push(`0 0 0 rg ${x + 13} ${top} m ${x} ${top - 9} l ${x + 3} ${top - 9} l ${x + 3} ${top - 24} l ${x + 23} ${top - 24} l ${x + 23} ${top - 9} l ${x + 26} ${top - 9} l f`);
+      ops.push(`1 1 1 rg ${x + 7} ${top - 14} 12 2.5 re f ${x + 7} ${top - 19} 12 2.5 re f 0 0 0 rg`);
+      ops.push(`BT /F2 ${size} Tf ${x + 34} ${top - 16} Td (${pdfSafe(b.text)}) Tj ET`);
+      y -= 30; continue;
+    }
+    if (b.box) { // conspicuous boxed statement
+      const bl = wrap(b.text, Math.floor(90 * 9.5 / size)); const h = bl.length * lh + 8;
+      need(h + 6); ops.push(`0 0 0 RG 1.2 w 50 ${(y - h + lh).toFixed(1)} 512 ${h.toFixed(1)} re S`);
+      y -= 2; for (const l of bl) { ops.push(`BT /F2 ${size} Tf 58 ${y} Td (${pdfSafe(l)}) Tj ET`); y -= lh; }
+      y -= 10; continue;
+    }
     for (const l of lines) { need(lh); ops.push(`BT /${font} ${size} Tf 54 ${y} Td (${pdfSafe(l)}) Tj ET`); y -= lh; }
     y -= b.gap ?? 4;
   }
