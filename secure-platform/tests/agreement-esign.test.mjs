@@ -82,7 +82,7 @@ test('end to end SAMPLE: create, send, two buyers sign with passkey, broker coun
   assert.equal(c.status, 200, JSON.stringify(c.body)); assert.equal(c.body.sample, true);
   const id = c.body.id;
   const preview = await call('GET', `/hbe/agreements/${id}`);
-  assert.match(preview.body, /Send SAMPLE for signature/); assert.match(preview.body, /\$350,000/);
+  assert.match(preview.body, /Send SAMPLE/); assert.match(preview.body, /\$350,000/);
   const pdf0 = Buffer.from((await call('GET', `/hbe/agreements/${id}/document.pdf`)).body).toString('latin1');
   assert.match(pdf0, /^%PDF-1\.4/); assert.match(pdf0, /SAMPLE - NOT FOR SIGNATURE/);
 
@@ -265,6 +265,25 @@ test('passkey pages: safe return param, success + return button, no dead ends', 
   assert.match(bu, /href="\/portal\/agreements"/); assert.doesNotMatch(bu, /evil\.example/);
   const id = (await call('POST', '/api/hbe/agreements', { buyer_id: 'buyer-a', fields: FIELDS() })).body.id;
   const pv = (await call('GET', `/hbe/agreements/${id}`)).body;
-  assert.match(pv, /Back to HBE dashboard/); assert.match(pv, /passkey\?return=%2Fhbe%2Fagreements%2F/);
+  assert.match(pv, /HBE dashboard/); assert.match(pv, /passkey\?return=%2Fhbe%2Fagreements%2F/);
   assert.match((await call('GET', '/portal/agreements', null, { cookie: 'tok-buyer-a' })).body, /Back to my portal/);
+});
+
+test('mobile layout: compact summary, action bar, single $ in price, passkey link hidden once set up', async () => {
+  const { renderParagraphs } = await import('../src/agreement-esign.js');
+  const t = renderParagraphs({ price_max: 500000, term_end: '2026-11-30' }).join(' ');
+  assert.match(t, /up to \$500,000\./); assert.doesNotMatch(t, /\$\$/);
+  const { call, db } = await setup();
+  const id = (await call('POST', '/api/hbe/agreements', { buyer_id: 'buyer-a', fields: FIELDS() })).body.id;
+  let pv = (await call('GET', `/hbe/agreements/${id}`)).body;
+  assert.match(pv, /<details class="sum"><summary>/); assert.match(pv, /Draft \u00b7 \d+ signers? waiting/);
+  assert.doesNotMatch(pv, /set on send/); assert.match(pv, /<div class="bar"><button class="btn wide" id="send">/);
+  assert.match(pv, /class="btn2"[^>]*>PDF</); assert.doesNotMatch(pv, /\$\$/);
+  assert.match(pv, /Set up my passkey/);
+  await db.prepare(`INSERT INTO passkey_credentials (id,owner_kind,owner_id,credential_id,public_key_jwk,alg,sign_count,user_handle,device_label,created_at) VALUES ('pk1','staff',?,'cred1','{}',-7,0,'h','t','2026-01-01')`).bind(OWNER).run();
+  await call('POST', `/api/hbe/agreements/${id}/send`, {});
+  pv = (await call('GET', `/hbe/agreements/${id}`)).body;
+  assert.match(pv, /Doc SHA-256: [0-9a-f]{64}/); assert.doesNotMatch(pv, /Set up my passkey/);
+  const bp = (await call('GET', `/portal/agreements?id=${id}`, null, { cookie: 'tok-buyer-a' })).body;
+  assert.match(bp, /<details class="sum">/); assert.match(bp, /<div class="bar"><button class="btn wide" id="sign" disabled/); assert.doesNotMatch(bp, /\$\$/);
 });
