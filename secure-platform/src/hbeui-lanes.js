@@ -421,6 +421,27 @@ export const HBEUI_COMPACT_CSS = `<style id="hbeui-compact-css">
   .hbe-chip-body .panel{margin:0;box-shadow:none;border:0;padding:0}
   .hbe-chip-panel{scroll-margin-top:72px}
   [data-hbe-chip="needs"]{order:1}[data-hbe-chip="stage"]{order:2}[data-hbe-chip="next"]{order:3}[data-hbe-chip="tasks"]{order:4}[data-hbe-chip="notes"]{order:5}[data-hbe-chip="profile"]{order:6}[data-hbe-chip="matters"]{order:7}[data-hbe-chip="story"]{order:8}[data-hbe-chip="journey"]{order:9}[data-hbe-chip="compass"]{order:10}[data-hbe-chip="checklist"]{order:11}[data-hbe-chip="showings"]{order:12}[data-hbe-chip="compensation"]{order:13}[data-hbe-chip="consult"]{order:14}[data-hbe-chip="hire"]{order:15}[data-hbe-chip="search"]{order:16}[data-hbe-chip="pilot"]{order:17}[data-hbe-chip="contact"]{order:18}[data-hbe-chip="stage-map"]{order:19}
+  /* Phone tabs: buyer dropdown, Next card, Next/Story/Notes/Contact + More */
+  .shell.has-selected>.buyer-strip,.hbe-mbar .hbe-mbar-next{display:none!important}
+  .shell.has-selected details.hbe-chip-panel:not([open]){display:none!important}
+  .hbe-buyer-select{display:flex;align-items:center;gap:.5rem;font-size:.8rem;color:#6b6b6b;font-weight:700}
+  .hbe-buyer-select select{flex:1;min-width:0;min-height:40px;padding:.4rem .6rem;border:1px solid #d9d5cd;border-radius:10px;background:#fff;font:600 .95rem system-ui,sans-serif;color:#1a1a2e}
+  .hbe-next-card{background:#1a1a2e;color:#faf9f6;border-radius:12px;padding:.8rem .9rem;display:flex;flex-direction:column;gap:.35rem}
+  .hbe-next-card>small{font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;font-weight:800;opacity:.8}
+  .hbe-next-card>strong{font:600 1.08rem Georgia,serif;line-height:1.3}
+  .hbe-next-card ul{margin:0;padding-left:1.1rem;font-size:.86rem}
+  .hbe-next-card ul a{color:#fff}
+  .hbe-next-card small{opacity:.8}
+  .hbe-next-open{align-self:flex-start;margin-top:.2rem;padding:.55rem 1.2rem;border-radius:999px;background:#c9a84c;color:#1a1a2e;font-weight:800;text-decoration:none;min-height:40px;box-sizing:border-box}
+  .hbe-tabs{display:flex!important;gap:.3rem;align-items:stretch;position:sticky;top:64px;z-index:55;background:rgba(250,249,246,.97);padding:.3rem 0}
+  .hbe-tabs>button,.hbe-more>summary{flex:1;min-height:42px;border:1px solid #d9d5cd;border-radius:10px;background:#fff;font:700 .84rem system-ui,sans-serif;color:#1a1a2e;padding:.3rem .2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.25rem}
+  .hbe-more{flex:1;position:relative;display:flex}
+  .hbe-more>summary{list-style:none;width:100%}
+  .hbe-more>summary::-webkit-details-marker{display:none}
+  .hbe-tabs [aria-current="true"]{background:#1a1a2e;color:#fff;border-color:#1a1a2e}
+  .hbe-more-list{position:absolute;right:0;top:48px;min-width:220px;max-height:70vh;overflow:auto;background:#fff;border:1px solid #e8e5e0;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.14);padding:.35rem;display:flex;flex-direction:column;z-index:70}
+  .hbe-more-list button{text-align:left;min-height:42px;padding:.5rem .75rem;border:0;background:none;border-radius:8px;font:600 .92rem system-ui,sans-serif;color:#1a1a2e;display:flex;gap:.4rem;align-items:center}
+  .hbe-more-list button[aria-current="true"]{background:#f3f1ec}
   .hbe-stage-panel .roadmap{display:grid!important;grid-template-columns:1fr!important;gap:.3rem!important}
   .hbe-stage-panel .roadmap form{margin:0}
   .hbe-stage-panel .roadmap .stage{width:100%;display:flex!important;align-items:center;gap:.6rem;text-align:left;min-height:40px}
@@ -448,8 +469,23 @@ function openOnly(d,scroll){panels().forEach(p=>{if(p!==d)p.open=false});if(d){d
 function targetChip(){const h=decodeURIComponent(location.hash.slice(1));if(h){if(h==='needs-me'||h==='needs-unread')return document.getElementById('chip-needs');if(h.startsWith('stage-'))return document.getElementById('chip-stage');const el=document.getElementById(h);const c=chipFor(el)||(el&&el.matches&&el.matches('details.hbe-chip-panel')?el:null);if(c&&!c.hidden)return c}
  try{const s=sessionStorage.getItem(KEY);const d=s&&document.getElementById(s);if(d)return d}catch{}
  const needs=document.getElementById('chip-needs');if(needs&&needs.dataset.count>0)return needs;return document.getElementById('chip-next')||document.getElementById('chip-tasks')||panels()[0];}
-function apply(){if(mq.matches){fillMenu();mergeStage(true);panels().forEach(p=>p.setAttribute('name','hbe-buyer-panels'));openOnly(targetChip(),!!location.hash)}else{mergeStage(false);panels().forEach(p=>{p.removeAttribute('name');p.open=true})}}
-document.addEventListener('toggle',e=>{const d=e.target;if(!mq.matches||!(d instanceof HTMLDetailsElement)||!d.classList.contains('hbe-chip-panel')||!d.open)return;openOnly(d,false)},true);
+function apply(){if(mq.matches){fillMenu();mergeStage(true);panels().forEach(p=>p.setAttribute('name','hbe-buyer-panels'));openOnly(targetChip(),!!location.hash);buildTabs();markTabs()}else{mergeStage(false);panels().forEach(p=>{p.removeAttribute('name');p.open=true})}}
+const ORDER=['needs','stage','tasks','profile','matters','journey','compass','checklist','showings','compensation','consult','hire','search','pilot'];
+const PRIMARY={next:['next','needs'],story:['story'],notes:['notes'],contact:['contact']};
+function chipLabel(p){const s=p.querySelector(':scope>summary');if(!s)return p.dataset.hbeChip;const l=s.querySelector('.hbe-chip-label'),n=s.querySelector('.hbe-chip-note');return (l?l.textContent:'')+(n?' · '+n.textContent.toUpperCase():'')}
+function buildTabs(){const nav=document.querySelector('.hbe-tabs');if(!nav)return;
+ nav.querySelectorAll('button[data-hbe-tab]').forEach(btn=>{const ids=PRIMARY[btn.dataset.hbeTab];if(!ids.some(id=>{const d=document.getElementById('chip-'+id);return d&&!d.hidden}))btn.hidden=true});
+ const list=nav.querySelector('.hbe-more-list');if(!list||list.dataset.filled)return;const prim=new Set(Object.values(PRIMARY).map(a=>a[0]));
+ panels().filter(p=>!p.hidden&&!prim.has(p.dataset.hbeChip)).sort((a,b)=>ORDER.indexOf(a.dataset.hbeChip)-ORDER.indexOf(b.dataset.hbeChip)).forEach(p=>{const b=document.createElement('button');b.type='button';b.setAttribute('role','menuitem');b.dataset.hbeOpen=p.id;b.textContent=chipLabel(p);list.appendChild(b)});list.dataset.filled='1'}
+function markTabs(){const nav=document.querySelector('.hbe-tabs');if(!nav)return;const open=panels().find(p=>p.open);const id=open?open.dataset.hbeChip:'';const t=Object.keys(PRIMARY).find(k=>PRIMARY[k].includes(id))||'more';
+ nav.querySelectorAll('[data-hbe-tab]').forEach(el=>el.setAttribute('aria-current',String(!!open&&el.dataset.hbeTab===t)));nav.querySelectorAll('[data-hbe-open]').forEach(el=>el.setAttribute('aria-current',String(!!open&&el.dataset.hbeOpen===open.id)))}
+document.addEventListener('click',e=>{if(!mq.matches||!e.target.closest)return;const tab=e.target.closest('button[data-hbe-tab]');const more=e.target.closest('button[data-hbe-open]');let d=null;
+ if(tab){d=PRIMARY[tab.dataset.hbeTab].map(id=>document.getElementById('chip-'+id)).find(x=>x&&!x.hidden)}else if(more){d=document.getElementById(more.dataset.hbeOpen);const m=more.closest('details.hbe-more');if(m)m.open=false}
+ if(d){openOnly(d,false);markTabs();requestAnimationFrame(()=>{const n=document.querySelector('.hbe-tabs');window.scrollTo({top:Math.max(0,(n?n.getBoundingClientRect().top+scrollY-8:0)),behavior:'smooth'})})}});
+document.addEventListener('change',e=>{const s=e.target;if(!s.matches||!s.matches('select[data-hbe-buyer-select]'))return;const v=s.value;if(/^\\/hbe\\?buyer=[^#]*$/.test(v))location.assign(v)});
+document.addEventListener('toggle',()=>{if(mq.matches)markTabs()},true);
+let userAt=0;['pointerdown','keydown'].forEach(t=>document.addEventListener(t,()=>{userAt=Date.now()},true));
+document.addEventListener('toggle',e=>{const d=e.target;if(Date.now()-userAt>2000)return;if(!mq.matches||!(d instanceof HTMLDetailsElement)||!d.classList.contains('hbe-chip-panel')||!d.open)return;openOnly(d,false)},true);
 document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a[href^="#"]');if(!a||!mq.matches)return;const el=document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));const c=chipFor(el)||(a.getAttribute('href').startsWith('#stage-')?document.getElementById('chip-stage'):null);if(c){openOnly(c,false);requestAnimationFrame(()=>(el||c).scrollIntoView({block:'start'}))}});
 document.addEventListener('submit',e=>{const f=e.target;if(!mq.matches||!f.closest||!f.closest('.roadmap'))return;const c=f.closest('details.hbe-chip-panel');if(c)try{sessionStorage.setItem(KEY,c.id)}catch{}const label=f.dataset.stageLabel||'this stage';if(!confirm('Set current stage to '+label+'? This updates the whole household.'))e.preventDefault()},true);
 document.addEventListener('submit',e=>{if(!mq.matches)return;const c=e.target.closest&&e.target.closest('details.hbe-chip-panel');if(c)try{sessionStorage.setItem(KEY,c.id)}catch{}});

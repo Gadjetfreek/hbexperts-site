@@ -151,6 +151,7 @@ function dashboardHtml(buyers, selected, tasks, notes, notifications) {
   <header class="site-header"><div class="header-inner"><a class="brand" href="https://hbexperts.com/">HomeBuyer Experts</a><div class="header-actions"><a href="/" target="_blank" rel="noopener">Buyer Journey</a><span>HBE Workspace</span></div></div></header>
   <main class="shell${selected ? ' has-selected' : ''}">
     ${selected ? mobileBar(selected, nextUsefulAction(buyers, tasks)) : ''}
+    ${selected ? mobileNav(selected, buyers, nextUsefulAction(buyers, tasks), tasks.filter(t => t.buyer_id === selected.id), notifications.filter(n => n.buyer_id === selected.id)) : ''}
     <section class="top"><div><div class="eyebrow">HBE WORKSPACE</div><h1>What needs our attention?</h1><p>One shared buyer journey. HBE sees the work; buyers see the parts that help them choose wisely.</p></div>${priorityBubble(buyers, tasks)}</section>
     <section class="buyer-strip" aria-label="Active buyers">${cards || '<div class="empty">No submitted buyers yet.</div>'}</section>
     ${selected ? selectedBuyer(selected, tasks.filter(t => t.buyer_id === selected.id), notes.filter(n => n.buyer_id === selected.id), notifications.filter(n => n.buyer_id === selected.id)) : '<section class="empty main-empty">A submitted Buyer Experience will appear here.</section>'}
@@ -210,6 +211,24 @@ function selectedBuyer(b, tasks, notes, notifications) {
     ${laneBandHtml({ lane: LANE.HBE, title: 'HBE workspace', subtitle: 'Tasks, notes, stage controls, research, and internal ops.', body: hbeBody, id: 'lane-hbe' })}
     </div>
   </section>`;
+}
+
+/**
+ * Phone-only navigation (<=720px): buyer dropdown, one "Next" card, and four
+ * tabs (Next, Story, Notes, Contact) + More. Tabs only open existing chips;
+ * nothing is removed. Desktop hides all of this (.hbe-mobile-only).
+ */
+function mobileNav(b, buyers, action, tasks, notifications) {
+  const options = buyers.map(x => `<option value="/hbe?buyer=${esc(encodeURIComponent(x.id))}"${x.id === b.id ? ' selected' : ''}>${esc(x.first_name)} ${esc(String(x.last_name || '').slice(0, 1))}${x.last_name ? '.' : ''} · ${esc(stageLabel(x.stage))}</option>`).join('');
+  const select = `<label class="hbe-buyer-select hbe-mobile-only"><span>Buyer</span><select data-hbe-buyer-select aria-label="Switch buyer">${options}</select></label>`;
+  const attention = classifyAttentionItems({ tasks, notifications });
+  const own = action && action.buyerId === b.id ? action : null;
+  const items = attention.slice(0, 3).filter((i, n) => !(n === 0 && !own) && i.title !== (own && own.title)).map(i => `<li><a href="${esc(i.href)}">${esc(i.title)}</a> <small>${esc(i.detail || '')}</small></li>`).join('');
+  const href = own ? nextActionHref(own) : attention[0] ? attention[0].href : '#chip-next';
+  const title = own ? own.title : attention[0] ? attention[0].title : 'See what’s next for this buyer';
+  const card = `<section class="hbe-next-card hbe-mobile-only" id="hbe-next-card" aria-label="What HBE owes this buyer next"><small>Next for HBE</small><strong>${esc(title)}</strong>${items ? `<ul>${items}</ul>` : ''}<a class="hbe-next-open" href="${esc(href)}"${own ? ` data-hbe-target="${esc(own.target)}"` : ''}>Open</a></section>`;
+  const tabs = `<nav class="hbe-tabs hbe-mobile-only" aria-label="Buyer sections"><button type="button" data-hbe-tab="next">Next${attention.length ? ` <span class="hbe-chip-badge hbe-chip-badge--alert">${attention.length}</span>` : ''}</button><button type="button" data-hbe-tab="story">Story</button><button type="button" data-hbe-tab="notes">Notes</button><button type="button" data-hbe-tab="contact">Contact</button><details class="hbe-more"><summary data-hbe-tab="more">More ▾</summary><div class="hbe-more-list" role="menu"></div></details></nav>`;
+  return `${select}${card}${tabs}`;
 }
 
 /** Phone-only sticky header: who, Stage N of 17, next action, ☰ menu. */
