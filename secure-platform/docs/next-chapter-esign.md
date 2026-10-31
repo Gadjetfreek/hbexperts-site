@@ -201,3 +201,14 @@ Decisions added: (8) approve adding the Google IdP to Access (policy unchanged) 
 - Cloudflare Access app "HBE STAGING buyer platform /hbe" covers `/hbe`, `/hbe/*`, `/api/hbe*`, using the same reusable "HBE admin only" policy as production (attached by reference, not modified).
 - Data: synthetic only. Test Buyer A / Test Buyer B (`test.buyer.a@example.com`, `test.buyer.b@example.com`) share case `stg-case-1` at stage `consultation`. Access codes are kept out of git.
 - Deploy: `CLOUDFLARE_API_TOKEN=... npx wrangler deploy -c wrangler.staging.toml`
+
+## One signing session (Oct 30 decision)
+
+Sebastian decided the Consumer Guide and the agreement can be signed together. The buyer flow is:
+1. E-records consent.
+2. One page: the Ohio Consumer Guide first (scroll to its end, tick the receipt box), then the agreement (scroll to its end, initials, signature).
+3. ONE Face ID / passkey assertion. Its challenge is bound to `sha256("hbe-bundle-v1|consumer_guide:<guide PDF sha>|agreement:<doc sha>")`. The guide receipt (`guide_acknowledge: true`) and the signature arrive in the same `/sign` submission.
+
+The audit trail still records `consumer_guide_viewed` and `consumer_guide_acknowledged` (guide hash) separately from `buyer_signed` (agreement hash), and both carry the same `bundle_sha256`. The certificate lists the guide hash and each buyer's receipt time. The separate `/guide/options` and `/guide/ack` endpoints are removed.
+
+Staff create fix: `POST /api/hbe/agreements` returned `{id}` without `ok:true`, so the page showed an empty "Please check:" even though the draft had been created. Fixed, and the form now names invalid fields in their labels, highlights and scrolls to them, and states the HTTP status for non-JSON or sign-in errors. `/hbe/agreements/new` accepts `?buyer=` or `?buyer_id=`.
