@@ -463,7 +463,7 @@ async function injectAppCount(res, env) {
   let counts;
   try { counts = await leadCounts(env); } catch { return res; }
   const text = await res.text();
-  const banner = `<section class="card" style="border-left:5px solid ${counts.unacknowledged ? '#8a1c12' : '#2d5a3d'}"><strong style="font-size:1.15rem">Unacknowledged leads: ${counts.unacknowledged}</strong>${counts.alertDelayed ? `<br><strong style="color:#8a1c12">Alert delayed: ${counts.alertDelayed}</strong>` : ''}<br><a href="/hbe#lead-response">Review leads in HBEUI</a></section>`;
+  const banner = `<section class="card" style="border-left:5px solid ${counts.unacknowledged ? '#8a1c12' : '#2d5a3d'}"><strong style="font-size:1.15rem">Leads not yet seen: ${counts.unacknowledged}</strong>${counts.alertDelayed ? `<br><strong style="color:#8a1c12">Alerts late: ${counts.alertDelayed}</strong>` : ''}<br><a href="/hbe#lead-response">Review new leads</a></section>`;
   const out = text.includes('<main>') ? text.replace('<main>', `<main>${banner}`) : text;
   return new Response(out, { status: res.status, headers: res.headers });
 }

@@ -175,12 +175,13 @@ test('lead actions are owner-only and CSRF-protected', async () => {
 test('lead panel shows unacknowledged count, delayed marker and default assignee', () => {
   const now = Date.parse('2026-01-01T12:00:00Z');
   const html = leadPanelHtml([{ buyer_id: 'synthetic-buyer', first_name: 'Test', last_name: 'Buyer', submitted_at: '2026-01-01T11:00:00Z', alert_status: 'failed', alert_created_at: '2026-01-01T11:00:00Z', last_error: 'SEND_FAILED' }], { unacknowledged: 1, alertDelayed: 1 }, 'tok', {}, now);
-  assert.match(html, /Unacknowledged leads: 1/);
-  assert.match(html, /Alert delayed 60m/);
-  assert.match(html, /Last error: SEND_FAILED/);
+  assert.match(html, /Not yet seen: 1/);
+  assert.match(html, /Alert 60 min late/);
+  assert.match(html, /Alert email couldn\u2019t send\. The email service turned it down/); assert.doesNotMatch(html, />SEND_FAILED</);
+  assert.match(html, /Next: review this lead, then reach out\./); assert.match(html, /I\u2019ve seen it/); assert.match(html, /I\u2019ve reached out/); assert.match(html, /<summary>Change owner<\/summary>/);
   assert.match(html, /value="cwhitehead@hbexperts\.com"/);
   assert.match(html, /name="csrf" value="tok"/);
-  assert.match(unacknowledgedBanner({ unacknowledged: 0, alertDelayed: 0 }), /Unacknowledged leads: 0/);
+  assert.match(unacknowledgedBanner({ unacknowledged: 0, alertDelayed: 0 }), /Not yet seen: 0/);
 });
 
 // ---------- fix 4: intake guard ----------
@@ -273,6 +274,13 @@ test('lead panel refresh route is owner-only and returns fresh HTML and counts',
   res = await handleLeadAction(mk(), env, new URL(`${ORIGIN}/api/hbe/lead/panel`), asOwner);
   assert.equal(res.status, 200);
   const d = await res.json();
-  assert.equal(d.ok, true); assert.match(d.html, /id="lead-response"/); assert.match(d.html, /Unacknowledged leads:/);
+  assert.equal(d.ok, true); assert.match(d.html, /id="lead-response"/); assert.match(d.html, /Not yet seen:/);
   assert.match(d.html, new RegExp(await mutationCsrfToken('synthetic.jwt.token')));
+});
+
+test('alert error codes are shown in plain words with what to do', async () => {
+  const { alertErrorText } = await import('../src/lead-response.js');
+  assert.match(alertErrorText('EMAIL_BINDING_MISSING'), /^Alert email couldn\u2019t send\. Email sending isn\u2019t set up/);
+  assert.match(alertErrorText('SOMETHING_NEW'), /^Alert email couldn\u2019t send\. Reach out to the buyer yourself/);
+  assert.equal(alertErrorText(''), '');
 });

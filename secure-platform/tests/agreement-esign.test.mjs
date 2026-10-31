@@ -287,3 +287,19 @@ test('mobile layout: compact summary, action bar, single $ in price, passkey lin
   const bp = (await call('GET', `/portal/agreements?id=${id}`, null, { cookie: 'tok-buyer-a' })).body;
   assert.match(bp, /<details class="sum">/); assert.match(bp, /<div class="bar"><button class="btn wide" id="sign" disabled/); assert.doesNotMatch(bp, /\$\$/);
 });
+
+test('hire-us path: plain step labels on form and preview', async () => {
+  const { call } = await setup();
+  const f = (await call('GET', '/hbe/agreements/new?buyer=buyer-a')).body;
+  assert.match(f, /<b>1 Fill in<\/b> \u2192 2 Preview \u2192 3 Send to sign/); assert.match(f, />Preview agreement</);
+  const id = (await call('POST', '/api/hbe/agreements', { buyer_id: 'buyer-a', fields: FIELDS() })).body.id;
+  assert.match((await call('GET', `/hbe/agreements/${id}`)).body, /<b>2 Preview<\/b>/);
+  await call('POST', `/api/hbe/agreements/${id}/send`, {});
+  assert.match((await call('GET', `/hbe/agreements/${id}`)).body, /<b>3 Sent<\/b>/);
+});
+
+test('case card: one clear hire-us button to the agreement form at Consultation', async () => {
+  const src = (await import('node:fs')).readFileSync(new URL('../src/hbe-worker.js', import.meta.url), 'utf8');
+  assert.equal(src.split('They\u2019re hiring us: open the next chapter').length - 1, 1);
+  assert.match(src, /b\.stage === 'consultation' \? `<section class="next-chapter" id="open-next-chapter"><a class="btn hire-btn" href="\/hbe\/agreements\/new\?buyer=\$\{encodeURIComponent\(b\.id\)\}">/);
+});
