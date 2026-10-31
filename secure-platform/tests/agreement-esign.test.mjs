@@ -246,3 +246,25 @@ test('template v6 carries the Ohio 4735.55 statements', () => {
   assert.match(t, /Blockbusting is illegal and defined as/); assert.match(t, /42 U\.S\.C\.A\. 3601, as amended/);
   assert.match(t, /\[\[EHO\]\]EQUAL HOUSING OPPORTUNITY/);
 });
+
+test('passkey pages: safe return param, success + return button, no dead ends', async () => {
+  const { safeReturn, passkeyLink } = await import('../src/agreement-esign.js');
+  for (const bad of ['https://evil.example/x', '//evil.example', '/\\evil.example', 'javascript:alert(1)', '/portal/x', '/hbe/passkey', '', '/hbe\n/x'])
+    assert.equal(safeReturn(bad, 'staff'), '/hbe', bad);
+  assert.equal(safeReturn('/hbe/agreements/abc', 'staff'), '/hbe/agreements/abc');
+  assert.equal(safeReturn('/portal/agreements?id=1', 'buyer'), '/portal/agreements?id=1');
+  assert.equal(safeReturn('/hbe/agreements/abc', 'buyer'), '/portal/agreements');
+  assert.equal(safeReturn('https://evil.example', 'buyer'), '/portal/agreements');
+  assert.match(passkeyLink('staff', '/hbe/agreements/a'), /^\/hbe\/passkey\?return=%2Fhbe%2Fagreements%2Fa$/);
+  const { call } = await setup();
+  const st = (await call('GET', '/hbe/passkey?return=%2F%2Fevil.example')).body;
+  assert.match(st, /href="\/hbe">\u2190 Back/); assert.doesNotMatch(st, /evil\.example/); assert.match(st, /Face ID is set up\./);
+  const st2 = (await call('GET', '/hbe/passkey?return=%2Fhbe%2Fagreements%2Fabc')).body;
+  assert.match(st2, /href="\/hbe\/agreements\/abc"/); assert.match(st2, /Return to the agreement/);
+  const bu = (await call('GET', '/portal/passkey?return=https%3A%2F%2Fevil.example', null, { cookie: 'tok-buyer-a' })).body;
+  assert.match(bu, /href="\/portal\/agreements"/); assert.doesNotMatch(bu, /evil\.example/);
+  const id = (await call('POST', '/api/hbe/agreements', { buyer_id: 'buyer-a', fields: FIELDS() })).body.id;
+  const pv = (await call('GET', `/hbe/agreements/${id}`)).body;
+  assert.match(pv, /Back to HBE dashboard/); assert.match(pv, /passkey\?return=%2Fhbe%2Fagreements%2F/);
+  assert.match((await call('GET', '/portal/agreements', null, { cookie: 'tok-buyer-a' })).body, /Back to my portal/);
+});

@@ -233,7 +233,7 @@ async function staffNewForm(env, url) {
   if (b.stage !== 'consultation') return html(page('Not available', `<h1>Not at Consultation</h1><p>The agreement is opened from the Consultation stage.</p>`), 409);
   const approved = await templateApproved(env);
   const f = FIELD_DEFS.map(d => `<label for="${d.key}" data-k="${d.key}">${esc(d.label)}</label>` + (d.type === 'select' ? `<select id="${d.key}" name="${d.key}">${d.options.map(o => `<option value="${o[0]}">${esc(o[1])}</option>`).join('')}</select>` : d.type === 'textarea' ? `<textarea id="${d.key}" name="${d.key}" rows="3"></textarea>` : `<input id="${d.key}" name="${d.key}" type="${d.type}" ${d.required ? 'required' : ''}>`)).join('');
-  const body = `<h1>Open the next chapter</h1><p>Exclusive Buyer\u2019s Agency Agreement for <strong>${esc(b.first_name)} ${esc(b.last_name)}</strong>.</p>${approved ? '' : `<div class="sample">${esc(SAMPLE_WATERMARK)} \u2014 template pending counsel approval</div>`}<form id="f" class="card">${f}<p><button class="btn" type="submit">Preview</button></p><p class="err" id="e"></p></form><p class="muted">The buyer signs in one session: e-records consent, then the Ohio Consumer Guide (receipt) and this agreement, confirmed with one Face ID / passkey check covering both documents.</p>`;
+  const body = `<p><a href="/hbe">\u2190 Back to HBE dashboard</a></p><h1>Open the next chapter</h1><p>Exclusive Buyer\u2019s Agency Agreement for <strong>${esc(b.first_name)} ${esc(b.last_name)}</strong>.</p>${approved ? '' : `<div class="sample">${esc(SAMPLE_WATERMARK)} \u2014 template pending counsel approval</div>`}<form id="f" class="card">${f}<p><button class="btn" type="submit">Preview</button></p><p class="err" id="e"></p></form><p class="muted">The buyer signs in one session: e-records consent, then the Ohio Consumer Guide (receipt) and this agreement, confirmed with one Face ID / passkey check covering both documents.</p>`;
   const js = `const LBL=${JSON.stringify(Object.fromEntries(FIELD_DEFS.map(d => [d.key, d.label])))},MSG={buyer_not_found:'This buyer was not found.',not_consultation_stage:'This buyer is not at the Consultation stage.',bad_origin:'The request was blocked as not coming from this page. Reload the page and try again.',auth_required:'Your HBE sign-in expired. Reload the page to sign in again.'},FIX={term_end:'pick a date after today',price_max:'enter a whole dollar amount, e.g. 500000',retainer_option:'choose an option'};
 const F=document.getElementById('f'),E=document.getElementById('e');
 const say=(t,keys)=>{E.textContent=t;F.querySelectorAll('.bad').forEach(x=>x.classList.remove('bad'));F.querySelectorAll('label[data-k]').forEach(l=>l.textContent=LBL[l.dataset.k]);(keys||[]).forEach(k=>{const i=document.getElementById(k),l=F.querySelector('label[data-k="'+k+'"]');if(i){i.classList.add('bad');i.setAttribute('aria-invalid','true')}if(l)l.textContent=LBL[k]+' \u2014 please check: '+(FIX[k]||'required')});const first=(keys||[]).map(k=>document.getElementById(k)).find(Boolean);(first||E).scrollIntoView({behavior:'smooth',block:'center'});if(first)first.focus({preventScroll:true})};
@@ -291,15 +291,16 @@ export async function sendAgreement(env, professional, id, request, send = sendW
   return { status: 200, ok: true, sample: Number(b.inst.is_sample) === 1, doc_sha256: sha, pushed };
 }
 
+const STAFF_NEXT = { draft: 'Next: review the preview above, then Send for signature.', sent: 'Sent. Next: the buyer(s) review and sign in their portal; this page updates when they do.', buyers_signed: 'All buyers signed. Next: Countersign as broker.', executed: 'Fully executed. The signed PDF and certificate are final.' };
 async function staffView(env, id) {
   const b = await loadInstance(env, id); if (!b) return html(page('Not found', '<h1>Not found</h1>'), 404);
   const sample = Number(b.inst.is_sample) === 1;
   const rows = b.signers.map(s => `<li>${esc(signerName(s))}: ${s.signed_at ? 'signed ' + esc(s.signed_at) : s.ersd_consent_at ? 'reviewing' : 'waiting'}</li>`).join('');
   const canCounter = b.inst.status === 'buyers_signed';
-  const body = `<h1>Agreement ${esc(b.inst.status)}</h1>${sample ? `<div class="sample">${esc(SAMPLE_WATERMARK)}</div>` : ''}<div class="card"><ul>${rows}</ul><p class="muted">Doc SHA-256: ${esc(b.inst.doc_sha256 || '(set on send)')}</p></div>${docHtml(b.fields, sample)}<p>${b.inst.status === 'draft' ? `<button class="btn" id="send">${sample ? 'Send SAMPLE for signature' : 'Send for signature'}</button>` : ''} ${canCounter ? '<button class="btn" id="cs">Countersign as broker</button>' : ''} <a class="btn" href="/hbe/agreements/${esc(id)}/document.pdf">PDF</a> <a href="/hbe/passkey">Set up my passkey</a></p><p class="err" id="e"></p>`;
+  const body = `<h1>Agreement ${esc(b.inst.status)}</h1>${sample ? `<div class="sample">${esc(SAMPLE_WATERMARK)}</div>` : ''}<div class="card"><ul>${rows}</ul><p class="muted">Doc SHA-256: ${esc(b.inst.doc_sha256 || '(set on send)')}</p></div>${docHtml(b.fields, sample)}<p>${b.inst.status === 'draft' ? `<button class="btn" id="send">${sample ? 'Send SAMPLE for signature' : 'Send for signature'}</button>` : ''} ${canCounter ? '<button class="btn" id="cs">Countersign as broker</button>' : ''} <a class="btn" href="/hbe/agreements/${esc(id)}/document.pdf">PDF</a> <a href="${esc(passkeyLink('staff', '/hbe/agreements/' + id))}">Set up my passkey</a></p><p class="err" id="e"></p><p class="muted">${esc(STAFF_NEXT[b.inst.status] || '')}</p><p><a class="btn" href="/hbe">Back to HBE dashboard</a> <a href="/hbe/agreements/new?buyer=${esc(b.inst.primary_buyer_id || '')}">New agreement for this buyer</a></p>`;
   const js = `${WEBAUTHN_BROWSER_JS}const id=${JSON.stringify(id)};const post=(u,b)=>fetch(u,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(b||{})}).then(r=>r.json());const E=t=>document.getElementById('e').textContent=t;
 const s=document.getElementById('send');if(s)s.onclick=async()=>{const j=await post('/api/hbe/agreements/'+id+'/send');j.ok?location.reload():E(j.error)};
-const c=document.getElementById('cs');if(c)c.onclick=async()=>{const o=await post('/api/hbe/agreements/'+id+'/countersign/options');if(!o.ok)return E(o.error);let cred=null;if(o.publicKey){try{cred=await hbePasskeyGet(o.publicKey)}catch(x){return E('Passkey cancelled')}}const sig=prompt('Type your full name to countersign');if(!sig)return;const j=await post('/api/hbe/agreements/'+id+'/countersign',{challenge_id:o.challenge_id,credential:cred,signature_text:sig,consent:true});j.ok?location.reload():E(j.error)};`;
+const c=document.getElementById('cs');if(c)c.onclick=async()=>{const o=await post('/api/hbe/agreements/'+id+'/countersign/options');if(!o.ok)return E((o.error==='no_passkey'?'Set up your passkey first (link above), then come back here.':o.error));let cred=null;if(o.publicKey){try{cred=await hbePasskeyGet(o.publicKey)}catch(x){return E('Passkey cancelled')}}const sig=prompt('Type your full name to countersign');if(!sig)return;const j=await post('/api/hbe/agreements/'+id+'/countersign',{challenge_id:o.challenge_id,credential:cred,signature_text:sig,consent:true});j.ok?location.reload():E(j.error)};`;
   return html(page('Agreement', body, js));
 }
 
@@ -364,10 +365,30 @@ async function pdfResponse(env, b) {
   return new Response(agreementPdf(b), { headers: { 'content-type': 'application/pdf', ...SEC } });
 }
 
-function passkeyPage(kind) {
+// Only same-origin relative paths inside the caller's own area; absolute, protocol-relative,
+// backslash and control-character values are rejected and replaced by the default.
+export function safeReturn(raw, kind) {
+  const def = kind === 'staff' ? '/hbe' : '/portal/agreements';
+  const v = String(raw || '');
+  if (!v || v.length > 300 || !v.startsWith('/') || v.startsWith('//') || /[\\\u0000-\u001f\u007f]/.test(v)) return def;
+  let u; try { u = new URL(v, 'https://x.invalid'); } catch { return def; }
+  if (u.origin !== 'https://x.invalid') return def;
+  const area = kind === 'staff' ? /^\/hbe(\/|$)/ : /^\/portal(\/|$)/;
+  if (!area.test(u.pathname) || /passkey/.test(u.pathname)) return def;
+  return u.pathname + u.search;
+}
+export function passkeyLink(kind, ret) { return `/${kind === 'staff' ? 'hbe' : 'portal'}/passkey?return=${encodeURIComponent(ret)}`; }
+
+async function passkeyPage(env, kind, ownerId, url) {
+  const ret = safeReturn(url.searchParams.get('return'), kind);
+  const label = kind === 'staff' ? (ret === '/hbe' ? 'Return to HBE dashboard' : 'Return to the agreement') : (ret.startsWith('/portal/agreements') ? 'Return to my agreement' : 'Return to my portal');
+  const has = (await credentialsFor(env, kind, ownerId)).length > 0;
   const base = kind === 'staff' ? '/api/hbe/passkey' : '/api/portal/passkey';
-  const body = `<h1>Set up Face ID / passkey</h1><p>Use Face ID, Touch ID or your device PIN to sign in and to sign agreements.</p><p><button class="btn" id="go">Set up passkey</button></p><p id="m" class="muted"></p>`;
-  const js = `${WEBAUTHN_BROWSER_JS}const csrf=${kind === 'staff' ? "''" : "document.cookie&&''"};document.getElementById('go').onclick=async()=>{const M=t=>document.getElementById('m').textContent=t;if(!await hbePasskeySupported())return M(${JSON.stringify(NO_PASSKEY_MESSAGE)});const t=window.__csrf||'';const o=await fetch('${base}/register/options',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({csrf:t})}).then(r=>r.json());if(!o.ok)return M(o.error);try{const c=await hbePasskeyCreate(o.publicKey);const j=await fetch('${base}/register/verify',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({csrf:t,challenge_id:o.challenge_id,credential:c,label:navigator.platform||''})}).then(r=>r.json());M(j.ok?'Passkey saved.':j.error)}catch(e){M('Cancelled.')}}`;
+  const back = `<a class="btn" id="ret" href="${esc(ret)}">${esc(label)}</a>`;
+  const body = `<p><a href="${esc(ret)}">\u2190 Back</a></p><h1>Set up Face ID / passkey</h1>`
+    + `<div id="done" class="card"${has ? '' : ' hidden'}><p><strong>${has ? 'Face ID / passkey is already set up on your account.' : 'Face ID is set up.'}</strong></p><p>${back}</p>${has ? '<p class="muted">Setting one up on another device? Use the button below.</p>' : ''}</div>`
+    + `<div id="setup"><p>Use Face ID, Touch ID or your device PIN to sign in and to sign agreements.</p><p><button class="btn" id="go">${has ? 'Add a passkey on this device' : 'Set up passkey'}</button></p></div><p id="m" class="muted"></p>`;
+  const js = `${WEBAUTHN_BROWSER_JS}document.getElementById('go').onclick=async()=>{const M=t=>document.getElementById('m').textContent=t;if(!await hbePasskeySupported())return M(${JSON.stringify(NO_PASSKEY_MESSAGE)});const t=window.__csrf||'';const o=await fetch('${base}/register/options',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify({csrf:t})}).then(r=>r.json()).catch(()=>({error:'Could not reach the server. Please reload.'}));if(!o.ok)return M(o.error);try{const c=await hbePasskeyCreate(o.publicKey);const j=await fetch('${base}/register/verify',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify({csrf:t,challenge_id:o.challenge_id,credential:c,label:navigator.platform||''})}).then(r=>r.json()).catch(()=>({error:'Could not reach the server. Please reload.'}));if(j.ok){const d=document.getElementById('done');d.innerHTML='<p><strong>Face ID is set up.</strong></p><p>'+${JSON.stringify(back)}+'</p>';d.hidden=false;document.getElementById('setup').hidden=true;M('');document.getElementById('ret').focus();d.scrollIntoView()}else M(j.error)}catch(e){M('Cancelled.')}}`;
   return { body, js };
 }
 
@@ -390,7 +411,7 @@ async function handleStaff(request, env, url, opts) {
   const pro = await staffAuth(request, env, opts); if (pro.response) return pro.response;
   const out = r => json(r.status === 200 ? r : { ok: false, ...r }, r.status);
   if (request.method === 'GET' && p === '/hbe/agreements/new') return staffNewForm(env, url);
-  if (request.method === 'GET' && p === '/hbe/passkey') { const { body, js } = passkeyPage('staff'); return html(page('Passkey', body, js)); }
+  if (request.method === 'GET' && p === '/hbe/passkey') { const { body, js } = await passkeyPage(env, 'staff', pro.email, url); return html(page('Passkey', body, js)); }
   let m;
   if (request.method === 'GET' && (m = p.match(/^\/hbe\/agreements\/([0-9a-f-]{36})$/))) return staffView(env, m[1]);
   if (request.method === 'GET' && (m = p.match(/^\/hbe\/agreements\/([0-9a-f-]{36})\/document\.pdf$/))) { const b = await loadInstance(env, m[1]); return b ? pdfResponse(env, b) : json({ ok: false }, 404); }
@@ -428,14 +449,14 @@ async function buyerSignPage(env, session, url) {
   const id = url.searchParams.get('id');
   if (!id) {
     const list = (await db(env).prepare(`SELECT i.id, i.status, i.is_sample, s.signed_at FROM agreement_signers s JOIN agreement_instances i ON i.id=s.instance_id WHERE s.buyer_id=? AND i.status<>'draft' ORDER BY i.created_at DESC`).bind(session.buyer_id).all()).results || [];
-    return html(page('Agreements', `<h1>Your agreements</h1>${list.map(a => `<div class="card">${Number(a.is_sample) ? '<strong>SAMPLE</strong> ' : ''}Status: ${esc(a.status)} ${a.status === 'executed' ? `<a href="/portal/agreements/${esc(a.id)}/certificate">Certificate</a> \u00b7 <a href="/portal/agreements/${esc(a.id)}/agreement.pdf">PDF</a>` : a.signed_at ? 'You signed.' : `<a class="btn" href="/portal/agreements?id=${esc(a.id)}">Review and sign</a>`}</div>`).join('') || '<p>Nothing to sign right now.</p>'}<p><a href="/portal/passkey">Set up Face ID / passkey</a></p>`));
+    return html(page('Agreements', `<h1>Your agreements</h1>${list.map(a => `<div class="card">${Number(a.is_sample) ? '<strong>SAMPLE</strong> ' : ''}Status: ${esc(a.status)} ${a.status === 'executed' ? `<a href="/portal/agreements/${esc(a.id)}/certificate">Certificate</a> \u00b7 <a href="/portal/agreements/${esc(a.id)}/agreement.pdf">PDF</a>` : a.signed_at ? 'You signed.' : `<a class="btn" href="/portal/agreements?id=${esc(a.id)}">Review and sign</a>`}</div>`).join('') || '<p>Nothing to sign right now.</p>'}<p><a class="btn" href="/portal">Back to my portal</a> <a href="${esc(passkeyLink('buyer', '/portal/agreements'))}">Set up Face ID / passkey</a></p>`));
   }
   const b = await buyerSigner(env, session, id); if (!b) return html(page('Not found', '<h1>Not found</h1>'), 404);
   const sample = Number(b.inst.is_sample) === 1;
-  if (b.signer.signed_at) return html(page('Signed', `<h1>You signed this agreement</h1><p>${b.inst.status === 'executed' ? `<a href="/portal/agreements/${esc(id)}/certificate">View certificate</a>` : 'We\u2019ll let you know when the broker countersigns.'}</p>`));
+  if (b.signer.signed_at) return html(page('Signed', `<h1>You signed this agreement</h1><p>${b.inst.status === 'executed' ? `<a href="/portal/agreements/${esc(id)}/certificate">View certificate</a>` : 'We\u2019ll let you know when the broker countersigns.'}</p><p><a class="btn" href="/portal/agreements">Back to my agreements</a> <a href="/portal">My portal</a></p>`));
   if (!['sent', 'partially_signed'].includes(b.inst.status)) return html(page('Not available', '<h1>Not available for signing</h1>'), 409);
   const body = `<h1>Something to review and sign</h1>${sample ? `<div class="sample">${esc(SAMPLE_WATERMARK)}</div>` : ''}
-<section class="card" id="s1"><h2>1. Electronic records</h2><p>${esc(ERSD_TEXT)}</p><label><input type="checkbox" id="ersd" style="width:auto"> I agree</label><p><button class="btn" id="c1">Continue</button> <a href="/portal/agreements/${esc(id)}/agreement.pdf">Download PDF</a></p></section>
+<p><a href="/portal/agreements">\u2190 Back to my agreements</a></p><section class="card" id="s1"><h2>1. Electronic records</h2><p>${esc(ERSD_TEXT)}</p><label><input type="checkbox" id="ersd" style="width:auto"> I agree</label><p><button class="btn" id="c1">Continue</button> <a href="/portal/agreements/${esc(id)}/agreement.pdf">Download PDF</a></p></section>
 <div id="s2" hidden>
 <section class="card" id="sg"><h2>2. Ohio Consumer Guide to Agency Relationships</h2><p class="muted">A separate state guide, not your agreement. Scroll to the end.</p><div class="doc" id="guide">${GUIDE_PARAGRAPHS.map(p => `<p>${esc(p)}</p>`).join('')}<p class="muted">\u2014 End of guide \u2014</p></div><p><a href="${GUIDE_PDF_PATH}" target="_blank" rel="noopener" id="gpdf">Open the official guide (PDF)</a></p><label><input type="checkbox" id="gack" style="width:auto" disabled> ${esc(GUIDE_ACK_TEXT)}</label></section>
 <section class="card" id="sa"><h2>3. Read the whole agreement</h2><p class="muted">Scroll to the end to continue.</p>${docHtml(b.fields, sample)}
@@ -456,7 +477,7 @@ $('gack').onchange=ready;document.querySelectorAll('input[name=kind]').forEach(r
 const pad=$('pad'),ctx=pad.getContext('2d');const pt=e=>{const r=pad.getBoundingClientRect();return[Math.round((e.clientX-r.left)*pad.width/r.width),Math.round((e.clientY-r.top)*pad.height/r.height)]};
 pad.onpointerdown=e=>{cur=[pt(e)];pad.setPointerCapture(e.pointerId)};pad.onpointermove=e=>{if(!cur)return;const p=pt(e),l=cur[cur.length-1];cur.push(p);ctx.beginPath();ctx.moveTo(l[0],l[1]);ctx.lineTo(p[0],p[1]);ctx.stroke()};pad.onpointerup=()=>{if(cur&&cur.length>1)strokes.push(cur);cur=null;ready()};
 $('clear').onclick=()=>{strokes=[];ctx.clearRect(0,0,pad.width,pad.height);ready()};
-$('sign').onclick=async()=>{$('sign').disabled=true;const o=await post('/api/portal/agreements/'+id+'/sign/options',{});if(!o.ok){E(o.error==='no_passkey'?'Set up Face ID / passkey first: /portal/passkey':o.error);return ready()}
+$('sign').onclick=async()=>{$('sign').disabled=true;const o=await post('/api/portal/agreements/'+id+'/sign/options',{});if(!o.ok){E(o.error==='no_passkey'?'Set up Face ID / passkey first \u2014 use the link that just appeared below; it brings you back here.':o.error);if(o.error==='no_passkey'){const a=document.createElement('a');a.className='btn';a.href='/portal/passkey?return='+encodeURIComponent('/portal/agreements?id='+id);a.textContent='Set up Face ID / passkey';$('e').after(a)}return ready()}
 let cred;try{cred=await hbePasskeyGet(o.publicKey)}catch(x){E('Face ID / passkey check was cancelled. Nothing was signed.');return ready()}
 const j=await post('/api/portal/agreements/'+id+'/sign',{challenge_id:o.challenge_id,credential:cred,guide_acknowledge:$('gack').checked,initials:$('initials').value,signature_kind:kind(),signature_text:$('typed').value,signature_strokes:strokes});if(j.ok)location='/portal/agreements';else{E(j.error);ready()}};`;
   return html(page('Review and sign', body, js));
@@ -549,7 +570,7 @@ async function buyerCertificate(env, session, id) {
   const b = await buyerSigner(env, session, id); if (!b || b.inst.status !== 'executed') return html(page('Not found', '<h1>Not available</h1>'), 404);
   const ev = await certificateEvents(env, b);
   const chain = await verifyEventChain(env, id);
-  return html(page('Certificate', `<h1>Certificate of completion</h1>${Number(b.inst.is_sample) ? `<div class="sample">${esc(SAMPLE_WATERMARK)}</div>` : ''}<div class="card"><p>Agreement ${esc(id)}</p><p class="muted">Document SHA-256 ${esc(b.inst.doc_sha256)}<br>Consumer Guide PDF SHA-256 ${esc(GUIDE_PDF_SHA256)}<br>${b.signers.filter(s => s.role === 'buyer').map(s => `Consumer Guide receipt: ${esc(signerName(s))} ${s.guide_ack_at ? esc(s.guide_ack_at) + ' (UTC)' : 'not recorded'}`).join('<br>')}<br>Signed PDF SHA-256 ${esc(b.inst.final_sha256)}<br>Audit chain ${chain ? 'intact' : 'BROKEN'}</p><ul>${ev.map(e => `<li>${esc(e.at)} \u2014 ${esc(e.event)}${e.signer_label ? ' \u2014 ' + esc(e.signer_label) : ''}</li>`).join('')}</ul><a class="btn" href="/portal/agreements/${esc(id)}/agreement.pdf">Download signed PDF</a></div>`));
+  return html(page('Certificate', `<h1>Certificate of completion</h1>${Number(b.inst.is_sample) ? `<div class="sample">${esc(SAMPLE_WATERMARK)}</div>` : ''}<div class="card"><p>Agreement ${esc(id)}</p><p class="muted">Document SHA-256 ${esc(b.inst.doc_sha256)}<br>Consumer Guide PDF SHA-256 ${esc(GUIDE_PDF_SHA256)}<br>${b.signers.filter(s => s.role === 'buyer').map(s => `Consumer Guide receipt: ${esc(signerName(s))} ${s.guide_ack_at ? esc(s.guide_ack_at) + ' (UTC)' : 'not recorded'}`).join('<br>')}<br>Signed PDF SHA-256 ${esc(b.inst.final_sha256)}<br>Audit chain ${chain ? 'intact' : 'BROKEN'}</p><ul>${ev.map(e => `<li>${esc(e.at)} \u2014 ${esc(e.event)}${e.signer_label ? ' \u2014 ' + esc(e.signer_label) : ''}</li>`).join('')}</ul><a class="btn" href="/portal/agreements/${esc(id)}/agreement.pdf">Download signed PDF</a></div><p><a class="btn" href="/portal/agreements">Back to my agreements</a></p>`));
 }
 
 export async function passkeyLoginOptions(env, url) {
@@ -588,7 +609,7 @@ async function handleBuyer(request, env, url, opts) {
   let m;
   if (request.method === 'GET') {
     if (p === '/portal/agreements') return buyerSignPage(env, session, url);
-    if (p === '/portal/passkey') { const csrf = await mutationCsrfToken(session.token); const { body, js } = passkeyPage('buyer'); return html(page('Passkey', body, `window.__csrf=${JSON.stringify(csrf)};${js}`)); }
+    if (p === '/portal/passkey') { const csrf = await mutationCsrfToken(session.token); const { body, js } = await passkeyPage(env, 'buyer', session.buyer_id, url); return html(page('Passkey', body, `window.__csrf=${JSON.stringify(csrf)};${js}`)); }
     if ((m = p.match(/^\/portal\/agreements\/([0-9a-f-]{36})\/certificate$/))) return buyerCertificate(env, session, m[1]);
     if ((m = p.match(/^\/portal\/agreements\/([0-9a-f-]{36})\/agreement\.pdf$/))) { const b = await buyerSigner(env, session, m[1]); return b && b.inst.status !== 'draft' ? pdfResponse(env, b) : json({ ok: false }, 404); }
     return null;
