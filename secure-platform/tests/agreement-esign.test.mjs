@@ -98,7 +98,7 @@ test('end to end SAMPLE: create, send, two buyers sign with passkey, broker coun
   assert.ok(!JSON.stringify(pushes).includes('Test'), 'no names in push payload');
   assert.match(await agreementBanner(new Request(ORIGIN + '/portal', { headers: { cookie: 'hbe_session=tok-buyer-a' } }), env), /Something to review and sign/);
   const page = await call('GET', `/portal/agreements?id=${id}`, null, { cookie: a.cookie });
-  assert.match(page.body, /Electronic records/); assert.match(page.body, /sign with Face ID/i); assert.match(page.body, /doc-end/);
+  assert.match(page.body, /OK to sign on your phone\?/); assert.match(page.body, /sign with Face ID/i); assert.match(page.body, /doc-end/);
 
   // Countersign before buyers sign is refused
   assert.equal((await call('POST', `/api/hbe/agreements/${id}/countersign`, { signature_text: 'Broker', consent: true })).status, 409);
@@ -202,7 +202,7 @@ test('Consumer Guide + agreement: one session, one passkey assertion bound to bo
   assert.equal((await call('POST', `/api/portal/agreements/${id}/guide/ack`, { csrf }, { cookie })).status, 404);
   // one page: guide first, then agreement, one sign button
   const pageHtml = (await call('GET', `/portal/agreements?id=${id}`, null, { cookie })).body;
-  const gi = pageHtml.indexOf('2. Ohio Consumer Guide to Agency Relationships'), ai = pageHtml.indexOf('3. Read the whole agreement');
+  const gi = pageHtml.indexOf('Read the Ohio Consumer Guide'), ai = pageHtml.indexOf('Read your agreement');
   assert.ok(gi > 0 && ai > gi); assert.match(pageHtml, /HomeBuyer Experts only represents buyers/);
   assert.match(pageHtml, /id="gack"/); assert.equal((pageHtml.match(/hbePasskeyGet\(o\.publicKey\)/g) || []).length, 1);
   assert.ok(!GUIDE_PARAGRAPHS.join(' ').includes('(brokerage)'));
@@ -285,7 +285,7 @@ test('mobile layout: compact summary, action bar, single $ in price, passkey lin
   pv = (await call('GET', `/hbe/agreements/${id}`)).body;
   assert.match(pv, /Doc SHA-256: [0-9a-f]{64}/); assert.doesNotMatch(pv, /Set up my passkey/);
   const bp = (await call('GET', `/portal/agreements?id=${id}`, null, { cookie: 'tok-buyer-a' })).body;
-  assert.match(bp, /<details class="sum">/); assert.match(bp, /<div class="bar"><button class="btn wide" id="sign" disabled/); assert.doesNotMatch(bp, /\$\$/);
+  assert.match(bp, /<details class="sum">/); assert.match(bp, /<div class="bar" id="signbar" hidden><button class="btn wide" id="sign" disabled/); assert.doesNotMatch(bp, /\$\$/);
 });
 
 test('hire-us path: plain step labels on form and preview', async () => {
@@ -302,4 +302,56 @@ test('case card: one clear hire-us button to the agreement form at Consultation'
   const src = (await import('node:fs')).readFileSync(new URL('../src/hbe-worker.js', import.meta.url), 'utf8');
   assert.equal(src.split('They\u2019re hiring us: open the next chapter').length - 1, 1);
   assert.match(src, /b\.stage === 'consultation' \? `<section class="next-chapter" id="open-next-chapter"><a class="btn hire-btn" href="\/hbe\/agreements\/new\?buyer=\$\{encodeURIComponent\(b\.id\)\}">/);
+});
+
+test('final agreement: counsel text loaded verbatim, no Consumer Guide acknowledgement line, EHO + tagline, boxes checked from fields', async () => {
+  const { FINAL_PARAGRAPHS } = await import('../src/agreement-template-final.js');
+  const { renderParagraphs, TEMPLATE_ID } = await import('../src/agreement-esign.js');
+  assert.equal(TEMPLATE_ID, 'hbe-buyer-agency-final-2026-10-31');
+  const all = FINAL_PARAGRAPHS.join('\n');
+  assert.match(all, /jointly and severally liable/); assert.match(all, /greater of \$5,000 or:/);
+  assert.match(all, /3% of the purchase price/); assert.match(all, /4% of the purchase price for a FSBO home/);
+  assert.match(all, /\$750 retainer/); assert.match(all, /The \$5,000 minimum is a flat amount and is not affected by this cap\./);
+  assert.match(all, /\[\[EHO\]\]EQUAL HOUSING OPPORTUNITY/); assert.match(all, /^\[\[TAG\]\]We work only for home buyers/);
+  assert.doesNotMatch(all, /for counsel review|DRAFT|Consumer Guide/i);
+  const t = renderParagraphs({ price_max: 450000, term_end: '2027-05-01', retainer_option: 'standard', ready_option: 'preapproval_10d' }).join('\n');
+  assert.match(t, /up to \$450,000\./); assert.match(t, /midnight on May 1, 2027\./);
+  assert.match(t, /\u2612 New client/); assert.match(t, /\u2610 Returning client/);
+  assert.match(t, /\u2610 You are ready/); assert.match(t, /\u2612 You will give us a valid mortgage pre-approval/);
+  assert.doesNotMatch(t, /\{\{/); assert.match(t, /\[\[H\]\]14\. Additional terms\nNone\./);
+});
+
+test('HBEUI hire-us: one agreement for both co-buyers; no SAMPLE-until-counsel copy', async () => {
+  const { call, db } = await setup();
+  const f = (await call('GET', '/hbe/agreements/new?buyer=buyer-a')).body;
+  assert.match(f, /Who signs/); assert.doesNotMatch(f, /pending counsel approval/);
+  const src = (await import('node:fs')).readFileSync(new URL('../src/hbe-worker.js', import.meta.url), 'utf8');
+  assert.doesNotMatch(src, /SAMPLE until counsel approves/);
+  const other = (await db.prepare(`SELECT id FROM buyers WHERE stage='consultation' AND id<>'buyer-a' LIMIT 1`).first())?.id;
+  if (other) {
+    const already = ((await db.prepare(`SELECT COUNT(*) n FROM buyer_case_members m JOIN buyer_case_members m2 ON m.case_id=m2.case_id WHERE m.buyer_id='buyer-a' AND m2.buyer_id=?`).bind(other).first())?.n || 0) > 0;
+    const r = await call('POST', '/api/hbe/agreements', { buyer_id: 'buyer-a', co_buyer_id: other, fields: FIELDS() });
+    assert.equal(r.status, 200);
+    const s = (await db.prepare(`SELECT buyer_id FROM agreement_signers WHERE instance_id=? AND role='buyer'`).bind(r.body.id).all()).results.map(x => x.buyer_id);
+    assert.ok(s.includes('buyer-a') && s.includes(other)); assert.equal(new Set(s).size, s.length); void already;
+  }
+  assert.equal((await call('POST', '/api/hbe/agreements', { buyer_id: 'buyer-a', co_buyer_id: 'nope', fields: FIELDS() })).status >= 400, true);
+});
+
+test('BuyerUI signing: plain steps, one per screen, big buttons, call/text Sebastian help line (display only)', async () => {
+  const { call } = await setup();
+  const id = (await call('POST', '/api/hbe/agreements', { buyer_id: 'buyer-a', fields: FIELDS() })).body.id;
+  await call('POST', `/api/hbe/agreements/${id}/send`, {});
+  const bp = (await call('GET', `/portal/agreements?id=${id}`, null, { cookie: 'tok-buyer-a' })).body;
+  for (const n of [1, 2, 3, 4]) assert.match(bp, new RegExp(`Step ${n} of 4`));
+  assert.match(bp, /id="sa" hidden/); assert.match(bp, /id="ss" hidden/);
+  assert.match(bp, /Call or text Sebastian at <a href="tel:\+13303283170">/); assert.doesNotMatch(bp, /sms:|twilio/i);
+});
+
+test('Consumer Guide PDF is served at /portal/consumer-guide.pdf and matches the official state form hash', async () => {
+  const { call } = await setup();
+  const r = await call('GET', '/portal/consumer-guide.pdf');
+  assert.equal(r.status, 200);
+  const { GUIDE_PDF_SHA256 } = await import('../src/consumer-guide.js');
+  assert.equal(GUIDE_PDF_SHA256, 'c94480269f25e42e572c66e069c27d99138a3629a1be821040dd4cd4bb1415d9');
 });

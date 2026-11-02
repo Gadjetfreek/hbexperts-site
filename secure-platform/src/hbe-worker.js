@@ -204,7 +204,7 @@ function selectedBuyer(b, tasks, notes, notifications) {
 
   return `<section class="buyer-main">
     <div class="buyer-heading"><div><div class="eyebrow">SELECTED BUYER</div><h2>${esc(b.first_name)} ${esc(b.last_name)}</h2><p><a href="mailto:${esc(b.email)}">${esc(b.email)}</a>${b.phone ? ` · <a href="tel:${esc(b.phone)}">${esc(b.phone)}</a>` : ''}${answers.co_buyer?.name ? ` · With ${esc(answers.co_buyer.name)}` : ''}</p></div></div>
-    ${b.stage === 'consultation' ? `<section class="next-chapter" id="open-next-chapter"><a class="btn hire-btn" href="/hbe/agreements/new?buyer=${encodeURIComponent(b.id)}">They’re hiring us: open the next chapter</a><p class="muted">3 quick steps: fill in the agreement, preview it, send it to sign. (SAMPLE until counsel approves; sign on paper in person for now.)</p></section>` : ''}
+    ${b.stage === 'consultation' ? `<section class="next-chapter" id="open-next-chapter"><a class="btn hire-btn" href="/hbe/agreements/new?buyer=${encodeURIComponent(b.id)}">They’re hiring us: open the next chapter</a><p class="muted">3 quick steps: pick who signs (one or both buyers), fill in the agreement, preview it, send it. They sign on their phones; we walk them through it.</p></section>` : ''}
     ${rail}
     <div class="hbe-chip-deck">
     ${laneBandHtml({ lane: LANE.BUYER, title: 'Buyer context', subtitle: 'Facts, decision profile, and what matters — context, not a to-do list.', body: buyerBody, id: 'lane-buyer' })}

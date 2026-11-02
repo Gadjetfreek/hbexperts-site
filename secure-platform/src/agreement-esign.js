@@ -13,7 +13,7 @@ import { authenticateHbeProfessional, requireVerifiedProfessional } from './hbe-
 import { ownerEmail, vapidConfig, validateSubscription } from './hbe-push.js';
 import { sendWebPush } from './web-push.js';
 import { assertMutationCsrf, mutationCsrfToken, sameOriginRequest } from './household-state.js';
-import { V6_PARAGRAPHS } from './agreement-template-v6.js';
+import { FINAL_PARAGRAPHS, FINAL_TEMPLATE_ID, FINAL_TEMPLATE_VERSION } from './agreement-template-final.js';
 import { GUIDE_ID, GUIDE_VERSION, GUIDE_PDF_PATH, GUIDE_PDF_SHA256, GUIDE_PDF_B64, GUIDE_PARAGRAPHS, GUIDE_ACK_TEXT } from './consumer-guide.js';
 import { buildPdf } from './agreement-pdf.js';
 import {
@@ -21,8 +21,10 @@ import {
   verifyRegistration, verifyAssertion, boundChallenge, WEBAUTHN_BROWSER_JS
 } from './webauthn.js';
 
-export const TEMPLATE_ID = 'hbe-buyer-agency-v6';
-export const TEMPLATE_VERSION = 'v6-draft-2026-10-30';
+// Final counsel-edited agreement (2026-10-31). Still SAMPLE until the owner sets agreement_templates.approved = 1 for this id.
+export const TEMPLATE_ID = FINAL_TEMPLATE_ID;
+export const TEMPLATE_VERSION = FINAL_TEMPLATE_VERSION;
+export const HBE_HELP_PHONE = '(330) 328-3170';
 export const SAMPLE_WATERMARK = 'SAMPLE \u2014 NOT FOR SIGNATURE';
 export const ERSD_VERSION = 'ersd-2026-10-30';
 const CHALLENGE_MS = 5 * 60 * 1000;
@@ -32,7 +34,8 @@ export const ERSD_TEXT = 'I agree to receive and sign this agreement electronica
 export const FIELD_DEFS = [
   { key: 'term_end', label: 'Agreement ends on', type: 'date', required: true },
   { key: 'price_max', label: 'Price range up to ($)', type: 'number', required: true },
-  { key: 'retainer_option', label: 'Retainer ($750)', type: 'select', required: true, options: [['standard', '$750 at signing'], ['returning_deferred', 'Returning client: $750 deferred to closing']] },
+  { key: 'retainer_option', label: 'Retainer ($750)', type: 'select', required: true, options: [['standard', 'New client: $750 at signing'], ['returning_deferred', 'Returning client: $750 deferred to closing']] },
+  { key: 'ready_option', label: 'Section 4 check one', type: 'select', required: false, options: [['', 'Leave for the buyers to tell us'], ['ready', 'Ready, willing and able to buy now'], ['preapproval_10d', 'Pre-approval within 10 days']] },
   { key: 'additional_provisions', label: 'Anything else to add (optional)', type: 'textarea', required: false }
 ];
 
@@ -53,7 +56,7 @@ function rp(env, url) { return { rpId: env.WEBAUTHN_RP_ID || url.hostname, origi
 // ---------------- template + rendering ----------------
 // One passkey assertion covers both documents: challenge bound to this bundle of both SHA-256 hashes.
 export async function bundleSha(guideSha, docSha) { return sha256Hex(`hbe-bundle-v1|consumer_guide:${guideSha}|agreement:${docSha}`); }
-export async function templateBodySha() { return sha256Hex(V6_PARAGRAPHS.join('\n')); }
+export async function templateBodySha() { return sha256Hex(FINAL_PARAGRAPHS.join('\n')); }
 export async function ensureTemplate(env) {
   await db(env).prepare(`INSERT OR IGNORE INTO agreement_templates (id,name,version,body_sha256,approved,created_at) VALUES (?,?,?,?,0,?)`)
     .bind(TEMPLATE_ID, 'Exclusive Buyer\u2019s Agency Agreement', TEMPLATE_VERSION, await templateBodySha(), nowIso()).run();
@@ -83,11 +86,16 @@ export function validateFields(input) {
 function fmtDate(d) { try { return new Date(d + 'T12:00:00Z').toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }); } catch { return d; } }
 export function renderParagraphs(fields) {
   const money = n => '$' + Number(n).toLocaleString('en-US');
-  return V6_PARAGRAPHS.map(p => p
+  const box = on => on ? '\u2612' : '\u2610';
+  const deferred = fields.retainer_option === 'returning_deferred';
+  return FINAL_PARAGRAPHS.map(p => p
     .replace('{{term_end}}', fields.term_end ? fmtDate(fields.term_end) : '________')
     .replace(/\$?\{\{price_max\}\}/, fields.price_max ? money(fields.price_max) : '________')
-    .replace('{{additional_provisions}}', fields.additional_provisions || 'None.'))
-    .concat([`Retainer selected: ${fields.retainer_option === 'returning_deferred' ? 'Returning client \u2014 $750 deferred to closing.' : '$750 due at signing.'}`]);
+    .replace('{{additional_provisions}}', fields.additional_provisions || 'None.')
+    .replace('{{ready_box}}', box(fields.ready_option === 'ready'))
+    .replace('{{preapproval_box}}', box(fields.ready_option === 'preapproval_10d'))
+    .replace('{{new_box}}', box(fields.retainer_option && !deferred))
+    .replace('{{returning_box}}', box(deferred)));
 }
 export async function documentSha(instance, fields, signerNames) {
   return sha256Hex(JSON.stringify({ t: instance.template_id, v: instance.template_version, sample: Number(instance.is_sample), id: instance.id, signers: signerNames, text: renderParagraphs(fields) }));
@@ -189,7 +197,7 @@ async function notifyOwner(env, send = sendWebPush) {
 // ---------------- PDF ----------------
 export function agreementPdf(bundle, { certificate = null } = {}) {
   const { inst, fields, signers } = bundle;
-  const blocks = renderParagraphs(fields).map((t, i) => t.startsWith('[[BOX]]') ? { text: t.slice(7), bold: true, box: true, size: 9.5 } : t.startsWith('[[EHO]]') ? { text: t.slice(7), eho: true, bold: true, size: 10 } : ({ text: t, bold: i < 2, size: i < 2 ? 12 : 9.5 }));
+  const blocks = renderParagraphs(fields).map((t, i) => t.startsWith('[[H]]') ? { text: t.slice(5), bold: true, size: i < 3 ? 12 : 10.5, gap: i < 3 ? 2 : 6 } : t.startsWith('[[TAG]]') ? { text: t.slice(7), bold: true, size: 10 } : t.startsWith('[[BOX]]') ? { text: t.slice(7), bold: true, box: true, size: 9.5 } : t.startsWith('[[EHO]]') ? { text: t.slice(7), eho: true, bold: true, size: 10 } : ({ text: t, size: 9.5 }));
   const g = signers.filter(s => s.role === 'buyer' && s.guide_ack_at);
   if (g.length) blocks.push({ text: `Ohio Consumer Guide to Agency Relationships (${GUIDE_VERSION}, PDF SHA-256 ${GUIDE_PDF_SHA256.slice(0, 16)}...) receipt acknowledged (recorded separately; same signing session, one passkey assertion bound to the guide and agreement SHA-256) by: ${g.map(s => `${signerName(s)} ${s.guide_ack_at} (UTC)`).join('; ')}.`, size: 8, gap: 8 });
   for (const s of signers) {
@@ -209,11 +217,13 @@ export function agreementPdf(bundle, { certificate = null } = {}) {
 }
 
 // ---------------- page shell ----------------
-const CSS = `body{font:16px/1.55 system-ui,-apple-system,Segoe UI,sans-serif;margin:0;background:#f7faf8;color:#1a1a2e}main{max-width:46rem;margin:0 auto;padding:1.2rem}h1{font:600 1.7rem Georgia,serif}.card{background:#fff;border:1px solid #dfe8e2;border-radius:14px;padding:1rem 1.2rem;margin:1rem 0}.btn{display:inline-block;background:#2d5a3d;color:#fff;border:0;border-radius:10px;padding:.75rem 1.1rem;font-weight:700;text-decoration:none;cursor:pointer}.btn[disabled]{opacity:.45;cursor:not-allowed}.sample{background:#fff4f4;border:2px dashed #b42318;color:#b42318;font-weight:800;padding:.6rem;border-radius:10px;text-align:center}.doc{max-height:55vh;overflow:auto;border:1px solid #ccc;border-radius:10px;padding:1rem;background:#fff;position:relative}.doc p{margin:.5rem 0}.wm{position:sticky;top:40%;text-align:center;color:rgba(180,35,24,.25);font:800 2rem system-ui;transform:rotate(-20deg);pointer-events:none;height:0}label{display:block;margin:.7rem 0 .2rem;font-weight:650}input,select,textarea{width:100%;padding:.6rem;border:1px solid #bbb;border-radius:8px;font:inherit;box-sizing:border-box}canvas{border:1px solid #888;border-radius:8px;touch-action:none;background:#fff;width:100%;max-width:520px;height:160px}.muted{color:#555;font-size:.92rem}.err{color:#b42318;font-weight:700}.bad{border:2px solid #b42318;background:#fff4f4}label.badl{color:#b42318}.steps{font-size:.92rem;color:#2d5a3d;margin:.2rem 0 .6rem}details.sum{background:#fff;border:1px solid #dfe8e2;border-radius:12px;padding:.5rem .8rem;margin:.6rem 0;font-size:.95rem}details.sum summary{cursor:pointer;font-weight:650}details.sum ul{margin:.4rem 0;padding-left:1.1rem}.tag{color:#b42318;font-weight:800}.bar{position:sticky;bottom:0;display:flex;gap:.5rem;padding:.6rem 0 calc(.6rem + env(safe-area-inset-bottom));background:#f7faf8;border-top:1px solid #dfe8e2;z-index:5}.bar .btn,.bar .btn2{flex:1 1 0;min-width:0;height:48px;display:flex;align-items:center;justify-content:center;font:700 1rem system-ui,-apple-system,sans-serif;border-radius:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 .6rem;box-sizing:border-box;text-decoration:none}.btn2{background:#fff;color:#2d5a3d;border:2px solid #2d5a3d;cursor:pointer}.bar .btn.wide{flex:2 1 0}.small{font-size:.88rem}`;
+const CSS = `.step h2{font-size:1.35rem}.stepno{color:#2d5a3d;font-weight:800;margin:0;text-transform:uppercase;font-size:.85rem;letter-spacing:.04em}.btn.wide{width:100%;font-size:1.15rem;padding:1rem}.btn2{display:inline-block;border:1px solid #2d5a3d;color:#2d5a3d;background:#fff;border-radius:10px;padding:.7rem 1rem;font-weight:700;text-decoration:none}.big-check{display:flex;gap:.7rem;align-items:flex-start;font-size:1.05rem;margin:.8rem 0}.big-check input{width:1.6rem;height:1.6rem;flex:none}.help{background:#eef6f0;border-radius:10px;padding:.7rem .9rem;font-size:1rem}.help a{font-weight:800}body{font:16px/1.55 system-ui,-apple-system,Segoe UI,sans-serif;margin:0;background:#f7faf8;color:#1a1a2e}main{max-width:46rem;margin:0 auto;padding:1.2rem}h1{font:600 1.7rem Georgia,serif}.card{background:#fff;border:1px solid #dfe8e2;border-radius:14px;padding:1rem 1.2rem;margin:1rem 0}.btn{display:inline-block;background:#2d5a3d;color:#fff;border:0;border-radius:10px;padding:.75rem 1.1rem;font-weight:700;text-decoration:none;cursor:pointer}.btn[disabled]{opacity:.45;cursor:not-allowed}.sample{background:#fff4f4;border:2px dashed #b42318;color:#b42318;font-weight:800;padding:.6rem;border-radius:10px;text-align:center}.doc{max-height:55vh;overflow:auto;border:1px solid #ccc;border-radius:10px;padding:1rem;background:#fff;position:relative}.doc p{margin:.5rem 0}.wm{position:sticky;top:40%;text-align:center;color:rgba(180,35,24,.25);font:800 2rem system-ui;transform:rotate(-20deg);pointer-events:none;height:0}label{display:block;margin:.7rem 0 .2rem;font-weight:650}input,select,textarea{width:100%;padding:.6rem;border:1px solid #bbb;border-radius:8px;font:inherit;box-sizing:border-box}canvas{border:1px solid #888;border-radius:8px;touch-action:none;background:#fff;width:100%;max-width:520px;height:160px}.muted{color:#555;font-size:.92rem}.err{color:#b42318;font-weight:700}.bad{border:2px solid #b42318;background:#fff4f4}label.badl{color:#b42318}.steps{font-size:.92rem;color:#2d5a3d;margin:.2rem 0 .6rem}details.sum{background:#fff;border:1px solid #dfe8e2;border-radius:12px;padding:.5rem .8rem;margin:.6rem 0;font-size:.95rem}details.sum summary{cursor:pointer;font-weight:650}details.sum ul{margin:.4rem 0;padding-left:1.1rem}.tag{color:#b42318;font-weight:800}.bar{position:sticky;bottom:0;display:flex;gap:.5rem;padding:.6rem 0 calc(.6rem + env(safe-area-inset-bottom));background:#f7faf8;border-top:1px solid #dfe8e2;z-index:5}.bar .btn,.bar .btn2{flex:1 1 0;min-width:0;height:48px;display:flex;align-items:center;justify-content:center;font:700 1rem system-ui,-apple-system,sans-serif;border-radius:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 .6rem;box-sizing:border-box;text-decoration:none}.btn2{background:#fff;color:#2d5a3d;border:2px solid #2d5a3d;cursor:pointer}.bar .btn.wide{flex:2 1 0}.small{font-size:.88rem}`;
 const page = (title, body, script = '') => `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>${esc(title)}</title><link rel="manifest" href="/portal/app.webmanifest"><style>${CSS}</style></head><body><main>${body}</main>${script ? `<script>${script}</script>` : ''}</body></html>`;
 export const EHO_SVG = '<svg width="34" height="30" viewBox="0 0 34 30" aria-hidden="true"><path d="M17 1 1 12h4v17h24V12h4z" fill="#000"/><rect x="10" y="15" width="14" height="3" fill="#fff"/><rect x="10" y="21" width="14" height="3" fill="#fff"/></svg>';
 export function paraHtml(p) {
   if (p.startsWith('[[BOX]]')) return `<p class="fees" style="border:2px solid #000;padding:.5rem;font-weight:800">${esc(p.slice(7))}</p>`;
+  if (p.startsWith('[[H]]')) return `<h3 style="margin:.9rem 0 .2rem;font-size:1.02rem">${esc(p.slice(5))}</h3>`;
+  if (p.startsWith('[[TAG]]')) return `<p class="tag-line" style="font-style:italic;color:#2d5a3d;font-weight:700">${esc(p.slice(7))}</p>`;
   if (p.startsWith('[[EHO]]')) return `<p class="eho" style="display:flex;gap:.5rem;align-items:center;font-weight:800">${EHO_SVG}${esc(p.slice(7))}</p>`;
   return `<p>${esc(p)}</p>`;
 }
@@ -232,9 +242,11 @@ async function staffNewForm(env, url) {
   if (!b) return html(page('Not found', '<h1>Buyer not found</h1>'), 404);
   if (b.stage !== 'consultation') return html(page('Not available', `<h1>Not at Consultation</h1><p>The agreement is opened from the Consultation stage.</p>`), 409);
   const approved = await templateApproved(env);
+  const who = await signerChoices(env, b.id);
+  const whoHtml = `<fieldset class="card" id="who"><legend><strong>Who signs</strong></legend>${who.members.map(m => `<p>\u2713 ${esc(m.first_name)} ${esc(m.last_name)}${m.id === b.id ? '' : ' (linked co-buyer)'}</p>`).join('')}${who.members.length < 2 ? `<label for="co_buyer_id">Second buyer on this agreement (optional)</label><select id="co_buyer_id" name="co_buyer_id"><option value="">Just this buyer</option>${who.candidates.map(c => `<option value="${esc(c.id)}">${esc(c.first_name)} ${esc(c.last_name)}</option>`).join('')}</select><p class="muted">Both buyers sign the same agreement, each on their own phone with their own login. Pick the co-buyer\u2019s own record (they fill in their own Buyer Experience first).</p>` : '<p class="muted">Both buyers sign the same agreement, each on their own phone.</p>'}</fieldset>`;
   const f = FIELD_DEFS.map(d => `<label for="${d.key}" data-k="${d.key}">${esc(d.label)}</label>` + (d.type === 'select' ? `<select id="${d.key}" name="${d.key}">${d.options.map(o => `<option value="${o[0]}">${esc(o[1])}</option>`).join('')}</select>` : d.type === 'textarea' ? `<textarea id="${d.key}" name="${d.key}" rows="3"></textarea>` : `<input id="${d.key}" name="${d.key}" type="${d.type}" ${d.required ? 'required' : ''}>`)).join('');
-  const body = `<p><a href="/hbe">\u2190 Back to HBE dashboard</a></p><h1>Open the next chapter</h1><p class="steps"><b>1 Fill in</b> \u2192 2 Preview \u2192 3 Send to sign</p><p>Buyer agency agreement for <strong>${esc(b.first_name)} ${esc(b.last_name)}</strong>.</p>${approved ? '' : `<div class="sample">${esc(SAMPLE_WATERMARK)} \u2014 template pending counsel approval</div>`}<form id="f" class="card">${f}<p><button class="btn" type="submit">Preview agreement</button></p><p class="err" id="e"></p></form><p class="muted">The buyer gets one link. They agree to sign electronically, read the Ohio Consumer Guide and this agreement, then sign both with one Face ID check.</p>`;
-  const js = `const LBL=${JSON.stringify(Object.fromEntries(FIELD_DEFS.map(d => [d.key, d.label])))},MSG={buyer_not_found:'This buyer was not found.',not_consultation_stage:'This buyer is not at the Consultation stage.',bad_origin:'The request was blocked as not coming from this page. Reload the page and try again.',auth_required:'Your HBE sign-in expired. Reload the page to sign in again.'},FIX={term_end:'pick a date after today',price_max:'enter a whole dollar amount, e.g. 500000',retainer_option:'choose an option'};
+  const body = `<p><a href="/hbe">\u2190 Back to HBE dashboard</a></p><h1>Open the next chapter</h1><p class="steps"><b>1 Fill in</b> \u2192 2 Preview \u2192 3 Send to sign</p><p>Buyer agency agreement for <strong>${esc(b.first_name)} ${esc(b.last_name)}</strong>.</p>${approved ? '' : `<div class="sample">${esc(SAMPLE_WATERMARK)} \u2014 test mode until you switch on the final agreement</div>`}<form id="f" class="card">${whoHtml}${f}<p><button class="btn" type="submit">Preview agreement</button></p><p class="err" id="e"></p></form><p class="muted">The buyer gets one link. They agree to sign electronically, read the Ohio Consumer Guide and this agreement, then sign both with one Face ID check.</p>`;
+  const js = `const LBL=${JSON.stringify(Object.fromEntries(FIELD_DEFS.map(d => [d.key, d.label])))},MSG={buyer_not_found:'This buyer was not found.',not_consultation_stage:'This buyer is not at the Consultation stage.',bad_origin:'The request was blocked as not coming from this page. Reload the page and try again.',auth_required:'Your HBE sign-in expired. Reload the page to sign in again.',already_two_buyers:'This agreement already has two buyers.',co_buyer_not_found:'That co-buyer was not found.',co_buyer_not_consultation_stage:'The co-buyer is not at the Consultation stage.'},FIX={term_end:'pick a date after today',price_max:'enter a whole dollar amount, e.g. 500000',retainer_option:'choose an option'};
 const F=document.getElementById('f'),E=document.getElementById('e');
 const say=(t,keys)=>{E.textContent=t;F.querySelectorAll('.bad').forEach(x=>x.classList.remove('bad'));F.querySelectorAll('label[data-k]').forEach(l=>l.textContent=LBL[l.dataset.k]);(keys||[]).forEach(k=>{const i=document.getElementById(k),l=F.querySelector('label[data-k="'+k+'"]');if(i){i.classList.add('bad');i.setAttribute('aria-invalid','true')}if(l)l.textContent=LBL[k]+' \u2014 please check: '+(FIX[k]||'required')});const first=(keys||[]).map(k=>document.getElementById(k)).find(Boolean);(first||E).scrollIntoView({behavior:'smooth',block:'center'});if(first)first.focus({preventScroll:true})};
 const STATUS={401:'not signed in (401)',403:'not allowed (403)',404:'not found (404)',409:'conflict (409)',429:'too many tries, wait a minute (429)',500:'server error (500)',502:'server unavailable (502)',503:'service unavailable (503)'};
@@ -248,6 +260,15 @@ catch(x){say('Could not reach the server. Check your connection and try again.')
   return html(page('Open the next chapter', body, js));
 }
 
+export async function signerChoices(env, buyerId) {
+  const member = await db(env).prepare(`SELECT case_id FROM buyer_case_members WHERE buyer_id=?`).bind(buyerId).first();
+  const members = member?.case_id ? ((await db(env).prepare(`SELECT b.id, b.first_name, b.last_name FROM buyer_case_members m JOIN buyers b ON b.id=m.buyer_id WHERE m.case_id=? ORDER BY b.id=? DESC, m.rowid`).bind(member.case_id, buyerId).all()).results || [])
+    : [await db(env).prepare(`SELECT id, first_name, last_name FROM buyers WHERE id=?`).bind(buyerId).first()].filter(Boolean);
+  const ids = members.map(m => m.id);
+  const candidates = members.length >= 2 ? [] : (((await db(env).prepare(`SELECT id, first_name, last_name FROM buyers WHERE stage='consultation' AND id<>? ORDER BY submitted_at DESC LIMIT 50`).bind(buyerId).all()).results) || []).filter(c => !ids.includes(c.id));
+  return { members, candidates };
+}
+
 export async function createAgreement(env, professional, body) {
   const buyer = await db(env).prepare(`SELECT id, stage FROM buyers WHERE id=?`).bind(String(body.buyer_id || '')).first();
   if (!buyer) return { status: 404, error: 'buyer_not_found' };
@@ -259,6 +280,16 @@ export async function createAgreement(env, professional, body) {
   const member = await db(env).prepare(`SELECT case_id FROM buyer_case_members WHERE buyer_id=?`).bind(buyer.id).first();
   const caseId = member?.case_id || null;
   const buyers = caseId ? ((await db(env).prepare(`SELECT buyer_id FROM buyer_case_members WHERE case_id=? ORDER BY buyer_id=? DESC, rowid`).bind(caseId, buyer.id).all()).results || []).map(r => r.buyer_id) : [buyer.id];
+  // Stage 3 co-buyer: HBE may name a second buyer on THIS agreement only. It does not merge households
+  // (that stays consent-based via invitations); the co-buyer consents by signing with their own login + passkey.
+  const coId = String(body.co_buyer_id || body.fields?.co_buyer_id || '').trim();
+  if (coId && !buyers.includes(coId)) {
+    if (buyers.length >= 2) return { status: 409, error: 'already_two_buyers' };
+    const co = await db(env).prepare(`SELECT id, stage FROM buyers WHERE id=?`).bind(coId).first();
+    if (!co) return { status: 404, error: 'co_buyer_not_found' };
+    if (co.stage !== 'consultation') return { status: 409, error: 'co_buyer_not_consultation_stage' };
+    buyers.push(co.id);
+  }
   const id = uid(); const now = nowIso();
   await db(env).prepare(`INSERT INTO agreement_instances (id,case_id,primary_buyer_id,template_id,template_version,is_sample,status,created_by,created_at,updated_at) VALUES (?,?,?,?,?,?,'draft',?,?,?)`)
     .bind(id, caseId, buyer.id, TEMPLATE_ID, TEMPLATE_VERSION, approved ? 0 : 1, professional.email, now, now).run();
@@ -459,18 +490,21 @@ async function buyerSignPage(env, session, url) {
   const sample = Number(b.inst.is_sample) === 1;
   if (b.signer.signed_at) return html(page('Signed', `<h1>You signed this agreement</h1><p>${b.inst.status === 'executed' ? `<a href="/portal/agreements/${esc(id)}/certificate">View certificate</a>` : 'We\u2019ll let you know when the broker countersigns.'}</p><p><a class="btn" href="/portal/agreements">Back to my agreements</a> <a href="/portal">My portal</a></p>`));
   if (!['sent', 'partially_signed'].includes(b.inst.status)) return html(page('Not available', '<h1>Not available for signing</h1>'), 409);
-  const body = `<p class="small"><a href="/portal/agreements">\u2190 Back to my agreements</a></p><h1>Review and sign</h1><details class="sum"><summary>${sample ? '<span class="tag">SAMPLE</span> \u00b7 ' : ''}Buyer\u2019s agency agreement \u00b7 ${(n => n + ' buyer' + (n === 1 ? '' : 's') + ' signing')(b.signers.filter(x => x.role === 'buyer').length)}</summary><p class="muted">Steps: electronic records consent, then the Ohio Consumer Guide, then the agreement \u2014 one Face ID check at the end.</p>${sample ? `<div class="sample">${esc(SAMPLE_WATERMARK)}</div>` : ''}</details>
-<section class="card" id="s1"><h2>1. Electronic records</h2><p>${esc(ERSD_TEXT)}</p><label><input type="checkbox" id="ersd" style="width:auto"> I agree</label><p><button class="btn" id="c1">Continue</button> <a href="/portal/agreements/${esc(id)}/agreement.pdf">Download PDF</a></p></section>
+  const nBuyers = b.signers.filter(x => x.role === 'buyer').length;
+  const help = `<p class="help" id="help">Stuck or have a question? Call or text Sebastian at <a href="tel:+13303283170">${HBE_HELP_PHONE}</a>. We\u2019re happy to walk you through it.</p>`;
+  const body = `<p class="small"><a href="/portal/agreements">\u2190 Back to my agreements</a></p><h1>Sign your HomeBuyer Experts agreement</h1><details class="sum"><summary>${sample ? '<span class="tag">SAMPLE</span> \u00b7 ' : ''}Buyer\u2019s agency agreement \u00b7 ${nBuyers} buyer${nBuyers === 1 ? '' : 's'} signing</summary><p class="muted">4 short steps. Takes about 10 minutes. ${nBuyers > 1 ? 'Each of you signs on your own phone.' : ''}</p>${sample ? `<div class="sample">${esc(SAMPLE_WATERMARK)}</div>` : ''}</details>${help}
+<section class="card step" id="s1"><p class="stepno">Step 1 of 4</p><h2>OK to sign on your phone?</h2><p>${esc(ERSD_TEXT)}</p><label class="big-check"><input type="checkbox" id="ersd"> Yes, I agree to sign electronically</label><p><button class="btn wide" id="c1">Next</button></p><p class="small"><a href="/portal/agreements/${esc(id)}/agreement.pdf">Download the agreement (PDF)</a></p></section>
 <div id="s2" hidden>
-<section class="card" id="sg"><h2>2. Ohio Consumer Guide to Agency Relationships</h2><p class="muted">A separate state guide, not your agreement. Scroll to the end.</p><div class="doc" id="guide">${GUIDE_PARAGRAPHS.map(p => `<p>${esc(p)}</p>`).join('')}<p class="muted">\u2014 End of guide \u2014</p></div><p><a href="${GUIDE_PDF_PATH}" target="_blank" rel="noopener" id="gpdf">Open the official guide (PDF)</a></p><label><input type="checkbox" id="gack" style="width:auto" disabled> ${esc(GUIDE_ACK_TEXT)}</label></section>
-<section class="card" id="sa"><h2>3. Read the whole agreement</h2><p class="muted">Scroll to the end to continue.</p>${docHtml(b.fields, sample)}
-<label for="initials">Your initials</label><input id="initials" maxlength="4" autocomplete="off">
-<h2>4. Your signature</h2><label><input type="radio" name="kind" value="typed" checked style="width:auto"> Type</label><label><input type="radio" name="kind" value="drawn" style="width:auto"> Draw</label>
+<section class="card step" id="sg"><p class="stepno">Step 2 of 4</p><h2>Read the Ohio Consumer Guide</h2><p class="muted">This is a short state guide about how real estate agents work. It is not your agreement. Scroll to the bottom.</p><div class="doc" id="guide">${GUIDE_PARAGRAPHS.map(p => `<p>${esc(p)}</p>`).join('')}<p class="muted">\u2014 End of guide \u2014</p></div><p class="small"><a href="${GUIDE_PDF_PATH}" target="_blank" rel="noopener" id="gpdf">Open the official guide (PDF)</a></p><label class="big-check"><input type="checkbox" id="gack" disabled> ${esc(GUIDE_ACK_TEXT)}</label><p><button class="btn wide" id="n2" disabled>Next</button></p></section>
+<section class="card step" id="sa" hidden><p class="stepno">Step 3 of 4</p><h2>Read your agreement</h2><p class="muted">Scroll to the bottom. Then type your initials once; they go on every \u201cinitials\u201d spot.</p>${docHtml(b.fields, sample)}
+<label for="initials">Your initials</label><input id="initials" maxlength="4" autocomplete="off" autocapitalize="characters"><p><button class="btn wide" id="n3" disabled>Next</button> <button type="button" class="btn2" id="b3">Back</button></p></section>
+<section class="card step" id="ss" hidden><p class="stepno">Step 4 of 4</p><h2>Sign</h2><p>Type your full name, or draw it with your finger.</p><label class="big-check"><input type="radio" name="kind" value="typed" checked> Type my name</label><label class="big-check"><input type="radio" name="kind" value="drawn"> Draw my signature</label>
 <input id="typed" placeholder="Type your full name" autocomplete="off"><canvas id="pad" width="520" height="160" hidden></canvas><p><button type="button" id="clear" hidden>Clear</button></p>
-<p class="muted">One Face ID, Touch ID or PIN check confirms both: your receipt of the Consumer Guide and your signature, linked to these exact two documents.</p></section><div class="bar"><button class="btn wide" id="sign" disabled aria-label="Confirm guide receipt and sign with Face ID / passkey">Sign with Face ID</button><a class="btn2" href="/portal/agreements/${esc(id)}/agreement.pdf">PDF</a></div></div><p class="err" id="e"></p>`;
+<p class="muted">Your phone will ask for Face ID, Touch ID or your PIN. That one check signs both: your Consumer Guide receipt and this agreement.</p><p><button type="button" class="btn2" id="b4">Back</button></p></section><div class="bar" id="signbar" hidden><button class="btn wide" id="sign" disabled aria-label="Confirm guide receipt and sign with Face ID / passkey">Sign with Face ID</button><a class="btn2" href="/portal/agreements/${esc(id)}/agreement.pdf">PDF</a></div></div><p class="err" id="e" role="alert"></p>`;
+  const NAV = `const show=k=>{['sg','sa','ss'].forEach(x=>$(x).hidden=x!==k);$('signbar').hidden=k!=='ss';window.scrollTo(0,0)};$('n2').onclick=()=>show('sa');$('n3').onclick=()=>show('ss');$('b3').onclick=()=>show('sg');$('b4').onclick=()=>show('sa');const nav=()=>{$('n2').disabled=!(gseen&&$('gack').checked);$('n3').disabled=!(scrolled&&$('initials').value.trim().length>=2)};setInterval(nav,400);`;
   const js = `${WEBAUTHN_BROWSER_JS}const id=${JSON.stringify(id)},csrf=${JSON.stringify(csrf)},NOPK=${JSON.stringify(NO_PASSKEY_MESSAGE)};const $=x=>document.getElementById(x),E=t=>$('e').textContent=t;
 const post=(u,b)=>fetch(u,{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify({csrf,...b})}).then(async r=>{try{return await r.json()}catch(_){return{ok:false,error:'HTTP '+r.status}}});
-let gseen=false,scrolled=false,strokes=[],cur=null;
+let gseen=false,scrolled=false,strokes=[],cur=null;${NAV}
 $('c1').onclick=async()=>{if(!$('ersd').checked)return E('Please agree to electronic records, or contact HBE to sign on paper.');if(!await hbePasskeySupported())return E(NOPK);const j=await post('/api/portal/agreements/'+id+'/consent',{ersd:true});if(!j.ok)return E(j.error);$('s1').hidden=true;$('s2').hidden=false;E('')};
 const gd=$('guide');gd.addEventListener('scroll',async()=>{if(!gseen&&gd.scrollTop+gd.clientHeight>=gd.scrollHeight-8){gseen=true;await post('/api/portal/agreements/'+id+'/guide/viewed',{viewed:true});$('gack').disabled=false;ready()}});
 const d=$('doc');d.addEventListener('scroll',async()=>{if(!scrolled&&gseen&&d.scrollTop+d.clientHeight>=d.scrollHeight-8){scrolled=true;await post('/api/portal/agreements/'+id+'/viewed',{scrolled:true});ready()}});
