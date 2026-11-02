@@ -105,12 +105,24 @@ export const LEAD_PANEL_CSS = `<style id="hbe-lead-response-css">
 .hbe-leads .lead-msg{min-height:1.2em;margin:.3rem 0;font-weight:600;color:#2d5a3d}.hbe-leads .lead-msg.bad{color:#8a1c12}.hbe-leads form{display:inline-flex;gap:.25rem;margin:.1rem .2rem .1rem 0}.hbe-leads button{font:inherit;font-size:.82rem;font-weight:700;border-radius:8px;padding:.3rem .6rem;border:1px solid #2d5a3d;background:#2d5a3d;color:#fff;cursor:pointer}
 .hbe-leads button.secondary{background:#fff;color:#2d5a3d}.hbe-leads input[type=email]{font:inherit;font-size:.82rem;width:13rem;max-width:100%}
 .hbe-leads .tag{display:inline-block;font-size:.75rem;font-weight:700;padding:.1rem .45rem;border-radius:6px;margin:.1rem .2rem 0 0}.hbe-leads .tag.delayed{background:#fbe9e7;color:#8a1c12}.hbe-leads .tag.ok{background:#e4f4e8;color:#1d5a2e}.hbe-leads .tag.spam{background:#fff4d6;color:#7a5600}
-@media(max-width:700px){.hbe-leads thead{display:none}.hbe-leads tr{display:block;border-top:1px solid #eef1ef;padding:.4rem 0}.hbe-leads td{display:block;border:0;padding:.15rem 0}}
+.hbe-leads .lead-list{list-style:none;margin:0;padding:0}.hbe-leads .lead-card{border-top:1px solid #eef1ef;padding:.7rem 0}.hbe-leads .lead-next{margin:.35rem 0;font-weight:700}.hbe-leads .lead-err{margin:.3rem 0;padding:.45rem .6rem;border-radius:8px;background:#fbe9e7;color:#8a1c12;font-size:.9rem}.hbe-leads .lead-actions{display:flex;flex-wrap:wrap;gap:.4rem}.hbe-leads .lead-actions button{font-size:.95rem;padding:.55rem .9rem;min-height:44px}.hbe-leads .lead-ownerline{margin:.3rem 0 0}.hbe-leads details.lead-owner summary{cursor:pointer;color:#2d5a3d;font-weight:700;font-size:.9rem;padding:.3rem 0}.hbe-leads details.lead-owner form{display:flex;flex-wrap:wrap;margin-top:.3rem}
 </style>`;
 
 export function unacknowledgedBanner(counts) {
   const u = Number(counts?.unacknowledged || 0), d = Number(counts?.alertDelayed || 0);
-  return `<div class="counts" id="hbe-unack-count"><a class="pill${u ? ' warn' : ''}" href="/hbe#lead-response">Unacknowledged leads: ${u}</a>${d ? `<span class="pill warn">Alert delayed: ${d}</span>` : ''}</div>`;
+  return `<div class="counts" id="hbe-unack-count"><a class="pill${u ? ' warn' : ''}" href="/hbe#lead-response">Not yet seen: ${u}</a>${d ? `<span class="pill warn">Alerts late: ${d}</span>` : ''}</div>`;
+}
+
+// Plain-word versions of alert delivery error codes, with what to do next.
+const ALERT_ERROR_HELP = {
+  EMAIL_BINDING_MISSING: 'Email sending isn\u2019t set up on this site yet. Reach out to the buyer yourself, and ask the site admin to connect alert email.',
+  SEND_FAILED: 'The email service turned it down. Reach out to the buyer yourself; it will try again.',
+  NO_RECIPIENT: 'No one is set to receive alerts. Reach out to the buyer yourself, and ask the site admin to add an alert address.'
+};
+export function alertErrorText(code) {
+  const c = String(code || '').trim(); if (!c) return '';
+  const key = Object.keys(ALERT_ERROR_HELP).find(k => c.toUpperCase().startsWith(k));
+  return `Alert email couldn\u2019t send. ${key ? ALERT_ERROR_HELP[key] : 'Reach out to the buyer yourself, and ask the site admin to check alert email.'}`;
 }
 
 export function leadPanelHtml(leads, counts, csrf, env, now = Date.now()) {
@@ -118,24 +130,28 @@ export function leadPanelHtml(leads, counts, csrf, env, now = Date.now()) {
     const name = `${l.first_name || ''} ${l.last_name || ''}`.trim() || 'Buyer';
     const delay = alertDelay(l, now);
     const tags = [
-      delay ? `<span class="tag delayed">${delay.kind === 'delayed' ? `Alert delayed ${delay.minutes}m` : `Alert was ${delay.minutes}m late`}</span>` : (l.alert_status === 'sent' ? '<span class="tag ok">Alert sent</span>' : ''),
-      l.last_error ? `<span class="tag delayed">Last error: ${esc(String(l.last_error).slice(0, 40))}</span>` : '',
-      l.escalated_at ? `<span class="tag delayed">Escalated ${esc(fmt(l.escalated_at))}</span>` : '',
-      Number(l.spam_flag) ? `<span class="tag spam">Suspected spam${l.spam_reason ? ': ' + esc(l.spam_reason) : ''}</span>` : ''
+      delay ? `<span class="tag delayed">${delay.kind === 'delayed' ? `Alert ${delay.minutes} min late` : `Alert was ${delay.minutes} min late`}</span>` : (l.alert_status === 'sent' ? '<span class="tag ok">Alert sent</span>' : ''),
+      l.escalated_at ? `<span class="tag delayed">Reminder sent ${esc(fmt(l.escalated_at))}</span>` : '',
+      Number(l.spam_flag) ? `<span class="tag spam">Might be spam${l.spam_reason ? ': ' + esc(l.spam_reason) : ''}</span>` : ''
     ].join('');
+    const errLine = l.last_error ? `<p class="lead-err" data-code="${esc(String(l.last_error).slice(0, 40))}">${esc(alertErrorText(l.last_error))}</p>` : '';
     const hidden = `<input type="hidden" name="csrf" value="${esc(csrf)}"><input type="hidden" name="buyer_id" value="${esc(l.buyer_id)}">`;
-    const ack = l.acknowledged_at
-      ? `<span class="tag ok">Acknowledged ${esc(fmt(l.acknowledged_at))}</span>`
-      : `<form method="post" action="${LEAD_ACTION_PREFIX}acknowledge" data-lead-action="acknowledge">${hidden}<button type="submit">Acknowledge</button></form>`;
-    const responded = l.first_response_at
-      ? `<span class="tag ok">Responded ${esc(fmt(l.first_response_at))}</span>`
-      : `<form method="post" action="${LEAD_ACTION_PREFIX}responded" data-lead-action="responded">${hidden}<button type="submit" class="secondary">Mark responded</button></form>`;
-    const assign = `<form method="post" action="${LEAD_ACTION_PREFIX}assign" data-lead-action="assign">${hidden}<input type="email" name="assigned_to" aria-label="Assignee for ${esc(name)}" value="${esc(l.assigned_to || defaultAssignee(env))}" required><button type="submit" class="secondary">Assign</button></form>`;
-    return `<tr><td><a href="/hbe?buyer=${encodeURIComponent(l.buyer_id)}"><strong>${esc(name)}</strong></a><br><small>${esc(fmt(l.submitted_at))}</small></td><td>${tags}</td><td>${ack} ${responded}</td><td>${assign}</td></tr>`;
+    const next = l.first_response_at ? `Done: you reached out ${esc(fmt(l.first_response_at))}.`
+      : l.acknowledged_at ? 'Next: reach out to them, then tap \u201cI\u2019ve reached out\u201d.'
+      : 'Next: review this lead, then reach out.';
+    const seen = l.acknowledged_at
+      ? `<span class="tag ok">Seen ${esc(fmt(l.acknowledged_at))}</span>`
+      : `<form method="post" action="${LEAD_ACTION_PREFIX}acknowledge" data-lead-action="acknowledge">${hidden}<button type="submit">I\u2019ve seen it</button></form>`;
+    const reached = l.first_response_at
+      ? `<span class="tag ok">Reached out ${esc(fmt(l.first_response_at))}</span>`
+      : `<form method="post" action="${LEAD_ACTION_PREFIX}responded" data-lead-action="responded">${hidden}<button type="submit"${l.acknowledged_at ? '' : ' class="secondary"'}>I\u2019ve reached out</button></form>`;
+    const owner = l.assigned_to || defaultAssignee(env);
+    const assign = `<details class="lead-owner"><summary>Change owner</summary><form method="post" action="${LEAD_ACTION_PREFIX}assign" data-lead-action="assign">${hidden}<input type="email" name="assigned_to" aria-label="New owner email for ${esc(name)}" value="${esc(owner)}" required><button type="submit" class="secondary">Save owner</button></form></details>`;
+    return `<li class="lead-card"><div class="lead-top"><a href="/hbe?buyer=${encodeURIComponent(l.buyer_id)}"><strong>${esc(name)}</strong></a> <small>${esc(fmt(l.submitted_at))}</small> ${tags}</div><p class="lead-next">${next}</p>${errLine}<div class="lead-actions">${seen} ${reached}</div><p class="lead-ownerline"><small>Owner: ${esc(owner)}</small></p>${assign}</li>`;
   }).join('');
-  return `<section class="hbe-leads" id="lead-response" aria-label="Lead response"><h2>Lead response</h2>${unacknowledgedBanner(counts)}
+  return `<section class="hbe-leads" id="lead-response" aria-label="New leads"><h2>New leads</h2>${unacknowledgedBanner(counts)}
 <p class="lead-msg" id="lead-msg" role="status" aria-live="polite"></p>
-<table><thead><tr><th>Lead</th><th>Alert</th><th>Status</th><th>Assignee</th></tr></thead><tbody>${rows || '<tr><td colspan="4">No leads yet.</td></tr>'}</tbody></table></section>`;
+<ul class="lead-list">${rows || '<li>No leads yet.</li>'}</ul></section>`;
 }
 
 // Lead actions submit in-page with fetch. A plain form POST to /api/hbe/* leaves the

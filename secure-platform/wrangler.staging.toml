@@ -1,0 +1,56 @@
+# STAGING ONLY: hosted test site for PR #106 (SAMPLE e-sign). Separate file so nothing inherits
+# production routes, bindings, crons or email. Deploy: npx wrangler deploy -c wrangler.staging.toml
+# No custom domains/routes, no send_email binding, no crons, synthetic data only.
+name = "hbe-buyer-platform-staging"
+main = "src/staging-entry.js"
+compatibility_date = "2026-08-26"
+workers_dev = true
+preview_urls = false
+keep_vars = false
+
+[vars]
+HBE_ENV = "staging"
+HBE_ADMIN_EMAIL = "cwhitehead@hbexperts.com"
+HBE_OWNER_EMAIL = "cwhitehead@hbexperts.com"
+HBE_LEAD_DEFAULT_ASSIGNEE = "cwhitehead@hbexperts.com"
+TURNSTILE_ENABLED = "false"
+MLS_FEED_MODE = "UNAPPROVED"
+WEBAUTHN_RP_ID = "hbe-buyer-platform-staging.hbe-home-buyers-expert.workers.dev"
+WEBAUTHN_ORIGIN = "https://hbe-buyer-platform-staging.hbe-home-buyers-expert.workers.dev"
+# Staging Access app (self-hosted on the staging host, /hbe and /api/hbe paths). Non-secret.
+CF_ACCESS_TEAM_DOMAIN = "https://still-hat-a141.cloudflareaccess.com"
+CF_ACCESS_AUD = "b31ee52041a2ee0038d3ad96c15cdccd3645cdfd788d6057731e20910be6579e"
+# Secrets set with wrangler secret put (staging-only values): VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, WEBAUTHN_USER_SALT
+
+[[d1_databases]]
+binding = "BUYER_DB"
+database_name = "hbe-buyer-journey-staging"
+database_id = "865fb0b6-f656-4bb2-ab5b-da30483c667b"
+
+[[ratelimits]]
+name = "LOGIN_RATE_LIMITER"
+namespace_id = "82626101"
+  [ratelimits.simple]
+  limit = 6
+  period = 60
+
+[[ratelimits]]
+name = "SUBMIT_RATE_LIMITER"
+namespace_id = "82626102"
+  [ratelimits.simple]
+  limit = 3
+  period = 60
+
+[ai]
+binding = "AI"
+
+[[r2_buckets]]
+binding = "SHOWING_PHOTOS"
+bucket_name = "hbe-showing-photos-staging"
+
+[[r2_buckets]]
+binding = "AGREEMENTS"
+bucket_name = "hbe-agreements-staging"
+
+[version_metadata]
+binding = "CF_VERSION_METADATA"
