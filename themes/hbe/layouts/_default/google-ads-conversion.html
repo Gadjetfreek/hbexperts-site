@@ -13,7 +13,7 @@
         if (fired || event.origin !== 'https://buyer.hbexperts.com' || event.source !== window.parent) return;
         if (event.data !== 'hbe:buyer-experience-submitted') return;
         fired = true;
-        gtag('event', 'conversion', { send_to: 'AW-18500305800/_HR6CNKd55QdEIiH0fVE' });
+        gtag('event', 'conversion', { send_to: 'AW-18500305800/_HR6CNKd55QdEIiH0fVE', value: 1.0, currency: 'USD' });
       });
     })();
   </script>
