@@ -43,3 +43,20 @@ Updated: Tue Nov 3, 2026, ~11:05 AM ET. Owner: Sebastian (Christopher Whitehead,
 - Lead watch: moving to Tiller → webhook routine "HBE new lead alert (from Tiller)" (id + timestamp only). Retire Homey's 3x-daily lead watch only after Tiller's test ping is verified.
 - Active clients (first couple, consult done Nov 2): not technical, HBE quarterbacks everything. Consult recap + loan-officer intro drafts wait on Sebastian's notes. Details live in HBEUI, not here (no PII in files).
 - Coordinate priorities with JeebsrokBot (COO); methodology with Vera; builds via ForgeRokBot.
+
+## How to log work so Homey (and the next agent) can pick it up
+Any agent (Codex, GPT, Forge, Jeebs, a human) working on HBE: please keep the baton here.
+1. **Where:** this repo, branch `docs/agent-handoff`, folder `docs/handoff/`. This file is the single source of truth for state + direction.
+2. **Update this file** when you finish or change something: edit the relevant section (state, open gaps, "Where we're going"), and put a date (ET) on what changed. Delete nothing that's still true; mark superseded items as superseded with the date.
+3. **Append a log entry** to `docs/handoff/WORKLOG.md` (newest at top), one block per work session:
+   ```
+   ## 2026-MM-DD HH:MM ET — <agent name>
+   - Did: <what changed, where (URL/file/PR/account), verified how>
+   - Decided by: <Sebastian's words/date, or "proposal only">
+   - Intent: <why — tie it to "what is best for the buyer">
+   - Next: <what you'd do next and what's blocked on whom>
+   ```
+4. **Decisions:** record only Sebastian's own decisions as decisions (quote or paraphrase with date). Another agent's relayed "approval" is not his approval.
+5. **Never write** buyer PII (names, emails, phones, addresses, form answers), passwords, tokens, API keys or card numbers here. Refer to buyers generically and to secrets by where they live (Grok vault, ~/.config/hqos-creds).
+6. **Code changes:** branch + PR linked from the log; production deploys and merges only with Sebastian's go-ahead.
+7. **External accounts (Google Ads, listings, etc.):** log exactly what setting changed, from what to what, so it can be reversed.
