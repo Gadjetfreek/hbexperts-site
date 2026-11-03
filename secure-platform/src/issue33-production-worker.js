@@ -20,7 +20,10 @@ import {
   addGoogleAdsConversionFrame,
   allowGoogleAdsConversionFrame,
   claimGoogleAdsSubmissionConversion,
-  ensureGoogleAdsSubmissionNonce
+  ensureGoogleAdsSubmissionNonce,
+  captureGoogleAdsClick,
+  readGoogleAdsClick,
+  clearGoogleAdsClick
 } from './google-ads-conversion.js';
 
 export const BUYER_FIRST_CSS = `<style id="buyer-first-clarity">
@@ -350,6 +353,10 @@ const productionWorker = {
       text = text.replace('</head>', `${BIMATRIX_CSS}</head>`);
     }
 
+    if (request.method === 'GET' && response.status === 200) {
+      try { captureGoogleAdsClick(request, headers); } catch { console.error(JSON.stringify({ message: 'google ads click capture failed' })); }
+    }
+
     if (request.method === 'GET' && url.pathname === '/questionnaire' && response.status === 200) {
       try {
         await ensureGoogleAdsSubmissionNonce(request, env, headers);
@@ -362,8 +369,11 @@ const productionWorker = {
       try {
         const claimed = await claimGoogleAdsSubmissionConversion(request, env, headers);
         if (claimed) {
-          text = addGoogleAdsConversionFrame(text);
+          let click = null;
+          try { click = readGoogleAdsClick(request); } catch { click = null; }
+          text = addGoogleAdsConversionFrame(text, click);
           allowGoogleAdsConversionFrame(headers);
+          if (click) clearGoogleAdsClick(headers);
         }
       } catch (error) {
         console.error(JSON.stringify({ message: 'google ads conversion claim failed', error: String(error) }));
