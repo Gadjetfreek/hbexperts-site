@@ -74,7 +74,7 @@ Representation should increase your ability to understand your options and make 
 
 Brokerage licensing information can be verified through the **Ohio Division of Real Estate & Professional Licensing**:
 
-[com.ohio.gov/divisions/real-estate](https://com.ohio.gov/divisions/real-estate)
+[com.ohio.gov/newsystem](https://com.ohio.gov/newsystem)
 
 Search for **Whitehead, Christopher** or license number **2005015772**.
 
