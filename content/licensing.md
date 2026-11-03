@@ -16,6 +16,12 @@ description: "HomeBuyer Experts brokerage and licensing information. Licensed in
 
 **Broker of Record:** Christopher Whitehead
 
+**Broker's Ohio Real Estate License Number:** 2005015772
+
+> Christopher Whitehead, Broker of Record, HomeBuyer Experts LLC, Northeast Ohio, buyer-only. Ohio license #2005015772.
+
+HomeBuyer Experts' Christopher Whitehead is based in Northeast Ohio and represents buyers only. He is not affiliated with any other real estate agent of the same name elsewhere in Ohio.
+
 ---
 
 ## Service Area
@@ -68,7 +74,9 @@ Representation should increase your ability to understand your options and make 
 
 Brokerage licensing information can be verified through the **Ohio Division of Real Estate & Professional Licensing**:
 
-[com.ohio.gov/divisions/real-estate](https://com.ohio.gov/divisions/real-estate)
+[com.ohio.gov/newsystem](https://com.ohio.gov/newsystem)
+
+Search for **Whitehead, Christopher** or license number **2005015772**.
 
 ---
 
