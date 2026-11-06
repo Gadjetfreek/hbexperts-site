@@ -38,7 +38,7 @@ Updated: Tue Nov 3, 2026, ~11:05 AM ET. Owner: Sebastian (Christopher Whitehead,
 
 ## Other open workstreams
 - Listings (service area only, no street address): Yelp done (hours unchanged); Google Business Profile — re-add Akron/Canton/Cleveland/Medina; Apple Maps; claim HomeLight (fix seller wording); CAARE update draft; LinkedIn blurb; ActiveRain; review-request plan (drafts only).
-- NAEBA profile: reply drafted (/workspace/naeba/reply.md, thread to krivera@naeba.info). Waiting on a current headshot from Sebastian, and 30 vs 35 mile radius. Save as Gmail draft with attachment; don't send.
+- NAEBA profile: reply drafted (/workspace/naeba/reply.md, thread to krivera@naeba.info). Waiting on a current headshot from Sebastian, and 35-mile radius (Sebastian decided Nov 6, 2026). Save as Gmail draft with attachment; don't send.
 - Site PR #107 (public identity): waiting on Sentinel routing answer, brokerage LLC license #, Sebastian's merge. PR #106 (native e-sign, staging) and feat/hbeui-mobile-tabs awaiting go-live decisions.
 - Lead watch: moving to Tiller → webhook routine "HBE new lead alert (from Tiller)" (id + timestamp only). Retire Homey's 3x-daily lead watch only after Tiller's test ping is verified.
 - Active clients (first couple, consult done Nov 2): not technical, HBE quarterbacks everything. Consult recap + loan-officer intro drafts wait on Sebastian's notes. Details live in HBEUI, not here (no PII in files).

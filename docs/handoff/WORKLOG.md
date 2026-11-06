@@ -12,3 +12,9 @@ See HOMEY-HANDOFF.md for the format and rules. No PII or secrets.
 - Decided by: Sebastian, Nov 3 2026 (approved fixes 1–4, simpler ad "Buying a home?", pausing "home buying assistance").
 - Intent: pay only for people looking to buy a home in our five counties who might want a buyer's agent; stop paying for grant/assistance-only searches.
 - Next: close gclid attribution gap (needs OK); Sebastian must do advertiser verification by Nov 13 and passkey by Nov 11; developer token / MCC for Tiller reporting; review search terms weekly.
+
+## 2026-11-06 14:05 ET — Homey
+- Did: NAEBA reply target updated from 30-mile to 35-mile radius around Akron in /workspace/naeba/reply.md (draft text only; Gmail draft still waiting on a current headshot).
+- Decided by: Sebastian, Nov 6, 2026 ("make it 35 miles").
+- Intent: cover all of Cleveland as well as the five counties for the NAEBA lead-gen program.
+- Next: Sebastian sends a current headshot (~1000px+); then create Gmail draft to krivera@naeba.info with attachment (do not send).
