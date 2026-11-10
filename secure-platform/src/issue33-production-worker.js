@@ -32,6 +32,13 @@ export const BUYER_FIRST_CSS = `<style id="buyer-first-clarity">
 .buyer-focus-card{background:#fff;border:1px solid #dfe8e2;border-radius:14px;padding:1.25rem 1.3rem;margin:1rem 0 1.15rem;box-shadow:0 8px 26px rgba(26,26,46,.05)}.buyer-focus-card h1{font:600 clamp(1.55rem,4vw,2.1rem) Georgia,serif;color:#1a1a2e;margin:.1rem 0 .35rem}.buyer-focus-card p{margin:.4rem 0;color:#555;line-height:1.55;font-size:1.02rem}.buyer-focus-card .buyer-here{color:#1a1a2e;font-size:1.08rem;margin:.15rem 0 .55rem}.buyer-focus-card .buyer-next-line{color:#1a1a2e;font-size:1.05rem;margin:.75rem 0 .35rem}.buyer-focus-card .buyer-reassure{color:#2d5a3d;font-weight:650}.buyer-more{background:#fff;border:1px solid #e8e5e0;border-radius:12px;margin:.8rem 0;overflow:hidden}.buyer-more>summary{cursor:pointer;padding:1rem 1.05rem;font-weight:850;color:#1a1a2e;list-style:none}.buyer-more>summary::-webkit-details-marker{display:none}.buyer-more>summary:after{content:'+';float:right;color:#2d5a3d;font-size:1.2rem}.buyer-more[open]>summary:after{content:'–'}.buyer-more-body{padding:0 1rem 1rem}.buyer-portal-simplified .i29-next,.buyer-portal-simplified .i29-guide,.buyer-portal-simplified .buyer-roadmap-next{display:none!important}
 @media(max-width:600px){.buyer-review{padding:1rem}.buyer-review-actions{display:grid;grid-template-columns:1fr}.buyer-review-actions button{width:100%}.buyer-focus-card{padding:1rem}}
 .qx-page1-orient{margin:0 0 1rem}.step .buyer-first-core.qx-page1-orient{max-width:none;margin:0 0 1rem}.step .value-context.qx-page1-orient{max-width:none;margin:0 0 .85rem}.step .i29-comp.qx-page1-orient{margin:0 0 1.15rem}
+.hbe-qx-contact-consent{margin:.85rem 0 0;color:#333;font-size:.92rem;line-height:1.45}
+.buyer-review .hbe-qx-contact-consent{margin:1rem 0 0}
+.hbe-qx-compliance-footer{margin:2.5rem 0 0;padding:1.15rem 1.2rem 1.35rem;border-top:1px solid #dfe8e2;background:#f7faf8;color:#2c2c2c;font-size:.88rem;line-height:1.55}
+.hbe-qx-compliance-footer p{margin:.35rem 0}
+.hbe-qx-compliance-footer a{color:#2d5a3d}
+.hbe-qx-eho{display:flex;align-items:center;gap:.7rem;margin:.6rem 0 .2rem}
+.hbe-qx-eho img{width:48px;height:auto;flex:0 0 auto}
 </style>`;
 
 export const BUYER_FIRST_JS = `<script id="buyer-first-review-script">
@@ -184,6 +191,31 @@ export function addBuyerFirstClarity(text, pathname) {
 
   if (pathname === '/portal' && !text.includes('id="buyer-portal-focus-script"')) {
     text = text.replace('</body>', `${BUYER_PORTAL_FOCUS_JS}</body>`);
+  }
+
+
+  if (pathname === '/questionnaire') {
+    const consentText = 'By submitting, you agree HomeBuyer Experts may call or email you about your home search.';
+    if (text.includes('id="buyerExperienceForm"') && !text.includes('id="hbe-qx-contact-consent"')) {
+      const consent = `<p class="hbe-qx-contact-consent" id="hbe-qx-contact-consent">${consentText}</p>`;
+      text = text.replace(/<div class="submitbox">([\s\S]*?)<\/div>/g, (m, inner) => {
+        if (inner.includes('hbe-qx-contact-consent')) return m;
+        return `<div class="submitbox">${inner}${consent}</div>`;
+      });
+    }
+    if (text.includes('class="buyer-review-actions"') && !text.includes('id="hbe-qx-review-consent"')) {
+      const reviewConsent = `<p class="hbe-qx-contact-consent" id="hbe-qx-review-consent">${consentText}</p>`;
+      text = text.replace('<div class="buyer-review-actions">', `${reviewConsent}<div class="buyer-review-actions">`);
+    }
+    if (!text.includes('id="hbe-qx-compliance-footer"')) {
+      const footer = `<footer class="hbe-qx-compliance-footer" id="hbe-qx-compliance-footer"><p>HomeBuyer Experts LLC · Broker of Record Christopher Whitehead · Ohio license #2005015772</p><p class="hbe-qx-eho"><img src="https://www.hud.gov/sites/dfiles/FHEO/images/fheo100.gif" alt="Equal Housing Opportunity" width="48" loading="lazy"><span>HomeBuyer Experts is an Equal Housing Opportunity provider. <a href="https://hbexperts.com/fair-housing/">Fair Housing</a></span></p><p><a href="https://hbexperts.com/privacy/">Privacy Policy</a></p></footer>`;
+      if (text.includes('</main>')) {
+        const i = text.lastIndexOf('</main>');
+        text = `${text.slice(0, i + 7)}${footer}${text.slice(i + 7)}`;
+      } else {
+        text = text.replace('</body>', `${footer}</body>`);
+      }
+    }
   }
 
   if (!text.includes('id="buyer-first-clarity"')) text = text.replace('</head>', `${BUYER_FIRST_CSS}</head>`);
