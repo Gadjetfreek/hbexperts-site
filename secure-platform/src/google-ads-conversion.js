@@ -97,8 +97,10 @@ function parseClick(raw) {
   return { key: match[1], value: match[2] };
 }
 
-// Called on buyer.hbexperts.com GET pages. Stores the first valid click id from the URL in a
-// first-party cookie (Secure, SameSite=Lax, 90 days) so it survives page-to-page navigation.
+// Called on buyer.hbexperts.com GET pages. If the URL has a valid click id (gclid, else
+// gbraid, else wbraid), store it in a first-party cookie (host-only, HttpOnly, Secure,
+// SameSite=Lax, 90 days) so it survives page-to-page navigation. A later visit with a new
+// valid click id overwrites the cookie (last click wins).
 export function captureGoogleAdsClick(request, headers) {
   const url = new URL(request.url);
   for (const key of CLICK_ID_KEYS) {

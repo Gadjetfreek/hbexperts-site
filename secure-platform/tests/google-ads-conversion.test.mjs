@@ -200,11 +200,25 @@ test('schema stores only hashed, expiring, single-use nonce receipts', () => {
   assert.match(schema, /converted_at TEXT/);
 });
 
-test('privacy disclosure describes the isolated fixed-signal boundary', () => {
+test('privacy disclosure describes the isolated conversion frame and first-party cookies', () => {
   const privacy = readFileSync(join(root, 'content/privacy.md'), 'utf8');
   assert.match(privacy, /separate, non-sensitive conversion frame/);
   assert.match(privacy, /fixed completion signal/);
-  assert.match(privacy, /not loaded in the questionnaire, secure submission confirmation, or Buyer Portal/);
+  assert.match(privacy, /hbe_ad_click/);
+  assert.match(privacy, /90 days/);
+  assert.match(privacy, /HttpOnly, Secure, and SameSite=Lax/);
+  assert.match(privacy, /gclid.*gbraid.*wbraid/s);
+  assert.match(privacy, /pass only that click ID to the public conversion frame/);
+  assert.match(privacy, /last click wins/);
+  assert.match(privacy, /hbe_acq/);
+  assert.match(privacy, /up to 24 hours/);
+  assert.match(privacy, /high-level channel/);
+  assert.match(privacy, /does not store names, email addresses, phone numbers, advertising click IDs/);
+  assert.match(privacy, /Google Fonts/);
+  assert.match(privacy, /Inter and Playfair Display/);
+  assert.match(privacy, /fonts\.googleapis\.com and fonts\.gstatic\.com/);
+  assert.match(privacy, /questionnaire does not load Google Fonts/);
+  assert.match(privacy, /not loaded in the questionnaire, the secure submission confirmation, or the Buyer Portal|not loaded in the questionnaire, secure submission confirmation, or Buyer Portal/);
   assert.match(privacy, /does not receive Buyer Experience form fields, access codes, submission nonces/);
 });
 

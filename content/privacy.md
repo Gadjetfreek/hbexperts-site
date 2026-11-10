@@ -4,7 +4,7 @@ subtitle: "How we collect, use, and protect your information."
 description: "HomeBuyer Experts privacy policy — what information we collect, why we collect it, how we use it, and your choices."
 ---
 
-**Effective Date: October 2026**
+**Effective Date: November 2026**
 
 HomeBuyer Experts ("HBE," "we," "us," or "our") is committed to protecting your privacy and preserving your control over what you choose to share. This policy explains what information we collect through this website and the HBE Buyer Journey, how we use it, and how we protect it.
 
@@ -47,7 +47,9 @@ Hosting and infrastructure providers may process technical information needed to
 
 The public informational site includes first-party acquisition instrumentation that records coarse events (for example, that a page was viewed and which high-level channel the visit appears to have come from). Those events use the page pathname and sanitized campaign tokens only. They may be kept briefly in browser memory/session storage and sent to HBE's first-party collector on the secure Buyer Journey host as **aggregate counts** (by day, event, channel, campaign token, and entry page). They do not include names, email addresses, phone numbers, Buyer Experience answers, household identifiers, IP addresses stored for analytics, user agents, full referrer URLs, or advertising/cross-site identifiers. An optional aggregate Cloudflare Web Analytics beacon may be enabled later; it is a separate pageview product, it does not receive these custom events, and it is off by default. We do not use this public-site instrumentation for advertising or cross-site targeting.
 
-On the paid-search landing page, HBE uses the Google Ads tag to measure advertising visits. After the secure Buyer Journey confirms that a Buyer Experience was successfully sent, it may request a separate, non-sensitive conversion frame from the public HBE site. Google code runs only in that isolated public frame—not in the questionnaire, secure submission confirmation, or Buyer Portal. The frame receives only a fixed completion signal. HBE does not send Google names, email addresses, phone numbers, questionnaire answers, access codes, submission nonces, household or buyer identifiers, or the contents of a submission. Google may use cookies or similar browser storage for advertising measurement under its own terms. HBE does not use Buyer Journey answers to build advertising profiles or sell behavioral data.
+Google Ads code is not loaded in the questionnaire, the secure submission confirmation, or the Buyer Portal. After the secure Buyer Journey confirms that a Buyer Experience was successfully sent, it may request a separate, non-sensitive conversion frame from the public HBE site. That frame receives a fixed completion signal and, when one is available, the Google ad click ID stored in the first-party `hbe_ad_click` cookie. This lets Google Ads credit the conversion to the ad click. Google code runs only in that isolated public frame. HBE does not send Google names, email addresses, phone numbers, questionnaire answers, access codes, submission nonces, household or buyer identifiers, or the contents of a submission. Google may use cookies or similar browser storage for advertising measurement under its own terms. HBE does not use Buyer Journey answers to build advertising profiles or sell behavioral data.
+
+The public informational website loads the Inter and Playfair Display fonts from Google Fonts. When those fonts load, Google may receive your IP address and basic browser information under Google's terms.
 
 ---
 
@@ -86,17 +88,27 @@ The public HBE informational website is hosted on GitHub Pages. GitHub may log s
 
 ### Google Ads
 
-HBE uses Google Ads measurement on the public paid-search landing page and in a separate public conversion frame that can receive a fixed completion signal only after the secure Buyer Journey accepts a Buyer Experience. Google Ads code is not loaded in the questionnaire, secure submission confirmation, or Buyer Portal. Google does not receive Buyer Experience form fields, access codes, submission nonces, or other secure Buyer Journey content from this integration.
+HBE uses Google Ads measurement on the public paid-search page and in a separate public conversion frame that can receive a fixed completion signal, and the Google ad click ID when one is available, only after the secure Buyer Journey accepts a Buyer Experience. Google Ads code is not loaded in the questionnaire, secure submission confirmation, or Buyer Portal. Google does not receive Buyer Experience form fields, access codes, submission nonces, or other secure Buyer Journey content from this integration.
+
+### Google Fonts
+
+The public informational website loads the Inter and Playfair Display fonts from Google Fonts (fonts.googleapis.com and fonts.gstatic.com). When those fonts are requested, Google may receive your IP address and basic browser information under Google's terms. The Buyer Journey questionnaire does not load Google Fonts.
 
 ---
 
 ## Cookies and Sessions
 
-The public informational site may use standard browser technologies needed for functionality. Coarse first-party instrumentation events may be stored in session storage for the visit only. Optional Cloudflare Web Analytics is a separate pageview product and is off by default; it does not receive those custom events. The Google Ads tag on the public paid-search landing page and isolated public conversion frame may set or read advertising-measurement cookies or similar browser storage.
+The public informational site may use standard browser technologies needed for functionality. Coarse first-party instrumentation events may be stored in session storage (`hbe_acq_v1`) for the visit only. Optional Cloudflare Web Analytics is a separate pageview product and is off by default; it does not receive those custom events. The Google Ads tag on the public paid-search page and isolated public conversion frame may set or read advertising-measurement cookies or similar browser storage under Google's terms.
 
-The secure Buyer Journey uses a session cookie to keep an authorized buyer signed in. If a buyer deliberately selects a "remember this device" option, that session may persist longer than a normal browser session.
+On the secure Buyer Journey host (buyer.hbexperts.com), HBE may set these first-party cookies:
 
-We do not use Buyer Journey session cookies for cross-site advertising or behavioral targeting.
+- **hbe_ad_click.** If you arrive from a Google ad, this cookie stores Google's ad click ID (`gclid`, `gbraid`, or `wbraid`) for up to 90 days so a later completed Buyer Experience can be credited to that ad click. It is HttpOnly, Secure, and SameSite=Lax, and it is limited to buyer.hbexperts.com. A later Google ad click updates the cookie to the newest click ID (last click wins). After a successful submission, HBE may pass only that click ID to the public conversion frame, then clear the cookie. This cookie does not store your name, email, phone, or form answers.
+
+- **hbe_acq.** This short-lived cookie (up to 24 hours) stores only coarse, non-identifying details about how you reached the Buyer Journey: a high-level channel (for example, paid or organic), an entry page path, and an optional sanitized campaign token. It is HttpOnly, Secure, and SameSite=Lax, and it is limited to buyer.hbexperts.com. HBE uses it only for aggregate counts, such as how many people start the Buyer Journey or complete a Buyer Experience. It does not store names, email addresses, phone numbers, advertising click IDs, or Buyer Experience answers.
+
+- **Session cookie.** The Buyer Journey uses a session cookie to keep an authorized buyer signed in. If a buyer deliberately selects a "remember this device" option, that session may persist longer than a normal browser session.
+
+We do not use Buyer Journey session cookies, `hbe_ad_click`, or `hbe_acq` for cross-site advertising or behavioral targeting.
 
 ---
 
