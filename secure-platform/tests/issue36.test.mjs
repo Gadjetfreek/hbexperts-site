@@ -451,3 +451,5 @@ test('portal questionnaire privacy and submit copy use review/send verbs', () =>
   const livePrivacy = live.match(/class="privacy">[\s\S]*?<\/div>/)[0];
   assert.doesNotMatch(livePrivacy, /Submit to HBE/);
 });
+
+import './questionnaire-compliance-footer.test.mjs';
