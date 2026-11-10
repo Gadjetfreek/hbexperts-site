@@ -1,5 +1,5 @@
 # Homey → next agent handoff (HBE operations)
-Updated: Tue Nov 3, 2026, ~11:05 AM ET. Owner: Sebastian (Christopher Whitehead, Broker of Record, cwhitehead@hbexperts.com). Jen (Jennifer Hobday) works alongside him.
+Updated: Tue Nov 10, 2026, 2:41 PM ET. Owner: Sebastian (Christopher Whitehead, Broker of Record, cwhitehead@hbexperts.com). Jen (Jennifer Hobday) works alongside him.
 
 ## Why we do this (intent to keep alive)
 - North Star: "What is best for the buyer?" People are the purpose; real estate is the medium.
@@ -25,21 +25,21 @@ Updated: Tue Nov 3, 2026, ~11:05 AM ET. Owner: Sebastian (Christopher Whitehead,
 - Done Nov 3 (verified): removed negatives "single mom", "single mother", "section 8", "100 down" (Sentinel rule); adding headlines "Buying a Home?" (pinned #1), "Buying a Home in NE Ohio?", "Get an Exclusive Buyer's Agent" (replaced "Buyer Strategy Session", "Make a Wiser Home Purchase", "What Is Best for the Buyer?"); description NOT added (4/4 full). Ad review pending.
 - Search-term findings (all time): keyword "home buying assistance" (phrase+exact) drove ~51 of 54 keyword clicks and pulls program/grant seekers; buyer-agent keywords get almost no traffic. PROPOSED (awaiting Sebastian): pause "home buying assistance", lean on buyer-agent / buyer-representation keywords. Ambiguous terms (e.g. "fha $100 down program", "first time home buyer") judged one by one.
 - Conversion tracking ALREADY exists (PR #90, merged Oct 8): buyer.hbexperts.com worker sets one-time nonce on /questionnaire, and on successful /api/intake injects hidden iframe https://hbexperts.com/google-ads-conversion/ which fires AW-18500305800/_HR6CNKd55QdEIiH0fVE. No buyer data sent to Google. Ads action "Submit lead form" shows "needs attention" (never fired).
-- KNOWN GAP (open, awaiting Sebastian's OK): ad now lands directly on the form page, which has no Google tag, so the gclid isn't captured and conversions likely won't be attributed. Proposed fix: carry gclid from the questionnaire URL through to the iframe (or a first-party cookie) on successful submit; branch + PR, Sebastian approves prod. Alternative: revert final URL to /buyer-representation/ (has the tag).
+- KNOWN GAP (code complete Nov 10, awaiting merge + Worker deploy): PR #108 captures a validated gclid/gbraid/wbraid in first-party cookie `hbe_ad_click` (HttpOnly, Secure, SameSite=Lax, 90 days; last click wins) and passes only that click ID to the conversion frame after a successful once-only intake claim. Privacy Policy updated to disclose `hbe_ad_click`, `hbe_acq`, and Google Fonts. Still needs Sebastian's merge and explicit Worker deploy go, plus confirmation that auto-tagging is on. After deploy, confirm "Submit lead form" shows Recording from the first real lead (no synthetic production submit).
 - Sebastian-only deadlines: advertiser verification by Nov 13 (else ads paused); passkey for the Google login before Nov 11.
 - Promos: $500 spend-$500 credit "processing"; $300 conversion-tracking offer must be redeemed by Nov 21 (ask Sebastian before accepting).
 - Billing note: Google Workspace (~$36/mo, 2 users) and Google One are separate from Ads.
 
 ## Where we're going (Ads)
 1. Confirm the in-progress edits; send Sebastian the sorted search-term list for decisions.
-2. Close the gclid attribution gap (with OK).
+2. Merge and deploy PR #108 (gclid attribution + privacy disclosures) with Sebastian's explicit Worker deploy go; confirm auto-tagging and that "Submit lead form" records after the first real lead.
 3. Free reporting automation on Tiller: Google Ads API + open-source google-ads-python. Needs a developer token via a free MCC (manager account) linked to 856-281-7245 and Basic access (test access won't read real accounts). JeebsrokBot found no existing token; PT was asked in Slack #hqos-agent-comms. If none: create MCC, apply in API Center. Interim option: Google Ads Scripts in-account.
 4. Weekly review: search terms, leads vs. spend; budget changes only with Sebastian.
 
 ## Other open workstreams
 - Listings (service area only, no street address): Yelp done (hours unchanged); Google Business Profile — re-add Akron/Canton/Cleveland/Medina; Apple Maps; claim HomeLight (fix seller wording); CAARE update draft; LinkedIn blurb; ActiveRain; review-request plan (drafts only).
 - NAEBA profile: reply drafted (/workspace/naeba/reply.md, thread to krivera@naeba.info). Waiting on a current headshot from Sebastian, and 35-mile radius (Sebastian decided Nov 6, 2026). Save as Gmail draft with attachment; don't send.
-- Site PR #107 (public identity): waiting on Sentinel routing answer, brokerage LLC license #, Sebastian's merge. PR #106 (native e-sign, staging) and feat/hbeui-mobile-tabs awaiting go-live decisions.
+- Site PR #107 (public identity; license lookup now https://lpi.elicense.ohio.gov/): waiting on Sebastian to confirm license #2005015772 and the format Ohio's eLicense lookup shows, then merge. PR #108 (gclid passthrough + privacy disclosures) and PR #109 (questionnaire compliance footer + call-or-email consent) waiting on merge and Sebastian's explicit Worker deploy go. License number on #107/#109 still needs confirmation. PR #106 (native e-sign, staging) and feat/hbeui-mobile-tabs awaiting go-live decisions.
 - Lead watch: moving to Tiller → webhook routine "HBE new lead alert (from Tiller)" (id + timestamp only). Retire Homey's 3x-daily lead watch only after Tiller's test ping is verified.
 - Active clients (first couple, consult done Nov 2): not technical, HBE quarterbacks everything. Consult recap + loan-officer intro drafts wait on Sebastian's notes. Details live in HBEUI, not here (no PII in files).
 - Coordinate priorities with JeebsrokBot (COO); methodology with Vera; builds via ForgeRokBot.
