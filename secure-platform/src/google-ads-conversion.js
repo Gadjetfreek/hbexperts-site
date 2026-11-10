@@ -81,12 +81,58 @@ export function allowGoogleAdsConversionFrame(headers) {
   headers.set('content-security-policy', `${directives.join('; ')};`);
 }
 
-export function addGoogleAdsConversionFrame(html) {
+// Ad click identifiers. Only these three keys, only a strict charset/length, never buyer data.
+const CLICK_ID_KEYS = ['gclid', 'gbraid', 'wbraid'];
+const CLICK_ID_RE = /^[A-Za-z0-9_-]{10,200}$/;
+const CLICK_COOKIE = 'hbe_ad_click';
+const CLICK_TTL_SECONDS = 90 * 24 * 60 * 60;
+
+export function validClickId(key, value) {
+  return CLICK_ID_KEYS.includes(key) && typeof value === 'string' && CLICK_ID_RE.test(value);
+}
+
+function parseClick(raw) {
+  const match = /^(gclid|gbraid|wbraid)\.([A-Za-z0-9_-]+)$/.exec(raw || '');
+  if (!match || !validClickId(match[1], match[2])) return null;
+  return { key: match[1], value: match[2] };
+}
+
+// Called on buyer.hbexperts.com GET pages. If the URL has a valid click id (gclid, else
+// gbraid, else wbraid), store it in a first-party cookie (host-only, HttpOnly, Secure,
+// SameSite=Lax, 90 days) so it survives page-to-page navigation. A later visit with a new
+// valid click id overwrites the cookie (last click wins).
+export function captureGoogleAdsClick(request, headers) {
+  const url = new URL(request.url);
+  for (const key of CLICK_ID_KEYS) {
+    const value = url.searchParams.get(key);
+    if (value !== null && validClickId(key, value)) {
+      headers.append('set-cookie', `${CLICK_COOKIE}=${key}.${value}; Path=/; Max-Age=${CLICK_TTL_SECONDS}; HttpOnly; Secure; SameSite=Lax`);
+      return { key, value };
+    }
+  }
+  return null;
+}
+
+export function readGoogleAdsClick(request) {
+  return parseClick(getCookie(request, CLICK_COOKIE));
+}
+
+export function clearGoogleAdsClick(headers) {
+  headers.append('set-cookie', `${CLICK_COOKIE}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax`);
+}
+
+export function googleAdsConversionFrameUrl(click) {
+  if (!click || !validClickId(click.key, click.value)) return GOOGLE_ADS_CONVERSION_FRAME_URL;
+  return `${GOOGLE_ADS_CONVERSION_FRAME_URL}?${click.key}=${encodeURIComponent(click.value)}`;
+}
+
+export function addGoogleAdsConversionFrame(html, click = null) {
   if (!html || typeof html !== 'string' || !html.includes('</body>')) return html;
   if (html.includes('id="hbe-google-ads-conversion-frame"')) return html;
+  const frameUrl = googleAdsConversionFrameUrl(click);
 
-  const frame = `<iframe id="hbe-google-ads-conversion-frame" title="" aria-hidden="true" tabindex="-1" sandbox="allow-scripts allow-same-origin" referrerpolicy="no-referrer" style="position:absolute;width:1px;height:1px;border:0;clip-path:inset(50%);overflow:hidden"></iframe><script id="hbe-google-ads-conversion-trigger">(()=>{const frame=document.getElementById('hbe-google-ads-conversion-frame');if(!frame)return;frame.addEventListener('load',()=>frame.contentWindow.postMessage('hbe:buyer-experience-submitted','https://hbexperts.com'),{once:true});frame.src='${GOOGLE_ADS_CONVERSION_FRAME_URL}';})();</script>`;
+  const frame = `<iframe id="hbe-google-ads-conversion-frame" title="" aria-hidden="true" tabindex="-1" sandbox="allow-scripts allow-same-origin" referrerpolicy="no-referrer" style="position:absolute;width:1px;height:1px;border:0;clip-path:inset(50%);overflow:hidden"></iframe><script id="hbe-google-ads-conversion-trigger">(()=>{const frame=document.getElementById('hbe-google-ads-conversion-frame');if(!frame)return;frame.addEventListener('load',()=>frame.contentWindow.postMessage('hbe:buyer-experience-submitted','https://hbexperts.com'),{once:true});frame.src='${frameUrl}';})();</script>`;
   return html.replace('</body>', `${frame}</body>`);
 }
 
-export const __test = { NONCE_COOKIE, NONCE_RE, NONCE_TTL_SECONDS, sha256Hex };
+export const __test = { CLICK_COOKIE, CLICK_ID_RE, CLICK_TTL_SECONDS, NONCE_COOKIE, NONCE_RE, NONCE_TTL_SECONDS, sha256Hex };

@@ -189,7 +189,7 @@ test('production wrapper gates nonce issuance and conversion claim to exact succ
   const worker = readFileSync(join(root, 'secure-platform/src/issue33-production-worker.js'), 'utf8');
   assert.match(worker, /request\.method === 'GET' && url\.pathname === '\/questionnaire' && response\.status === 200/);
   assert.match(worker, /request\.method === 'POST' && url\.pathname === '\/api\/intake' && response\.status === 200/);
-  assert.match(worker, /if \(claimed\) \{[\s\S]*addGoogleAdsConversionFrame\(text\)[\s\S]*allowGoogleAdsConversionFrame\(headers\)/);
+  assert.match(worker, /if \(claimed\) \{[\s\S]*addGoogleAdsConversionFrame\(text, click\)[\s\S]*allowGoogleAdsConversionFrame\(headers\)/);
 });
 
 test('schema stores only hashed, expiring, single-use nonce receipts', () => {
@@ -200,10 +200,105 @@ test('schema stores only hashed, expiring, single-use nonce receipts', () => {
   assert.match(schema, /converted_at TEXT/);
 });
 
-test('privacy disclosure describes the isolated fixed-signal boundary', () => {
+test('privacy disclosure describes the isolated conversion frame and first-party cookies', () => {
   const privacy = readFileSync(join(root, 'content/privacy.md'), 'utf8');
   assert.match(privacy, /separate, non-sensitive conversion frame/);
   assert.match(privacy, /fixed completion signal/);
-  assert.match(privacy, /not loaded in the questionnaire, secure submission confirmation, or Buyer Portal/);
+  assert.match(privacy, /hbe_ad_click/);
+  assert.match(privacy, /90 days/);
+  assert.match(privacy, /HttpOnly, Secure, and SameSite=Lax/);
+  assert.match(privacy, /gclid.*gbraid.*wbraid/s);
+  assert.match(privacy, /pass only that click ID to the public conversion frame/);
+  assert.match(privacy, /last click wins/);
+  assert.match(privacy, /hbe_acq/);
+  assert.match(privacy, /up to 24 hours/);
+  assert.match(privacy, /high-level channel/);
+  assert.match(privacy, /does not store names, email addresses, phone numbers, advertising click IDs/);
+  assert.match(privacy, /Google Fonts/);
+  assert.match(privacy, /Inter and Playfair Display/);
+  assert.match(privacy, /fonts\.googleapis\.com and fonts\.gstatic\.com/);
+  assert.match(privacy, /questionnaire does not load Google Fonts/);
+  assert.match(privacy, /not loaded in the questionnaire, the secure submission confirmation, or the Buyer Portal|not loaded in the questionnaire, secure submission confirmation, or Buyer Portal/);
   assert.match(privacy, /does not receive Buyer Experience form fields, access codes, submission nonces/);
+});
+
+// --- Ad click id (gclid/gbraid/wbraid) passthrough ---
+import {
+  captureGoogleAdsClick,
+  readGoogleAdsClick,
+  clearGoogleAdsClick,
+  googleAdsConversionFrameUrl,
+  validClickId
+} from '../src/google-ads-conversion.js';
+
+const SYNTH_GCLID = 'TeSt_GcLiD-0123456789abcXYZ';
+
+test('click id validation is strict', () => {
+  assert.equal(validClickId('gclid', SYNTH_GCLID), true);
+  assert.equal(validClickId('gbraid', '0AAAAA-synthetic_1'), true);
+  assert.equal(validClickId('wbraid', 'CkSynthetic_wbraid1'), true);
+  for (const bad of ['', 'short', 'a'.repeat(201), 'abc<script>xyz1', 'abc def ghij1', 'abc%27xyz12345', "abc'xyz12345", 'abc"xyz12345', 'a.b.c.d.e.f.g.h', 'buyer@example.com']) {
+    assert.equal(validClickId('gclid', bad), false, bad);
+  }
+  assert.equal(validClickId('email', SYNTH_GCLID), false);
+  assert.equal(validClickId('utm_source', SYNTH_GCLID), false);
+});
+
+test('landing capture stores only a valid click id in a first-party Lax cookie', () => {
+  const headers = new Headers();
+  const click = captureGoogleAdsClick(new Request(`https://buyer.hbexperts.com/questionnaire?gclid=${SYNTH_GCLID}&email=buyer%40example.com&name=Test`), headers);
+  assert.deepEqual(click, { key: 'gclid', value: SYNTH_GCLID });
+  const cookie = headers.get('set-cookie');
+  assert.match(cookie, new RegExp(`^hbe_ad_click=gclid\\.${SYNTH_GCLID};`));
+  assert.match(cookie, /Max-Age=7776000/);
+  assert.match(cookie, /Secure/);
+  assert.match(cookie, /SameSite=Lax/);
+  assert.doesNotMatch(cookie, /Domain=/i);
+  assert.doesNotMatch(cookie, /example\.com|Test/);
+  assert.ok(__test.CLICK_TTL_SECONDS <= 90 * 24 * 60 * 60);
+});
+
+test('invalid or missing click ids are ignored and set no cookie', () => {
+  for (const q of ['', '?gclid=bad<>value12345', '?gclid=short', '?utm_source=google', `?fbclid=${SYNTH_GCLID}`]) {
+    const headers = new Headers();
+    assert.equal(captureGoogleAdsClick(new Request(`https://buyer.hbexperts.com/${q}`), headers), null);
+    assert.equal(headers.has('set-cookie'), false, q);
+  }
+});
+
+test('click id survives navigation: read back from cookie on any later request', () => {
+  const req = new Request('https://buyer.hbexperts.com/api/intake', { method: 'POST', headers: { cookie: `other=1; hbe_ad_click=wbraid.CkSynthetic_wbraid1` } });
+  assert.deepEqual(readGoogleAdsClick(req), { key: 'wbraid', value: 'CkSynthetic_wbraid1' });
+  const tampered = new Request('https://buyer.hbexperts.com/api/intake', { method: 'POST', headers: { cookie: `hbe_ad_click=gclid.abc<script>12345` } });
+  assert.equal(readGoogleAdsClick(tampered), null);
+  const wrongKey = new Request('https://buyer.hbexperts.com/api/intake', { method: 'POST', headers: { cookie: `hbe_ad_click=email.${SYNTH_GCLID}` } });
+  assert.equal(readGoogleAdsClick(wrongKey), null);
+  const h = new Headers();
+  clearGoogleAdsClick(h);
+  assert.match(h.get('set-cookie'), /^hbe_ad_click=; .*Max-Age=0/);
+});
+
+test('success frame carries only the click id, never buyer data', () => {
+  assert.equal(googleAdsConversionFrameUrl(null), 'https://hbexperts.com/google-ads-conversion/');
+  assert.equal(googleAdsConversionFrameUrl({ key: 'gclid', value: 'bad<>' }), 'https://hbexperts.com/google-ads-conversion/');
+  const out = addGoogleAdsConversionFrame(successHtml, { key: 'gclid', value: SYNTH_GCLID });
+  assert.match(out, new RegExp(`frame\\.src='https://hbexperts\\.com/google-ads-conversion/\\?gclid=${SYNTH_GCLID}'`));
+  const src = /frame\.src='([^']+)'/.exec(out)[1];
+  const params = [...new URL(src).searchParams.keys()];
+  assert.deepEqual(params, ['gclid']);
+  assert.doesNotMatch(src, /Private|Buyer|SECRET|@/);
+  assert.doesNotMatch(out, /googletagmanager|googleadservices|AW-18500305800|send_to/i);
+});
+
+test('public frame sends explicit value and currency once', () => {
+  const layout = readFileSync(join(root, 'themes/hbe/layouts/_default/google-ads-conversion.html'), 'utf8');
+  assert.match(layout, /value: 1\.0, currency: 'USD'/);
+  assert.equal((layout.match(/gtag\('event', 'conversion'/g) || []).length, 1);
+});
+
+test('production worker wires capture on GET and passthrough only inside the successful claim', () => {
+  const src = readFileSync(join(root, 'secure-platform/src/issue33-production-worker.js'), 'utf8');
+  const claimBlock = src.slice(src.indexOf("url.pathname === '/api/intake' && response.status === 200"));
+  assert.ok(claimBlock.indexOf('if (claimed)') < claimBlock.indexOf('readGoogleAdsClick'));
+  assert.match(src, /try \{ captureGoogleAdsClick\(request, headers\); \} catch/);
 });
