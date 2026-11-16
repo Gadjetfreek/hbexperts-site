@@ -65,8 +65,18 @@ function cookieValue(headers) {
 
 test('public base tag remains scoped to the buyer representation landing page', () => {
   const layout = readFileSync(join(root, 'themes/hbe/layouts/_default/baseof.html'), 'utf8');
-  assert.match(layout, /if eq \.RelPermalink "\/buyer-representation\/"/);
-  assert.equal((layout.match(/AW-18500305800/g) || []).length, 2);
+  const scopeStart = layout.indexOf('{{ if eq .RelPermalink "/buyer-representation/" }}');
+  const scopeEnd = layout.indexOf('{{ end }}', scopeStart);
+  const landingPageTags = layout.slice(scopeStart, scopeEnd);
+  const outsideLandingPageScope = layout.slice(0, scopeStart) + layout.slice(scopeEnd);
+
+  assert.ok(scopeStart >= 0);
+  assert.ok(scopeEnd > scopeStart);
+  assert.equal((landingPageTags.match(/GTM-TWSV28HQ/g) || []).length, 1);
+  assert.equal((landingPageTags.match(/AW-18500305800/g) || []).length, 2);
+  assert.equal((landingPageTags.match(/gtag\('js', new Date\(\)\)/g) || []).length, 1);
+  assert.doesNotMatch(outsideLandingPageScope, /GTM-TWSV28HQ|AW-18500305800/);
+  assert.ok(layout.indexOf('GTM-TWSV28HQ') < layout.indexOf('<meta charset="utf-8">'));
   assert.ok(layout.indexOf('AW-18500305800') < layout.indexOf('<meta charset="utf-8">'));
 });
 
@@ -88,7 +98,7 @@ test('secure platform never embeds Google code, identifiers, or third-party endp
     .filter(path => path.endsWith('.js'))
     .map(path => readFileSync(path, 'utf8'))
     .join('\n');
-  assert.doesNotMatch(secureSource, /googletagmanager|googleadservices|AW-18500305800|_HR6CNKd55QdEIiH0fVE|send_to/i);
+  assert.doesNotMatch(secureSource, /googletagmanager|googleadservices|GTM-TWSV28HQ|AW-18500305800|_HR6CNKd55QdEIiH0fVE|send_to/i);
 });
 
 test('questionnaire visit issues an opaque HttpOnly nonce stored only as a hash', async () => {
