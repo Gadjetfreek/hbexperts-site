@@ -23,7 +23,10 @@ import {
   ensureGoogleAdsSubmissionNonce,
   captureGoogleAdsClick,
   readGoogleAdsClick,
-  clearGoogleAdsClick
+  clearGoogleAdsClick,
+  isBuyerJourneyLandingPath,
+  addBuyerJourneyLandingTags,
+  allowBuyerJourneyLandingTagsCsp
 } from './google-ads-conversion.js';
 
 export const BUYER_FIRST_CSS = `<style id="buyer-first-clarity">
@@ -387,6 +390,12 @@ const productionWorker = {
 
     if (request.method === 'GET' && response.status === 200) {
       try { captureGoogleAdsClick(request, headers); } catch { console.error(JSON.stringify({ message: 'google ads click capture failed' })); }
+    }
+
+    // Paid-search tracker: GTM + AW gtag on the exact root landing HTML only.
+    if (request.method === 'GET' && response.status === 200 && isBuyerJourneyLandingPath(url.pathname)) {
+      text = addBuyerJourneyLandingTags(text);
+      allowBuyerJourneyLandingTagsCsp(headers);
     }
 
     if (request.method === 'GET' && url.pathname === '/questionnaire' && response.status === 200) {
