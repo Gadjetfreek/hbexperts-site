@@ -135,4 +135,74 @@ export function addGoogleAdsConversionFrame(html, click = null) {
   return html.replace('</body>', `${frame}</body>`);
 }
 
-export const __test = { CLICK_COOKIE, CLICK_ID_RE, CLICK_TTL_SECONDS, NONCE_COOKIE, NONCE_RE, NONCE_TTL_SECONDS, sha256Hex };
+// Public-facing paid-search measurement, root HTML of buyer.hbexperts.com only.
+// GTM container and the direct AW config are injected together. Do not add a
+// noscript iframe, a _gl linker, or a second gtag config if one is already present.
+export const BUYER_JOURNEY_GTM_ID = 'GTM-TWSV28HQ';
+export const BUYER_JOURNEY_AW_ID = 'AW-18500305800';
+
+export function isBuyerJourneyLandingPath(pathname) {
+  if (typeof pathname !== 'string') return false;
+  let decoded = pathname;
+  try {
+    for (let i = 0; i < 5; i++) {
+      const next = decodeURIComponent(decoded);
+      if (next === decoded) break;
+      decoded = next;
+    }
+  } catch {
+    return false;
+  }
+  return decoded === '/';
+}
+
+const GTM_HEAD_SNIPPET = `<!-- Google Tag Manager --><script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${BUYER_JOURNEY_GTM_ID}');</script><!-- End Google Tag Manager -->`;
+
+const AW_GTAG_SNIPPET = `<script async src="https://www.googletagmanager.com/gtag/js?id=${BUYER_JOURNEY_AW_ID}"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());gtag('config', '${BUYER_JOURNEY_AW_ID}');</script>`;
+
+function hasGtmContainer(html) {
+  return html.includes(`gtm.js?id=${BUYER_JOURNEY_GTM_ID}`) || html.includes(`'${BUYER_JOURNEY_GTM_ID}'`) || html.includes(`"${BUYER_JOURNEY_GTM_ID}"`);
+}
+
+function hasAwGtagConfig(html) {
+  return html.includes(`gtag/js?id=${BUYER_JOURNEY_AW_ID}`) || html.includes(`gtag('config', '${BUYER_JOURNEY_AW_ID}')`) || html.includes(`gtag("config", "${BUYER_JOURNEY_AW_ID}")`);
+}
+
+export function addBuyerJourneyLandingTags(html) {
+  if (!html || typeof html !== 'string') return html;
+  if (!/<head[\s>]/i.test(html)) return html;
+  const parts = [];
+  if (!hasGtmContainer(html)) parts.push(GTM_HEAD_SNIPPET);
+  if (!hasAwGtagConfig(html)) parts.push(AW_GTAG_SNIPPET);
+  if (!parts.length) return html;
+  return html.replace(/<head([^>]*)>/i, `<head$1>${parts.join('')}`);
+}
+
+const LANDING_TAG_CSP = {
+  'script-src': ['https://www.googletagmanager.com', 'https://www.googleadservices.com', 'https://www.google.com'],
+  'img-src': ['https://www.googletagmanager.com', 'https://www.googleadservices.com', 'https://googleads.g.doubleclick.net', 'https://pagead2.googlesyndication.com', 'https://www.google.com'],
+  'connect-src': ['https://www.googletagmanager.com', 'https://www.googleadservices.com', 'https://googleads.g.doubleclick.net', 'https://pagead2.googlesyndication.com', 'https://www.google.com', 'https://ad.doubleclick.net'],
+  'frame-src': ['https://www.googletagmanager.com']
+};
+
+function addCspSources(policy, directive, sources) {
+  const re = new RegExp(`(^|;)\\s*${directive}\\s+([^;]*)`);
+  const match = re.exec(policy);
+  if (!match) return `${policy}; ${directive} 'self' ${sources.join(' ')}`;
+  const existing = new Set(match[2].trim().split(/\s+/).filter(Boolean));
+  for (const src of sources) existing.add(src);
+  return policy.replace(re, `${match[1]} ${directive} ${[...existing].join(' ')}`);
+}
+
+export function allowBuyerJourneyLandingTagsCsp(headers) {
+  const current = headers.get('content-security-policy');
+  if (!current) return;
+  let policy = current;
+  for (const [directive, sources] of Object.entries(LANDING_TAG_CSP)) {
+    policy = addCspSources(policy, directive, sources);
+  }
+  if (!policy.trim().endsWith(';')) policy = `${policy.trim()};`;
+  headers.set('content-security-policy', policy);
+}
+
+export const __test = { CLICK_COOKIE, CLICK_ID_RE, CLICK_TTL_SECONDS, NONCE_COOKIE, NONCE_RE, NONCE_TTL_SECONDS, sha256Hex, hasGtmContainer, hasAwGtagConfig, LANDING_TAG_CSP };

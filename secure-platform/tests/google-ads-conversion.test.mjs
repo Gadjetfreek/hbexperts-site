@@ -83,12 +83,20 @@ test('isolated public frame sends the exact conversion only after a trusted fixe
   assert.doesNotMatch(layout, /first_name|last_name|email|phone|access.?code|household.?id|buyer.?id|questionnaire|nonce/i);
 });
 
-test('secure platform never embeds Google code, identifiers, or third-party endpoints', () => {
-  const secureSource = sourceFiles(join(root, 'secure-platform/src'))
-    .filter(path => path.endsWith('.js'))
+test('secure platform keeps Google identifiers off every surface except the buyer landing-page tags', () => {
+  const srcDir = join(root, 'secure-platform/src');
+  const files = sourceFiles(srcDir).filter(path => path.endsWith('.js'));
+  const conversionPath = join(srcDir, 'google-ads-conversion.js');
+  const otherSource = files
+    .filter(path => path !== conversionPath)
     .map(path => readFileSync(path, 'utf8'))
     .join('\n');
-  assert.doesNotMatch(secureSource, /googletagmanager|googleadservices|AW-18500305800|_HR6CNKd55QdEIiH0fVE|send_to/i);
+  const conversion = readFileSync(conversionPath, 'utf8');
+  assert.doesNotMatch(otherSource, /googletagmanager|googleadservices|GTM-TWSV28HQ|AW-18500305800|_HR6CNKd55QdEIiH0fVE|send_to/i);
+  assert.doesNotMatch(conversion, /_HR6CNKd55QdEIiH0fVE|send_to/i);
+  assert.match(conversion, /GTM-TWSV28HQ/);
+  assert.match(conversion, /AW-18500305800/);
+  assert.doesNotMatch(conversion, /googletagmanager\.com\/ns\.html/);
 });
 
 test('questionnaire visit issues an opaque HttpOnly nonce stored only as a hash', async () => {
@@ -220,6 +228,9 @@ test('privacy disclosure describes the isolated conversion frame and first-party
   assert.match(privacy, /questionnaire does not load Google Fonts/);
   assert.match(privacy, /not loaded in the questionnaire, the secure submission confirmation, or the Buyer Portal|not loaded in the questionnaire, secure submission confirmation, or Buyer Portal/);
   assert.match(privacy, /does not receive Buyer Experience form fields, access codes, submission nonces/);
+  assert.match(privacy, /Buyer Journey landing page/);
+  assert.match(privacy, /Google Tag Manager/);
+  assert.match(privacy, /buyer\.hbexperts\.com\//);
 });
 
 // --- Ad click id (gclid/gbraid/wbraid) passthrough ---
@@ -301,4 +312,161 @@ test('production worker wires capture on GET and passthrough only inside the suc
   const claimBlock = src.slice(src.indexOf("url.pathname === '/api/intake' && response.status === 200"));
   assert.ok(claimBlock.indexOf('if (claimed)') < claimBlock.indexOf('readGoogleAdsClick'));
   assert.match(src, /try \{ captureGoogleAdsClick\(request, headers\); \} catch/);
+  assert.match(src, /isBuyerJourneyLandingPath\(url\.pathname\)/);
+  assert.match(src, /addBuyerJourneyLandingTags\(text\)/);
+  assert.match(src, /allowBuyerJourneyLandingTagsCsp\(headers\)/);
+  assert.doesNotMatch(src, /GTM-TWSV28HQ|AW-18500305800/);
+});
+
+import {
+  BUYER_JOURNEY_GTM_ID,
+  BUYER_JOURNEY_AW_ID,
+  isBuyerJourneyLandingPath,
+  addBuyerJourneyLandingTags,
+  allowBuyerJourneyLandingTagsCsp
+} from '../src/google-ads-conversion.js';
+import worker from '../src/issue33-production-worker.js';
+
+function landingEnv() {
+  const statement = () => {
+    const stmt = {
+      bind() { return stmt; },
+      async first() { return null; },
+      async all() { return { results: [] }; },
+      async run() { return { success: true, meta: { changes: 0 } }; }
+    };
+    return stmt;
+  };
+  return {
+    BUYER_DB: {
+      prepare(sql) { return statement(); },
+      async batch(items) {
+        const out = [];
+        for (const item of items) out.push(await item.run());
+        return out;
+      }
+    },
+    CF_ACCESS_TEAM_DOMAIN: 'https://hbexperts.cloudflareaccess.com',
+    CF_ACCESS_AUD: 'landing-test-aud',
+    HBE_ADMIN_EMAIL: 'cwhitehead@hbexperts.com'
+  };
+}
+
+async function landingGet(path, init = {}) {
+  return worker.fetch(new Request(`https://buyer.hbexperts.com${path}`, { method: 'GET', ...init }), landingEnv(), { waitUntil() {} });
+}
+
+function assertLandingTags(html) {
+  assert.match(html, /GTM-TWSV28HQ/);
+  assert.match(html, /AW-18500305800/);
+  assert.match(html, /['"]gtm\.start['"]/);
+  assert.match(html, /www\.googletagmanager\.com\/gtm\.js\?id=/);
+  assert.match(html, /www\.googletagmanager\.com\/gtag\/js\?id=AW-18500305800/);
+  assert.match(html, /gtag\('config', 'AW-18500305800'\)/);
+  assert.doesNotMatch(html, /googletagmanager\.com\/ns\.html|<noscript/i);
+  assert.doesNotMatch(html, /\blinker\b|_gl/);
+  assert.equal((html.match(/gtag\('config', 'AW-18500305800'\)/g) || []).length, 1);
+  assert.equal((html.match(/GTM-TWSV28HQ/g) || []).length, 1);
+}
+
+function assertNoLandingTags(body, label = 'body') {
+  assert.doesNotMatch(body, /GTM-TWSV28HQ|AW-18500305800|googletagmanager|googleadservices/i, label);
+}
+
+test('only the exact root path is the buyer landing page', () => {
+  assert.equal(isBuyerJourneyLandingPath('/'), true);
+  assert.equal(isBuyerJourneyLandingPath('/index.html'), false);
+  assert.equal(isBuyerJourneyLandingPath('/INDEX.HTML'), false);
+  assert.equal(isBuyerJourneyLandingPath('/questionnaire'), false);
+  assert.equal(isBuyerJourneyLandingPath('/questionnaire/'), false);
+  assert.equal(isBuyerJourneyLandingPath('/portal'), false);
+  assert.equal(isBuyerJourneyLandingPath('/login'), false);
+  assert.equal(isBuyerJourneyLandingPath('/hbe'), false);
+  assert.equal(isBuyerJourneyLandingPath('//'), false);
+  assert.equal(isBuyerJourneyLandingPath('/%2F'), false);
+  assert.equal(isBuyerJourneyLandingPath('/%69ndex.html'), false);
+  assert.equal(isBuyerJourneyLandingPath(''), false);
+  assert.equal(isBuyerJourneyLandingPath(null), false);
+});
+
+test('landing-tag helper injects GTM head snippet and AW gtag once, with no noscript or linker', () => {
+  const html = '<!doctype html><html><head><meta charset="utf-8"></head><body>Home</body></html>';
+  const out = addBuyerJourneyLandingTags(html);
+  assertLandingTags(out);
+  assert.ok(out.indexOf('GTM-TWSV28HQ') < out.indexOf('<meta charset="utf-8">'));
+  assert.equal(addBuyerJourneyLandingTags(out), out);
+});
+
+test('landing-tag helper does not add a second AW gtag config when one is already present', () => {
+  const html = `<!doctype html><html><head><script async src="https://www.googletagmanager.com/gtag/js?id=${BUYER_JOURNEY_AW_ID}"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());gtag('config', '${BUYER_JOURNEY_AW_ID}');</script></head><body></body></html>`;
+  const out = addBuyerJourneyLandingTags(html);
+  assert.match(out, /GTM-TWSV28HQ/);
+  assert.equal((out.match(/gtag\('config', 'AW-18500305800'\)/g) || []).length, 1);
+  assert.equal((out.match(/gtag\/js\?id=AW-18500305800/g) || []).length, 1);
+});
+
+test('landing-tag CSP allowlist is added only when a policy already exists', () => {
+  const headers = new Headers({
+    'content-security-policy': "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data:; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"
+  });
+  allowBuyerJourneyLandingTagsCsp(headers);
+  const csp = headers.get('content-security-policy');
+  assert.match(csp, /script-src[^;]*https:\/\/www\.googletagmanager\.com/);
+  assert.match(csp, /script-src[^;]*https:\/\/www\.googleadservices\.com/);
+  assert.match(csp, /script-src[^;]*https:\/\/www\.google\.com/);
+  assert.match(csp, /img-src[^;]*https:\/\/www\.googletagmanager\.com/);
+  assert.match(csp, /connect-src[^;]*https:\/\/www\.googletagmanager\.com/);
+  assert.match(csp, /frame-src[^;]*https:\/\/www\.googletagmanager\.com/);
+  assert.match(csp, /default-src 'self'/);
+  const empty = new Headers();
+  allowBuyerJourneyLandingTagsCsp(empty);
+  assert.equal(empty.get('content-security-policy'), null);
+});
+
+test('root HTML response has GTM and AW tags; CSP allowlist is scoped to root', async () => {
+  const res = await landingGet('/');
+  assert.equal(res.status, 200);
+  assert.match(res.headers.get('content-type') || '', /text\/html/);
+  const html = await res.text();
+  assertLandingTags(html);
+  const csp = res.headers.get('content-security-policy') || '';
+  assert.match(csp, /www\.googletagmanager\.com/);
+  assert.match(csp, /www\.googleadservices\.com/);
+});
+
+test('gclid passthrough still captures on the tagged root landing page', async () => {
+  const res = await landingGet(`/?gclid=${SYNTH_GCLID}`);
+  assert.equal(res.status, 200);
+  const html = await res.text();
+  assertLandingTags(html);
+  assert.match(res.headers.get('set-cookie') || '', new RegExp(`hbe_ad_click=gclid\\.${SYNTH_GCLID}`));
+});
+
+test('other buyer routes, APIs, 404, and /index.html have neither tag ID nor Google CSP origins', async () => {
+  const routes = [
+    '/questionnaire',
+    '/portal',
+    '/login',
+    '/hbe',
+    '/health',
+    '/index.html',
+    '/this-route-does-not-exist-404',
+    '/api/intake'
+  ];
+  for (const path of routes) {
+    const method = path === '/api/intake' ? 'POST' : 'GET';
+    const res = await worker.fetch(
+      new Request(`https://buyer.hbexperts.com${path}`, {
+        method,
+        headers: path === '/api/intake' ? { 'content-type': 'application/x-www-form-urlencoded' } : undefined,
+        body: path === '/api/intake' ? 'email=synthetic%40example.com' : undefined
+      }),
+      landingEnv(),
+      { waitUntil() {} }
+    );
+    const csp = res.headers.get('content-security-policy') || '';
+    const body = await res.text();
+    assert.doesNotMatch(csp, /googletagmanager|googleadservices/i, `${path} CSP`);
+    assertNoLandingTags(body, path);
+  }
 });
