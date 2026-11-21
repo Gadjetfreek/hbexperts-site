@@ -11,8 +11,8 @@
 // - The shared path only adds three hidden fields to the existing questionnaire form, which then
 //   goes through the existing /api/intake lead flow after the buyer's explicit consent.
 
-export const STORY_COPY_VERSION = 'buyer-story-copy-v1-2026-11-20';
-export const PHRASE_BANK_VERSION = 'buyer-story-phrases-v1-2026-11-20';
+export const STORY_COPY_VERSION = 'buyer-story-copy-v2-2026-11-20';
+export const PHRASE_BANK_VERSION = 'buyer-story-phrases-v2-2026-11-20';
 export const STORY_SOURCE = 'buyer_story';
 export const STORY_TEXT_MAX = 12000;
 export const QUESTIONNAIRE_DRAFT_KEY = 'hbe:buyer-experience:draft';
@@ -27,9 +27,13 @@ export const STORY_COPY = {
     // either way. Default OFF (the stricter of Homey's and Vera's rules).
     moneyInSummaryAndAdvocate: false
   },
-  limits: { freeTextChars: 400, itemsPerSection: 5, advocateSteps: 5 },
+  limits: { freeTextChars: 400, itemsPerSection: 5, advocateSteps: 5, advocateUnpinned: 4, shareChars: 12000 },
   // Fields the story never reads, whatever the form contains.
   excludeFields: ['first_name', 'last_name', 'email', 'phone', 'remember_device', 'household_invite_token', 'financing', 'notes', 'consultation_success', 'story_source', 'story_consent', 'story_text'],
+  // NAMES PLACEHOLDER: default 'Jen and Chris' until the owner picks. The public site's own copy
+  // uses 'Christopher' (about.md, licensing.md) and 'Jen' / 'Meet Jennifer' (about.md).
+  // Homey is confirming the final form with the owner; change it here only.
+  names: 'Jen and Chris',
   title: 'Your Buyer Story',
   brand: 'HomeBuyer Experts',
   headings: {
@@ -48,9 +52,9 @@ export const STORY_COPY = {
     storyFallback: 'This is a snapshot of what you told us matters, in your words.',
     matters: 'These are the things you said matter most.',
     needs: 'Here is what you said a home needs to do for you.',
-    mind: 'You named a few worries. Many people buying a home have these same ones. Having them is normal.',
+    mind: 'You named these worries. Having them is normal.',
     known: 'Some things are clear. Some are still open. Both are normal.',
-    options: 'You have more than one good path.',
+    options: 'Here are some paths that fit what you shared.',
     decide: 'Here is how you said you like to make choices.',
     glance: 'A plain summary of what you chose.',
     advocate: "Whoever helps you, or if you go it alone, here's what a good buyer's advocate would do with what you've shared."
@@ -65,7 +69,7 @@ export const STORY_COPY = {
     glanceTiming: 'Timing:',
     glanceBudget: 'Budget you said feels comfortable:'
   },
-  tags: { need: 'Need', flexible: 'Flexible' },
+  tags: { need: 'Need' },
   lines: {
     otherBuyer: 'You told us another buyer is part of this decision. This story shows only your answers. They can share their own.',
     unknownUnknowns: "You said you don't know what you don't know yet. That is a normal place to start.",
@@ -75,13 +79,13 @@ export const STORY_COPY = {
   },
   truncated: '(see your full answers)',
   advocateRules: [
-    { id: 'listen', when: 'always', text: 'Start by listening, and make sure they understand what you shared here, in your own words.' },
+    { id: 'listen', when: 'always', text: 'Start by listening, then repeat back what you shared to make sure they understood it.' },
     { id: 'checklist', when: 'hasNeeds', text: 'Turn what matters most to you into a short checklist to hold every home up against.' },
     { id: 'condition', when: 'conditionWorry', text: "Help you plan how to learn about a home's condition, and point you to a licensed home inspector for answers about it." },
     { id: 'lender', when: 'money', text: 'Suggest you talk with a lender early, so you know what monthly payment feels comfortable before you look.' },
     { id: 'pace', when: 'paceWorry', text: 'Walk through each decision with you at your pace, so you never feel rushed.' },
     { id: 'notYet', when: 'notYet', text: 'Help you make the best choice for you, even when the best choice is to wait or walk away.' },
-    { id: 'pros', when: 'always', text: 'Send legal, tax, and lending questions to the right licensed professionals.' }
+    { id: 'pros', when: 'always', pinned: true, text: 'Point you to the right licensed professionals for legal, tax, and lending questions.' }
   ],
   advocateFact: "An exclusive buyer's agent represents only buyers, never sellers. Ask any agent you interview who else they represent and how they're paid.",
   closing: 'Wherever you go from here, the next step is yours to choose.',
@@ -156,10 +160,10 @@ export const STORY_COPY = {
       'Prefer not to answer': null
     },
     concerns: {
-      'Paying too much': null,
+      'Paying too much': 'Paying more than a home is worth',
       'Choosing the wrong area': 'Choosing the wrong area',
       'Hidden property problems': 'Problems with a home that are hard to see',
-      'Financing / monthly cost': null,
+      'Financing / monthly cost': 'Financing and the monthly cost',
       'Negotiating effectively': 'Negotiating well',
       'Timing / market conditions': 'Timing, and what the market is doing',
       'Inspection issues': 'What an inspection might find',
@@ -183,7 +187,7 @@ export const STORY_COPY = {
     refresh: 'Refresh my story',
     editHint: 'You can change any wording below before you save or share it. To change an answer, go back to that part, then refresh your story.',
     empty: 'Answer a few questions above and your story will appear here.',
-    consentLabel: 'Yes, save my Buyer Journey and share it, with my story, with Jen and Sebastian at HomeBuyer Experts so they can follow up with me. I can ask to have it deleted anytime.',
+    consentLabel: 'Yes, save my Buyer Journey and share it, along with my story, with {names} at HomeBuyer Experts so they can follow up with me. No mailing lists, no texts. I can ask to have it deleted anytime.',
     privacyLink: 'Privacy Policy',
     privacyUrl: 'https://hbexperts.com/privacy/',
     downloadLabel: 'Download my story',
@@ -191,12 +195,17 @@ export const STORY_COPY = {
     // OPEN QUESTION FOR HOMEY / SEBASTIAN: Homey's label is "Email me a copy and keep my journey",
     // but the existing sender can only mail HBE's own inboxes, so the buyer cannot be emailed a
     // copy without new email setup. The label says what really happens until that is decided.
-    shareLabel: 'Share it with HBE and keep my journey',
-    shareSub: 'Jen and Sebastian will read it personally and reach out, no obligation. To keep your own copy, use Download my story too.',
+    shareLabel: 'Share my story with HBE and keep my journey',
+    shareSub: '{names} will read it personally and reach out, no obligation. To keep your own copy, use Download my story too.',
     shareNeedsConsent: 'Turn on the switch above to share your story.',
     reviewRow: 'Your Buyer Story',
     reviewRowValue: 'Included, as it reads in your story preview.',
-    afterDownload: 'Your story is ready to save as a PDF or print. Your draft answers were also cleared from this browser\u2019s temporary storage. They stay on this page until you leave it.'
+    afterDownload: 'Your story is ready to save as a PDF or print. We\u2019ve cleared your draft answers from this browser.',
+    skipContact: 'Just want your story? Continue without contact details',
+    skipContactSub: 'You only need them if you choose to share with HBE.',
+    needContact: 'To share, please add your first name, last name, email, and whether another buyer is involved. They are in Part 1.',
+    counter: '{n} of {max} characters',
+    overLimit: 'Your story is longer than {max} characters, so it can\u2019t be shared yet. Please shorten it a little. Downloading still works.'
   }
 };
 
@@ -257,8 +266,8 @@ export function createStoryEngine(copy) {
     // 3. What a Home Needs to Do for You (needs vs. flexible)
     add('needs', copy.intros.needs, [
       quote(copy.leads.ruleOut, one(a, 'non_negotiables'), copy.tags.need),
-      line(phrase('lifestyle_pace', one(a, 'lifestyle_pace')), copy.tags.need),
-      line(phrase('space_priority', one(a, 'space_priority')), copy.tags.flexible)
+      line(phrase('lifestyle_pace', one(a, 'lifestyle_pace'))),
+      line(phrase('space_priority', one(a, 'space_priority')))
     ]);
 
     // 4. What's on Your Mind (named worries, normalized, never solved)
@@ -289,7 +298,7 @@ export function createStoryEngine(copy) {
 
     // Plain summary of priorities (and budget comfort only behind the money switch)
     const picked = list(a, 'priorities').map(v => phrase('priorities', v) ? v : (money && own(copy.phrases.moneyPriorities, v) ? copy.phrases.moneyPriorities[v] : null)).filter(Boolean);
-    add('glance', copy.intros.glance, [
+    if (money) add('glance', copy.intros.glance, [
       picked.length ? { lead: copy.leads.glancePriorities, text: picked.join(', ') } : null,
       tl ? { lead: copy.leads.glanceTiming, text: timeline } : null,
       money ? quote(copy.leads.glanceBudget, one(a, 'budget_comfort')) : null
@@ -305,7 +314,11 @@ export function createStoryEngine(copy) {
       paceWorry: has(concerns, copy.rules.paceWorries) || one(a, 'info_preference') === 'Walk me through it step by step',
       notYet: longTimeline || timingWorry
     };
-    const steps = copy.advocateRules.filter(r => cond[r.when] === true).slice(0, copy.limits.advocateSteps).map(r => ({ text: r.text, rule: r.id }));
+    // Pinned rules ("pros") always appear; the rest keep table order, capped.
+    const fired = copy.advocateRules.filter(r => cond[r.when] === true);
+    const pinned = fired.filter(r => r.pinned);
+    const rest = fired.filter(r => !r.pinned).slice(0, Math.min(copy.limits.advocateUnpinned, copy.limits.advocateSteps - pinned.length));
+    const steps = [...rest, ...pinned].map(r => ({ text: r.text, rule: r.id }));
     sections.push({ id: 'advocate', heading: copy.headings.advocate, intro_sentence: copy.intros.advocate, items: steps, note: copy.advocateFact });
 
     const date = squash(o.date) || '';
@@ -392,7 +405,18 @@ export function readStorySubmission(form) {
   return { present: true, ok, source, consent, text };
 }
 
-export const STORY_CONSENT_ERROR = 'To share your Buyer Story, please turn on the sharing switch first. Or use Download my story to keep it to yourself.';
+// Contact fields the share/submit path needs. The download path never needs them.
+export const CONTACT_FIELDS = ['first_name', 'last_name', 'email', 'has_other_buyer'];
+export function missingContactFields(get, fields) {
+  return (fields || []).filter(name => !String(get(name) == null ? '' : get(name)).trim());
+}
+
+export function fillUi(copy) {
+  const max = Number(copy.limits.shareChars).toLocaleString('en-US');
+  const out = {};
+  for (const [k, v] of Object.entries(copy.ui)) out[k] = String(v).split('{names}').join(copy.names).split('{max}').join(max);
+  return out;
+}
 
 // ---- Page injection --------------------------------------------------------------------------
 const STORY_CSS = `<style id="buyer-story-css">
@@ -423,6 +447,7 @@ const STORY_CSS = `<style id="buyer-story-css">
 .story-choice[disabled]{opacity:.55;cursor:not-allowed}
 .story-link{background:none;border:0;color:#2d5a3d;text-decoration:underline;font:inherit;cursor:pointer;padding:.2rem 0}
 .story-status{color:#2d5a3d;font-size:.92rem;min-height:1.2em}
+.story-skip{margin:.6rem 0 0;color:#555}
 @media screen{#buyer-story-print{display:none}}
 @media print{
 @page{margin:16mm}
@@ -437,7 +462,7 @@ html.hbe-story-printing #buyer-story-print{display:block!important;color:#1a1a2e
 
 export function buyerStoryStepHtml(copy = STORY_COPY) {
   const e = createStoryEngine(copy).escape;
-  const u = copy.ui;
+  const u = fillUi(copy);
   return `<section class="buyer-story-step" id="buyer-story-step" aria-labelledby="buyer-story-heading">
 <p class="story-eyebrow">${e(u.eyebrow)}</p><h2 id="buyer-story-heading">${e(u.heading)}</h2>
 <p class="story-help">${e(u.intro)}</p>
@@ -445,6 +470,7 @@ export function buyerStoryStepHtml(copy = STORY_COPY) {
 <div id="buyer-story-preview" hidden><p class="story-help">${e(u.editHint)}</p>
 <article id="buyer-story-doc" contenteditable="true" spellcheck="true" aria-label="${e(copy.title)}"></article>
 <button class="story-link" id="buyer-story-refresh" type="button">${e(u.refresh)}</button></div>
+<p class="story-status" id="buyer-story-count" aria-live="polite"></p>
 <label class="story-switch"><input type="checkbox" id="buyer-story-consent" role="switch" aria-checked="false"><span>${e(u.consentLabel)} <a href="${e(u.privacyUrl)}" target="_blank" rel="noopener noreferrer">${e(u.privacyLink)}</a></span></label>
 <div class="story-choices">
 <button class="story-choice" id="buyer-story-download" type="button"><strong>${e(u.downloadLabel)}</strong><small>${e(u.downloadSub)}</small></button>
@@ -459,31 +485,54 @@ function storyClientScript(copy) {
   // The UI below uses only DOM, print, and Web Storage removal. No network APIs.
   return `(()=>{
 const COPY=${JSON.stringify(copy).replace(/</g, '\\u003c')};
+const UI=${JSON.stringify(fillUi(copy)).replace(/</g, '\\u003c')};
 const E=(${createStoryEngine.toString()})(COPY);
 const clearStoryStorage=${clearStoryStorage.toString()};
+const missingContactFields=${missingContactFields.toString()};
+const CONTACT=${JSON.stringify(CONTACT_FIELDS)};
 const DRAFT_KEY=${JSON.stringify(QUESTIONNAIRE_DRAFT_KEY)};
 const form=document.getElementById('buyerExperienceForm');
 const root=document.getElementById('buyer-story-step');
 if(!form||!root)return;
 const $=id=>document.getElementById(id);
-const doc=$('buyer-story-doc'),preview=$('buyer-story-preview'),consent=$('buyer-story-consent'),dl=$('buyer-story-download'),share=$('buyer-story-share'),hint=$('buyer-story-share-hint'),status=$('buyer-story-status');
+const doc=$('buyer-story-doc'),preview=$('buyer-story-preview'),consent=$('buyer-story-consent'),dl=$('buyer-story-download'),share=$('buyer-story-share'),hint=$('buyer-story-share-hint'),status=$('buyer-story-status'),count=$('buyer-story-count');
+const MAX=COPY.limits.shareChars;
 let built=false,mode='download';
 const today=()=>new Date().toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'});
 function answers(){const a={};new FormData(form).forEach((v,k)=>{if(COPY.excludeFields.indexOf(k)!==-1)return;(a[k]=a[k]||[]).push(String(v));});return a;}
-function render(){doc.innerHTML=E.toHtml(E.build(answers(),{anonymous:true,date:today()}));preview.hidden=false;built=true;}
 function shareText(){
   const clone=doc.cloneNode(true);
   clone.querySelectorAll('.story-anon-line').forEach(n=>n.remove());
   const out=[];clone.querySelectorAll('h1,h2,p,li').forEach(n=>{const t=(n.textContent||'').replace(/\\s+/g,' ').trim();if(t)out.push(n.tagName==='LI'?'- '+t:n.tagName==='H2'?'\\n'+t.toUpperCase():t);});
   return out.join('\\n').trim();
 }
+function overLimit(){return built&&shareText().length>MAX;}
+function sync(){
+  const n=built?shareText().length:0;
+  count.textContent=built?UI.counter.replace('{n}',n.toLocaleString('en-US')):'';
+  const over=n>MAX;
+  if(over)count.textContent+=' \u00b7 '+UI.overLimit;
+  const on=consent.checked&&!over;
+  share.disabled=!on;share.setAttribute('aria-disabled',String(!on));hint.hidden=consent.checked;
+}
+function render(){doc.innerHTML=E.toHtml(E.build(answers(),{anonymous:true,date:today()}));preview.hidden=false;built=true;sync();}
 function dropHidden(){form.querySelectorAll('input[data-buyer-story]').forEach(n=>n.remove());}
 function addHidden(name,value){const i=document.createElement('input');i.type='hidden';i.name=name;i.value=value;i.setAttribute('data-buyer-story','');form.appendChild(i);}
+// Download path: contact fields are optional. The share/submit path puts the requirement back.
+function contactEls(){return [...form.elements].filter(el=>CONTACT.indexOf(el.name)!==-1);}
+function relaxContact(){contactEls().forEach(el=>{if(el.required){el.required=false;el.setAttribute('data-story-relaxed','');}});}
+function restoreContact(){form.querySelectorAll('[data-story-relaxed]').forEach(el=>{el.required=true;el.removeAttribute('data-story-relaxed');});}
+function missingContact(){const fd=new FormData(form);return missingContactFields(n=>fd.get(n),CONTACT);}
+function goToPart1(){const steps=[...form.querySelectorAll('.step')];for(let i=0;i<steps.length&&!(steps[0]&&steps[0].classList.contains('active'));i++){const a=form.querySelector('.step.active .back');if(!a)break;a.click();}}
+function gateShare(){restoreContact();const miss=missingContact();if(miss.length){status.textContent=UI.needContact;goToPart1();setTimeout(()=>form.reportValidity(),0);return false;}return true;}
+const skip=$('buyer-story-skip-contact');
+if(skip)skip.addEventListener('click',()=>{relaxContact();const next=skip.closest('.step')&&skip.closest('.step').querySelector('.next');if(next)next.click();});
 // Keep story-step typing out of the questionnaire's draft autosave.
 ['input','change'].forEach(t=>root.addEventListener(t,e=>e.stopPropagation()));
+doc.addEventListener('input',sync);
 $('buyer-story-show').addEventListener('click',render);
 $('buyer-story-refresh').addEventListener('click',render);
-consent.addEventListener('change',()=>{const on=consent.checked;consent.setAttribute('aria-checked',String(on));share.disabled=!on;share.setAttribute('aria-disabled',String(!on));hint.hidden=on;if(!on){mode='download';dropHidden();}});
+consent.addEventListener('change',()=>{consent.setAttribute('aria-checked',String(consent.checked));if(!consent.checked){mode='download';dropHidden();}sync();});
 dl.addEventListener('click',()=>{
   if(!built)render();
   const old=document.getElementById('buyer-story-print');if(old)old.remove();
@@ -492,23 +541,30 @@ dl.addEventListener('click',()=>{
   document.body.appendChild(p);document.documentElement.classList.add('hbe-story-printing');
   const done=()=>{window.removeEventListener('afterprint',done);document.documentElement.classList.remove('hbe-story-printing');p.remove();};
   window.addEventListener('afterprint',done);
-  try{window.print();}finally{clearStoryStorage([window.sessionStorage,window.localStorage],DRAFT_KEY);status.textContent=COPY.ui.afterDownload;}
+  try{window.print();}finally{clearStoryStorage([window.sessionStorage,window.localStorage],DRAFT_KEY);status.textContent=UI.afterDownload;}
 });
 const reviewBtn=document.getElementById('review-before-send');
-if(reviewBtn)reviewBtn.addEventListener('click',e=>{if(e.isTrusted){mode='download';dropHidden();}});
+// Any path to Review & Send needs contact details again (capture phase, before the review handler).
+if(reviewBtn)reviewBtn.addEventListener('click',e=>{if(e.isTrusted){mode='download';dropHidden();}if(!gateShare()){e.stopImmediatePropagation();e.preventDefault();}},true);
 share.addEventListener('click',()=>{
   if(!consent.checked||!reviewBtn)return;
   if(!built)render();
+  if(overLimit()){sync();return;}
+  if(!gateShare())return;
   mode='share';reviewBtn.click();
   const list=document.getElementById('buyer-review-list');
-  if(list&&!list.querySelector('[data-buyer-story-row]')){const row=document.createElement('div');row.className='buyer-review-item';row.setAttribute('data-buyer-story-row','');const s=document.createElement('small');s.textContent=COPY.ui.reviewRow;const d=document.createElement('div');d.textContent=COPY.ui.reviewRowValue;row.append(s,d);list.prepend(row);}
+  if(list&&!list.querySelector('[data-buyer-story-row]')){const row=document.createElement('div');row.className='buyer-review-item';row.setAttribute('data-buyer-story-row','');const s=document.createElement('small');s.textContent=UI.reviewRow;const d=document.createElement('div');d.textContent=UI.reviewRowValue;row.append(s,d);list.prepend(row);}
 });
 // Runs before the review dialog's own send handler (capture phase), so the story rides along
 // with the normal questionnaire submission only when the buyer chose to share and consented.
 document.addEventListener('click',e=>{
   const t=e.target&&e.target.closest?e.target.closest('#buyer-review-send'):null;if(!t)return;
-  dropHidden();
-  if(mode==='share'&&consent.checked){addHidden('story_source','buyer_story');addHidden('story_consent','yes');addHidden('story_text',shareText());}
+  dropHidden();restoreContact();
+  if(mode==='share'&&consent.checked){
+    const text=shareText();
+    if(text.length>MAX){e.stopImmediatePropagation();e.preventDefault();sync();status.textContent=UI.overLimit;return;}
+    addHidden('story_source','buyer_story');addHidden('story_consent','yes');addHidden('story_text',text);
+  }
 },true);
 })();`;
 }
@@ -522,6 +578,13 @@ export function addBuyerStoryStep(html, copy = STORY_COPY) {
   const at = text.indexOf(anchor);
   if (at === -1 || !text.includes('id="buyerExperienceForm"')) return text;
   text = text.slice(0, at) + buyerStoryStepHtml(copy) + text.slice(at);
+  const next = '<button class="btn primary next" type="button">Continue</button>';
+  const firstNext = text.indexOf(next);
+  if (firstNext !== -1 && firstNext < text.indexOf('id="buyer-story-step"')) {
+    const u = fillUi(copy), e = createStoryEngine(copy).escape;
+    const skip = `<p class="story-skip"><button class="story-link" id="buyer-story-skip-contact" type="button">${e(u.skipContact)}</button><br><small>${e(u.skipContactSub)}</small></p>`;
+    text = text.slice(0, firstNext + next.length) + skip + text.slice(firstNext + next.length);
+  }
   text = text.includes('</head>') ? text.replace('</head>', `${STORY_CSS}</head>`) : STORY_CSS + text;
   const script = `<script id="buyer-story-script">${storyClientScript(copy)}</script>`;
   const end = text.lastIndexOf('</body>');

@@ -14,10 +14,12 @@ intake), `submission-alerts.js` (adds the story to the existing lead email).
   where the buyer picks "Save as PDF" (desktop Chrome/Edge/Safari/Firefox, Android Chrome) or
   Share > Save to Files / Print (iOS Safari). Afterwards the questionnaire's sessionStorage draft
   is cleared.
-- **Share it with HBE and keep my journey**. Disabled until the consent switch (OFF by default) is
-  on. It opens the existing "Review & Send" dialog; on send, the normal form post to `/api/intake`
-  carries three extra fields (`story_source=buyer_story`, `story_consent=yes`, `story_text`). The
-  server rejects a story without consent. The existing flow then writes the buyer row, the
+- **Share my story with HBE and keep my journey**. Disabled until the consent switch (OFF by default) is
+  on, and until Part 1's contact fields are filled (the download path never needs them; a "Continue
+  without contact details" link on Part 1 relaxes them until the buyer tries to share). The preview has
+  a live counter matching the 12,000-character server cap; sharing is blocked above it. It opens the existing "Review & Send" dialog; on send, the normal form post to `/api/intake`
+  carries three extra fields (`story_source=buyer_story`, `story_consent=yes`, `story_text`). Without
+  consent the server drops the story and saves an ordinary lead (never a 400). The existing flow then writes the buyer row, the
   `buyer_experience_submitted` notification (payload gains `source`, `story_consent`,
   `story_text`) and the `notification_deliveries` row in one D1 batch, and only then sends the
   existing alert email to the existing recipients, with the story after the lead summary.
@@ -33,6 +35,13 @@ Everything the buyer reads lives in `STORY_COPY`: headings, intros, fixed lines,
 phrase bank (one neutral phrase per multiple-choice option; `null` = deliberately left out), the
 advocate rule table, and the UI labels. Bump `version` / `phraseBankVersion` when copy changes.
 
+## Handling shared stories
+- The preview is editable, so treat the shared `story_text` as buyer-authored, not as a record of their answers.
+- Deletion requests (Sentinel R29 L3): the shared story lives in `notifications.payload_json` (`story_text`) for the
+  `buyer_experience_submitted` notification, as well as in the alert email. Any deletion of a buyer must also purge or
+  null that payload, not just the `buyers` row. There is no deletion tool in this repo yet; see the TODO in `worker.js`.
+- Story fields without `story_consent=yes` (or with empty text) are dropped; the lead is saved as an ordinary submission.
+
 ## Follow-ups (not built)
 - Emailing the buyer their own copy: the existing send_email binding only reaches HBE inboxes.
   Needs a decision on new email setup.
@@ -40,5 +49,3 @@ advocate rule table, and the UI labels. Bump `version` / `phraseBankVersion` whe
 - AI-written version: consented path only; would use the existing Workers AI binding, so it is
   infrastructure-free but adds usage cost and review of invented-fact risk. Not built in v1.
 - "After the Keys" post-close story.
-- A way to reach the story without filling Part 1's required contact fields (they are not sent on
-  the download path, but the step gate still asks for them).

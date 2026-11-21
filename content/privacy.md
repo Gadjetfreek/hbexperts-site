@@ -30,6 +30,13 @@ When you deliberately **review and send** your Buyer Experience to HomeBuyer Exp
 
 We aim to ask for information only when it has a clear buyer-serving purpose.
 
+### Your Buyer Story
+
+At the end of the Buyer Experience you can create an optional "Buyer Story" from your own answers.
+
+- **Download my story.** The story is built on your device and saved or printed through your browser. It is not sent to or stored by HBE, no analytics or advertising tags run on that step, and the temporary draft of your answers is cleared from your browser afterward.
+- **Share my story with HBE.** Only if you turn on the sharing switch and send your Buyer Experience, the story text you approved (including any edits you made to it) is saved with your buyer record and included in the internal email alert HBE receives about your submission. If the switch is off, the story is not saved or emailed.
+
 ### Buyer Journey Account and Session Information
 
 After a Buyer Experience is submitted, HBE's secure buyer system may create information needed to provide the BuyerUI, including:
@@ -115,6 +122,8 @@ We do not use Buyer Journey session cookies, `hbe_ad_click`, or `hbe_acq` for cr
 ## Data Retention
 
 Buyer information is retained only as long as reasonably necessary for the purpose for which it was shared, an active or reasonably anticipated buyer relationship, legal or professional obligations, security, or legitimate recordkeeping needs.
+
+A Buyer Story you choose to share is kept with your buyer record on the same basis and is not set to expire on its own schedule. You can ask us to delete it at any time using the contact details below. A copy also remains in the HBE email alert that delivered it.
 
 ---
 

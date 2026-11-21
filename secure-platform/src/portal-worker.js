@@ -1,5 +1,5 @@
 import uiWorker from './ui-worker.js';
-import { readStorySubmission, STORY_CONSENT_ERROR, STORY_SOURCE } from './buyer-story.js';
+import { readStorySubmission, STORY_SOURCE } from './buyer-story.js';
 
 const DRAFT_KEY = 'hbe:buyer-experience:draft';
 
@@ -53,6 +53,7 @@ async function handleIntake(request, env, ctx) {
   baseForm.set('notes', clean(form.get('notes')));
   if (form.get('remember_device') === 'yes') baseForm.set('remember_device', 'yes');
   // Your Buyer Story (consented path only): pass the story through the existing lead flow.
+  // Without valid consent or text the story is dropped and the lead is saved as usual.
   const story = readStorySubmission(form);
   if (story.ok) {
     baseForm.set('story_source', STORY_SOURCE);
@@ -102,9 +103,6 @@ function validateSubmission(form) {
   for (const [name, message] of required) {
     if (!clean(form.get(name))) return message;
   }
-
-  const story = readStorySubmission(form);
-  if (story.present && !story.ok) return STORY_CONSENT_ERROR;
 
   if (values(form, 'priorities').length > 3) {
     return 'Please choose up to three priorities.';
