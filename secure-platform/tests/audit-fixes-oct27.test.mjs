@@ -280,3 +280,5 @@ test('lead panel refresh route is owner-only and returns fresh HTML and counts',
 // CI runs this file by name; it also runs the Buyer Story suite until the workflow gets its own step
 // (adding a workflow step needs a token with workflow scope).
 import './buyer-story.test.mjs';
+// Built-bundle guard for keep_names=false (inline scripts break with esbuild's __name helper).
+import './worker-bundle.test.mjs';
