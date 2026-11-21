@@ -1,0 +1,25 @@
+{{ define "main" }}
+<section class="hero">
+  <div class="hero-content">
+    <p class="hero-eyebrow">Exclusive Buyer Representation · Northeast Ohio</p>
+    <h1 class="hero-headline">{{ .Title }}</h1>
+    {{ with .Params.subtitle }}<p class="hero-tagline">{{ . }}</p>{{ end }}
+    <p class="hero-tagline">{{ .Site.Params.tagline }}</p>
+    <div class="hero-cta">
+      <a href="https://buyer.hbexperts.com/" class="btn btn-primary btn-large" data-hbe-cta="buyer-journey" data-hbe-start-here>Start Here</a>
+    </div>
+    <p class="journey-cta-explain">Next you open HBE’s secure Buyer Journey. You can explore every stage before sharing personal information. Nothing goes to HBE until you deliberately review and send a Buyer Experience.</p>
+  </div>
+</section>
+
+<div class="page-content">
+  {{ .Content }}
+</div>
+
+<section class="cta-section">
+  <h2>See the Process Before You Share Anything</h2>
+  <p class="journey-cta-explain">You can explore every stage before sharing personal information. Nothing goes to HBE until you deliberately review and send a Buyer Experience.</p>
+  <p class="journey-cta-actions"><a href="https://buyer.hbexperts.com/" class="btn btn-primary btn-large" data-hbe-cta="buyer-journey" data-hbe-start-here>Start Here</a></p>
+  <p style="margin-top: 1.5rem; font-size: 0.95rem;">Or start a conversation: <a href="tel:{{ .Site.Params.phone }}" style="font-weight: 600;">{{ .Site.Params.phone }}</a></p>
+</section>
+{{ end }}
