@@ -282,3 +282,5 @@ test('lead panel refresh route is owner-only and returns fresh HTML and counts',
 import './buyer-story.test.mjs';
 // Built-bundle guard for keep_names=false (inline scripts break with esbuild's __name helper).
 import './worker-bundle.test.mjs';
+// Lockfile guard for the bundle test's pinned jsdom (Sentinel R32 M1).
+import './bundle-deps-lock.test.mjs';

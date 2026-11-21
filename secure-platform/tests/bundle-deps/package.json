@@ -1,0 +1,8 @@
+{
+  "name": "hbe-bundle-test-deps",
+  "private": true,
+  "description": "Pinned test-only dependencies for tests/worker-bundle.test.mjs. Installed into a temp dir with npm ci --ignore-scripts; never bundled into the Worker.",
+  "dependencies": {
+    "jsdom": "24.1.3"
+  }
+}

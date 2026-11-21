@@ -5,13 +5,15 @@
 //
 // The bundle checks build with the pinned production Wrangler (see deploy.ps1) via
 // `wrangler deploy --dry-run --outdir`, which needs no Cloudflare login, and run the rendered
-// /questionnaire in jsdom. Both tools are fetched with npx/npm into a temp dir, so they need
-// network access; set HBE_SKIP_BUNDLE_BUILD=1 to skip only those checks when offline.
+// /questionnaire in jsdom. jsdom and its transitive deps are pinned by the committed lockfile in
+// tests/bundle-deps/ and installed into a temp dir with `npm ci --ignore-scripts` (no install scripts
+// run, nothing written to the repo). Wrangler stays pinned via npx. Both need network access; set
+// HBE_SKIP_BUNDLE_BUILD=1 to skip only those checks when offline.
 // Synthetic data only: no Cloudflare account, no D1, no network calls from the page.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -19,7 +21,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const WRANGLER_VERSION = '4.134.0'; // keep in sync with deploy.ps1
-const JSDOM_VERSION = '24.1.3';
+const JSDOM_VERSION = '24.1.3'; // pinned in tests/bundle-deps/package-lock.json
+const DEPS_DIR = join(ROOT, 'tests', 'bundle-deps');
 const SKIP = process.env.HBE_SKIP_BUNDLE_BUILD === '1';
 
 test('wrangler.toml turns keep_names off for the production bundle', () => {
@@ -65,9 +68,13 @@ test('built bundle has no __name helper and the questionnaire scripts run cleanl
       assert.doesNotMatch(src, /__name\(/, `${name} must not reference __name`);
     }
 
-    writeFileSync(join(work, 'package.json'), '{"private":true}');
-    execFileSync(npm, ['install', '--no-save', '--loglevel=error', `jsdom@${JSDOM_VERSION}`], { cwd: work, env: npmEnv, stdio: 'pipe', shell: process.platform === 'win32' });
-    const { JSDOM, VirtualConsole } = createRequire(join(work, 'package.json'))('jsdom');
+    const deps = join(work, 'deps');
+    mkdirSync(deps);
+    for (const f of ['package.json', 'package-lock.json']) copyFileSync(join(DEPS_DIR, f), join(deps, f));
+    execFileSync(npm, ['ci', '--ignore-scripts', '--no-audit', '--no-fund', '--loglevel=error'], { cwd: deps, env: npmEnv, stdio: 'pipe', shell: process.platform === 'win32' });
+    const depsRequire = createRequire(join(deps, 'package.json'));
+    assert.equal(depsRequire('jsdom/package.json').version, JSDOM_VERSION, 'lockfile installs the pinned jsdom');
+    const { JSDOM, VirtualConsole } = depsRequire('jsdom');
 
     const errors = [];
     const virtualConsole = new VirtualConsole();
