@@ -1,15 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  {{ if eq .RelPermalink "/buyer-representation/" }}
-  <!-- Google tag: limited to the paid-search landing page. -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-18500305800"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'AW-18500305800');
-  </script>
+  {{ if .Params.googleAdsLanding }}
+  {{ partial "google-ads-landing-tags.html" . }}
   {{ end }}
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -42,5 +35,8 @@
   {{ partial "footer.html" . }}
   <script src="{{ "js/nav.js" | relURL }}"></script>
   <script src="{{ "js/acquisition.js" | relURL }}"></script>
+  {{ if .Params.googleAdsLanding }}
+  <script src="{{ "js/ads-click-passthrough.js" | relURL }}"></script>
+  {{ end }}
 </body>
 </html>

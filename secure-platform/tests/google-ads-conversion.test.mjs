@@ -63,11 +63,26 @@ function cookieValue(headers) {
   return match?.[1] || '';
 }
 
-test('public base tag remains scoped to the buyer representation landing page', () => {
+test('public Google tags are gated to the paid-search landing page front-matter flag', () => {
   const layout = readFileSync(join(root, 'themes/hbe/layouts/_default/baseof.html'), 'utf8');
-  assert.match(layout, /if eq \.RelPermalink "\/buyer-representation\/"/);
-  assert.equal((layout.match(/AW-18500305800/g) || []).length, 2);
-  assert.ok(layout.indexOf('AW-18500305800') < layout.indexOf('<meta charset="utf-8">'));
+  const partial = readFileSync(join(root, 'themes/hbe/layouts/partials/google-ads-landing-tags.html'), 'utf8');
+  const start = readFileSync(join(root, 'content/start.md'), 'utf8');
+  const menu = readFileSync(join(root, 'hugo.toml'), 'utf8');
+  assert.match(layout, /if \.Params\.googleAdsLanding/);
+  assert.match(layout, /partial "google-ads-landing-tags\.html"/);
+  assert.match(layout, /js\/ads-click-passthrough\.js/);
+  assert.doesNotMatch(layout, /GTM-TWSV28HQ|AW-18500305800/);
+  assert.equal((partial.match(/GTM-TWSV28HQ/g) || []).length, 1);
+  assert.equal((partial.match(/AW-18500305800/g) || []).length, 2);
+  assert.match(partial, /['"]gtm\.start['"]/);
+  assert.match(partial, /gtag\('config', 'AW-18500305800'\)/);
+  assert.doesNotMatch(partial, /googletagmanager\.com\/ns\.html|<noscript/i);
+  assert.doesNotMatch(partial, /gtag\(['"]set['"].*linker|linker:\s*\{|_gl=/);
+  assert.ok(layout.indexOf('google-ads-landing-tags.html') < layout.indexOf('<meta charset="utf-8">'));
+  assert.match(start, /googleAdsLanding:\s*true/);
+  assert.match(start, /robots:\s*"noindex, follow"/);
+  assert.match(start, /list:\s*never/);
+  assert.doesNotMatch(menu, /url\s*=\s*"\/start\//);
 });
 
 test('isolated public frame sends the exact conversion only after a trusted fixed message', () => {
@@ -220,6 +235,8 @@ test('privacy disclosure describes the isolated conversion frame and first-party
   assert.match(privacy, /questionnaire does not load Google Fonts/);
   assert.match(privacy, /not loaded in the questionnaire, the secure submission confirmation, or the Buyer Portal|not loaded in the questionnaire, secure submission confirmation, or Buyer Portal/);
   assert.match(privacy, /does not receive Buyer Experience form fields, access codes, submission nonces/);
+  assert.match(privacy, /hbexperts\.com\/start\//);
+  assert.match(privacy, /Google Tag Manager/);
 });
 
 // --- Ad click id (gclid/gbraid/wbraid) passthrough ---
@@ -301,4 +318,85 @@ test('production worker wires capture on GET and passthrough only inside the suc
   const claimBlock = src.slice(src.indexOf("url.pathname === '/api/intake' && response.status === 200"));
   assert.ok(claimBlock.indexOf('if (claimed)') < claimBlock.indexOf('readGoogleAdsClick'));
   assert.match(src, /try \{ captureGoogleAdsClick\(request, headers\); \} catch/);
+});
+
+import { spawnSync } from 'node:child_process';
+import { mkdtempSync, rmSync, existsSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+
+function collectFiles(directory, suffix, out = []) {
+  for (const path of sourceFiles(directory)) {
+    if (path.endsWith(suffix)) out.push(path);
+  }
+  return out;
+}
+
+test('GTM and landing AW identifiers stay off every public source except the landing tags partial', () => {
+  const theme = join(root, 'themes/hbe');
+  const content = join(root, 'content');
+  const files = [
+    ...collectFiles(theme, '.html'),
+    ...collectFiles(theme, '.js').filter(path => !path.endsWith('.test.mjs') && !path.endsWith('ads-click-passthrough.js')),
+    ...collectFiles(content, '.md')
+  ];
+  const partial = join(theme, 'layouts/partials/google-ads-landing-tags.html');
+  const conversion = join(theme, 'layouts/_default/google-ads-conversion.html');
+  for (const path of files) {
+    const text = readFileSync(path, 'utf8');
+    if (path === partial) continue;
+    assert.doesNotMatch(text, /GTM-TWSV28HQ/, path);
+    if (path !== conversion) {
+      assert.doesNotMatch(text, /AW-18500305800/, path);
+    }
+  }
+});
+
+test('built Hugo output has both tag IDs only on /start/ (conversion frame may keep AW)', function () {
+  const hugo = spawnSync('hugo', ['version'], { encoding: 'utf8' });
+  if (hugo.status !== 0) {
+    this.skip('Hugo is not installed');
+    return;
+  }
+  const dest = mkdtempSync(join(tmpdir(), 'hbe-start-'));
+  try {
+    const build = spawnSync('hugo', ['--destination', dest, '--cleanDestinationDir'], {
+      cwd: root,
+      encoding: 'utf8'
+    });
+    assert.equal(build.status, 0, build.stderr || build.stdout);
+    const htmlFiles = collectFiles(dest, '.html');
+    assert.ok(htmlFiles.length > 1, 'expected a multi-page Hugo build');
+    const startPath = join(dest, 'start/index.html');
+    assert.equal(existsSync(startPath), true);
+    const start = readFileSync(startPath, 'utf8');
+    assert.match(start, /GTM-TWSV28HQ/);
+    assert.match(start, /AW-18500305800/);
+    assert.match(start, /['"]gtm\.start['"]/);
+    assert.match(start, /gtag\('config', 'AW-18500305800'\)/);
+    assert.match(start, />Start Here</);
+    assert.match(start, /href="https:\/\/buyer\.hbexperts\.com\/"/);
+    assert.match(start, /js\/ads-click-passthrough\.js/);
+    assert.match(start, /name="robots" content="noindex, follow"/);
+    assert.doesNotMatch(start, /googletagmanager\.com\/ns\.html|<noscript/i);
+    assert.doesNotMatch(start, /\blinker\b|_gl/);
+    assert.equal((start.match(/gtag\('config', 'AW-18500305800'\)/g) || []).length, 1);
+
+    const sitemapPath = join(dest, 'sitemap.xml');
+    if (existsSync(sitemapPath)) {
+      assert.doesNotMatch(readFileSync(sitemapPath, 'utf8'), /hbexperts\.com\/start\//);
+    }
+
+    for (const path of htmlFiles) {
+      const html = readFileSync(path, 'utf8');
+      const rel = path.slice(dest.length);
+      if (path === startPath) continue;
+      assert.doesNotMatch(html, /GTM-TWSV28HQ/, rel);
+      assert.doesNotMatch(html, /js\/ads-click-passthrough\.js/, rel);
+      if (!rel.endsWith('/google-ads-conversion/index.html') && !rel.endsWith('/google-ads-conversion.html')) {
+        assert.doesNotMatch(html, /AW-18500305800/, rel);
+      }
+    }
+  } finally {
+    rmSync(dest, { recursive: true, force: true });
+  }
 });
