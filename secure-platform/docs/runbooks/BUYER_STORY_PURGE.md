@@ -50,18 +50,24 @@ Set up once per session (bash or zsh):
 ```sh
 set +o history 2>/dev/null || true   # keep IDs out of shell history for this session
 UUID_V4='^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+# Private temp dir for the SQL file (never a fixed name in the repo); removed when the shell exits.
+PURGE_DIR=$(mktemp -d "${TMPDIR:-/tmp}/hbe-purge.XXXXXX") && chmod 700 "$PURGE_DIR"
+PURGE_SQL="$PURGE_DIR/purge.sql"
+trap 'rm -rf "$PURGE_DIR"' EXIT INT TERM HUP
+
 read -r ID                           # paste the buyer ID from the lookup (step A1), then Enter
 [[ $ID =~ $UUID_V4 ]] && echo "ID ok" || { echo "NOT a buyer ID. Stop."; unset ID; }
 
-run_purge_sql() {                    # fills the placeholder in purge.sql, runs it, deletes it
-  [[ $ID =~ $UUID_V4 ]] || { echo "ID not validated. Stop." >&2; rm -f purge.sql; return 1; }
-  sed "s/__BUYER_ID__/$ID/g" purge.sql > purge.run.sql && mv purge.run.sql purge.sql
-  wrangler d1 execute hbe-buyer-journey-v2 --remote --file purge.sql
-  rm -f purge.sql purge.run.sql
+run_purge_sql() {                    # fills the placeholder in $PURGE_SQL, runs it, deletes it
+  [[ $ID =~ $UUID_V4 ]] || { echo "ID not validated. Stop." >&2; rm -f "$PURGE_SQL"; return 1; }
+  sed "s/__BUYER_ID__/$ID/g" "$PURGE_SQL" > "$PURGE_SQL.run" && mv "$PURGE_SQL.run" "$PURGE_SQL"
+  wrangler d1 execute hbe-buyer-journey-v2 --remote --file "$PURGE_SQL"
+  rm -f "$PURGE_SQL" "$PURGE_SQL.run"
 }
 ```
 
-Then each step below is: write `purge.sql` with `cat > purge.sql <<'SQL' ... SQL`, then run `run_purge_sql`.
+Then each step below is: write the file with `cat > "$PURGE_SQL" <<'SQL' ... SQL`, then run `run_purge_sql`.
+The repo's `.gitignore` also ignores `purge*.sql`, as a backstop in case a file is ever made by hand.
 
 **Why this blocks injection:**
 - With the quoted delimiter (`<<'SQL'`), the shell expands nothing in the body. `$(...)`, backticks,
@@ -70,12 +76,10 @@ Then each step below is: write `purge.sql` with `cat > purge.sql <<'SQL' ... SQL
   passes. The regex allows only `0-9`, `a-f` and `-`. That means no quote can close the SQL literal,
   no `/`, `&` or `\` can break the `sed` expression, and no shell metacharacter can appear.
 - `--file` means the SQL never passes through shell quoting at all.
-- `purge.sql` holds an ID, so `run_purge_sql` deletes it after every run. Check `ls purge*.sql` at the
-  end, and delete anything left over.
+- The SQL file holds an ID, so it lives in a private `mktemp -d` directory, `run_purge_sql` deletes it
+  after every run, and the `trap` removes the whole directory when the shell exits or is interrupted.
 
-If you would rather type the ID by hand, open `purge.sql` in an editor and replace `__BUYER_ID__`
-yourself. Still run the regex check on it first. A valid ID contains no `'`, but if you ever edit any
-other literal by hand, write each `'` as `''`.
+Don't hand-edit IDs into the file. Always go through `read -r ID`, the regex check and `run_purge_sql`.
 
 ## Option A: purge the story only (default)
 
@@ -84,14 +88,19 @@ Use this when the buyer asks to delete their story but not their whole record.
 ### A1. Find the buyer ID (read-only, no PII export)
 
 Preferred: in the Cloudflare dashboard, open D1 > `hbe-buyer-journey-v2` > Console and run the lookup
-there, so the email never touches a shell.
+there, so the email never touches a shell. **If the email contains `'` or `;`, use the dashboard only.**
 
-If you must use the CLI, use the file method. Write the template, then open `purge.sql` in an editor
-and replace `__BUYER_EMAIL__` with the address the buyer gave. If it contains `'`, write it as `''`.
-Do **not** substitute an email with `sed` or the shell.
+CLI alternative, only with this guard. It **stops** on `'` or `;`, and otherwise only accepts a plain
+address made of letters, digits and `. _ % + -`, which can't break the SQL literal or the `sed`
+expression:
 
 ```sh
-cat > purge.sql <<'SQL'
+read -r EMAIL                        # type the buyer's email, then Enter
+case $EMAIL in *"'"*|*";"*) echo "Email contains ' or ;. Stop and use the dashboard."; unset EMAIL;; esac
+EMAIL_RE='^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'
+[[ -n $EMAIL && $EMAIL =~ $EMAIL_RE ]] && echo "email ok" || { echo "Unusual email. Stop and use the dashboard."; unset EMAIL; }
+
+cat > "$PURGE_SQL" <<'SQL'
 SELECT b.id AS buyer_id,
        substr(b.submitted_at,1,10) AS submitted_on,
        json_extract(b.answers_json,'$.source') AS answers_source,
@@ -103,9 +112,10 @@ LEFT JOIN notifications n ON n.buyer_id=b.id AND n.type='buyer_experience_submit
 WHERE lower(b.email)=lower('__BUYER_EMAIL__')
 ORDER BY b.submitted_at DESC;
 SQL
-# edit purge.sql by hand now (replace __BUYER_EMAIL__), then:
-wrangler d1 execute hbe-buyer-journey-v2 --remote --file purge.sql
-rm -f purge.sql
+[[ -n $EMAIL && $EMAIL =~ $EMAIL_RE ]] || { echo "Email not validated. Stop."; rm -f "$PURGE_SQL"; }
+[[ -f $PURGE_SQL ]] && sed "s/__BUYER_EMAIL__/$EMAIL/g" "$PURGE_SQL" > "$PURGE_SQL.run" && mv "$PURGE_SQL.run" "$PURGE_SQL" \
+  && wrangler d1 execute hbe-buyer-journey-v2 --remote --file "$PURGE_SQL"
+rm -f "$PURGE_SQL" "$PURGE_SQL.run"; unset EMAIL
 ```
 
 - The output is only IDs, dates, flags and lengths. Don't copy it into the log.
@@ -116,7 +126,7 @@ rm -f purge.sql
 ### A2. Preview (SELECT, agents may prepare and run it)
 
 ```sh
-cat > purge.sql <<'SQL'
+cat > "$PURGE_SQL" <<'SQL'
 SELECT n.id, n.type,
        json_extract(n.payload_json,'$.source') AS source,
        json_extract(n.payload_json,'$.story_consent') AS consent,
@@ -136,7 +146,7 @@ history still work, and removes only the story and its flags. No rows are delete
 doesn't matter. `notification_deliveries` has no story content and is left alone.
 
 ```sh
-cat > purge.sql <<'SQL'
+cat > "$PURGE_SQL" <<'SQL'
 UPDATE notifications
    SET payload_json=json_remove(payload_json,'$.story_text','$.story_consent','$.source')
  WHERE buyer_id='__BUYER_ID__' AND type='buyer_experience_submitted'
@@ -170,13 +180,15 @@ What happens when the `buyers` row is deleted (from `schema*.sql` and `migration
   `hbe_buyer_journeys`, `hbe_buyer_journey_generations`.
 
 Some tables come from optional schema files (`schema-issue29.sql`, `schema-issue33.sql`,
-`schema-stage4.sql`). If a query fails with `no such table`, delete that line and rerun, and note it in
-the log.
+`schema-stage4.sql`) and migrations (`migrations/hbe-*.sql`), and may not exist in production.
+**Nothing skips a missing table automatically.** If B1 fails with `no such table: X`, the operator must
+**manually** remove every line that mentions table `X` from the SQL, rerun B1, and note the skipped
+table in the log. Do this with B1 before B2, so B2 is edited the same way before any delete runs.
 
 **B1. Preview and verify counts** (SELECT). Run this before the delete, and again after it.
 
 ```sh
-cat > purge.sql <<'SQL'
+cat > "$PURGE_SQL" <<'SQL'
 SELECT
  (SELECT COUNT(*) FROM buyers WHERE id='__BUYER_ID__') AS buyers,
  (SELECT COUNT(*) FROM buyer_sessions WHERE buyer_id='__BUYER_ID__') AS sessions,
@@ -211,7 +223,7 @@ run_purge_sql
 notification children, then `buyers` (the cascade and SET NULL rules handle the rest).
 
 ```sh
-cat > purge.sql <<'SQL'
+cat > "$PURGE_SQL" <<'SQL'
 DELETE FROM hbe_lead_events WHERE buyer_id='__BUYER_ID__';
 DELETE FROM hbe_lead_status WHERE buyer_id='__BUYER_ID__';
 DELETE FROM hbe_push_alerts WHERE buyer_id='__BUYER_ID__';
@@ -273,7 +285,7 @@ Also check:
 Option A (both counts must be 0):
 
 ```sh
-cat > purge.sql <<'SQL'
+cat > "$PURGE_SQL" <<'SQL'
 SELECT
  (SELECT COUNT(*) FROM notifications WHERE buyer_id='__BUYER_ID__'
     AND (json_extract(payload_json,'$.story_text') IS NOT NULL OR json_extract(payload_json,'$.source')='buyer_story')) AS story_rows,
@@ -287,7 +299,8 @@ Option B: rerun B1. Every column must be 0.
 Email: the `in:anywhere` Gmail searches above, plus `in:trash` and `in:spam`, return nothing in every
 mailbox checked.
 
-Files: `ls purge*.sql` shows nothing. Then `unset ID` and `set -o history`.
+Files: `ls "$PURGE_DIR"` shows nothing. Then `unset ID`, `set -o history`, and close the shell (the trap
+removes `$PURGE_DIR`).
 
 ## Log template (no buyer PII)
 
@@ -300,7 +313,7 @@ Date received:          YYYY-MM-DD
 Operator:               (initials)
 Approval ref:           (where Sebastian's approval is recorded, with date)
 Scope:                  A (story only) / B (whole record)
-Steps done:             [ ] A1 identify  [ ] ID regex-checked  [ ] A2/B1 preview  [ ] A3/B2 write  [ ] purge.sql deleted
+Steps done:             [ ] A1 identify  [ ] ID regex-checked  [ ] A2/B1 preview  [ ] A3/B2 write  [ ] temp SQL dir removed
                         [ ] email: buyers@  [ ] email: cwhitehead@  [ ] Spam + Trash emptied
                         [ ] forwards/group checked  [ ] Vault checked  [ ] exports checked
 Row counts:             before: ____   affected: ____   after: ____
