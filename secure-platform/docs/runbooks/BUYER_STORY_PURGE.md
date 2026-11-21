@@ -40,7 +40,8 @@ draft generated from answers, not the Buyer Story. It matters only for a full-re
 ## Safe command pattern (read this first)
 
 Never paste a buyer's email or ID into a double-quoted `--command "..."`. Every query, reads included,
-goes in a SQL file written from a **single-quoted heredoc** and runs with `--file`.
+goes in a SQL file written from a **single-quoted heredoc**. Writes run with `--file`; SELECT previews
+pass the same file's content with `--command` (see the note under the helpers).
 
 **Buyer IDs are UUID v4.** `createBuyer` in `src/worker.js` sets `id=crypto.randomUUID()`, which is
 always lowercase `xxxxxxxx-xxxx-4xxx-[89ab]xxx-xxxxxxxxxxxx`. So the ID is validated with a strict v4 regex.
@@ -64,9 +65,25 @@ run_purge_sql() {                    # fills the placeholder in $PURGE_SQL, runs
   wrangler d1 execute hbe-buyer-journey-v2 --remote --file "$PURGE_SQL"
   rm -f "$PURGE_SQL" "$PURGE_SQL.run"
 }
+
+run_select_sql() {                   # same as run_purge_sql, for SELECT previews: prints the result rows
+  [[ $ID =~ $UUID_V4 ]] || { echo "ID not validated. Stop." >&2; rm -f "$PURGE_SQL"; return 1; }
+  sed "s/__BUYER_ID__/$ID/g" "$PURGE_SQL" > "$PURGE_SQL.run" && mv "$PURGE_SQL.run" "$PURGE_SQL"
+  wrangler d1 execute hbe-buyer-journey-v2 --remote --command "$(cat "$PURGE_SQL")"
+  rm -f "$PURGE_SQL" "$PURGE_SQL.run"
+}
 ```
 
-Then each step below is: write the file with `cat > "$PURGE_SQL" <<'SQL' ... SQL`, then run `run_purge_sql`.
+**Why two helpers:** `wrangler d1 execute --remote --file` runs the file as an import and prints only a
+summary (queries run, rows read and written), **not the result rows**. That is fine for writes, and the
+summary's rows-written figure is useful there, but a SELECT preview run with `--file` shows no counts. So
+SELECT previews use `run_select_sql`, which passes the **same template content** with `--command`. This is
+still safe: `"$(cat "$PURGE_SQL")"` hands the file to wrangler as one argument, and the shell does not
+re-expand text that comes out of a command substitution. The content is the quoted-heredoc template with
+only a regex-checked ID filled in. (Observed on the Nov 21, 2026 ZZTEST smoke-test purge.)
+
+Then each step below is: write the file with `cat > "$PURGE_SQL" <<'SQL' ... SQL`, then run
+`run_select_sql` (SELECT) or `run_purge_sql` (UPDATE/DELETE), as the step says.
 The repo's `.gitignore` also ignores `purge*.sql`, as a backstop in case a file is ever made by hand.
 
 **Why this blocks injection:**
@@ -75,11 +92,12 @@ The repo's `.gitignore` also ignores `purge*.sql`, as a backstop in case a file 
 - The SQL only says `'__BUYER_ID__'`. The real ID goes in through `sed`, and only after the regex
   passes. The regex allows only `0-9`, `a-f` and `-`. That means no quote can close the SQL literal,
   no `/`, `&` or `\` can break the `sed` expression, and no shell metacharacter can appear.
-- `--file` means the SQL never passes through shell quoting at all.
-- The SQL file holds an ID, so it lives in a private `mktemp -d` directory, `run_purge_sql` deletes it
+- `--file` (writes) means the SQL never passes through shell quoting at all. `--command "$(cat ...)"`
+  (SELECT previews) passes it as a single argument without re-expansion.
+- The SQL file holds an ID, so it lives in a private `mktemp -d` directory, each helper deletes it
   after every run, and the `trap` removes the whole directory when the shell exits or is interrupted.
 
-Don't hand-edit IDs into the file. Always go through `read -r ID`, the regex check and `run_purge_sql`.
+Don't hand-edit IDs into the file. Always go through `read -r ID`, the regex check and `run_select_sql` / `run_purge_sql`.
 
 ## Option A: purge the story only (default)
 
@@ -114,7 +132,7 @@ ORDER BY b.submitted_at DESC;
 SQL
 [[ -n $EMAIL && $EMAIL =~ $EMAIL_RE ]] || { echo "Email not validated. Stop."; rm -f "$PURGE_SQL"; }
 [[ -f $PURGE_SQL ]] && sed "s/__BUYER_EMAIL__/$EMAIL/g" "$PURGE_SQL" > "$PURGE_SQL.run" && mv "$PURGE_SQL.run" "$PURGE_SQL" \
-  && wrangler d1 execute hbe-buyer-journey-v2 --remote --file "$PURGE_SQL"
+  && wrangler d1 execute hbe-buyer-journey-v2 --remote --command "$(cat "$PURGE_SQL")"
 rm -f "$PURGE_SQL" "$PURGE_SQL.run"; unset EMAIL
 ```
 
@@ -136,7 +154,7 @@ FROM notifications n
 LEFT JOIN notification_deliveries d ON d.notification_id=n.id
 WHERE n.buyer_id='__BUYER_ID__' AND n.type='buyer_experience_submitted';
 SQL
-run_purge_sql
+run_select_sql
 ```
 
 ### A3. Redact (WRITE: needs Sebastian's approval)
@@ -177,7 +195,15 @@ What happens when the `buyers` row is deleted (from `schema*.sql` and `migration
   `buyer_case_invitations.accepted_by_buyer_id`. These rows belong to the case, so their content stays.
   Decide with Sebastian whether any of it needs separate redaction.
 - **No foreign key (delete by hand first):** `hbe_lead_events`, `hbe_lead_status`, `hbe_push_alerts`,
-  `hbe_buyer_journeys`, `hbe_buyer_journey_generations`.
+  `hbe_buyer_journeys`, `hbe_buyer_journey_generations`, and `hbe_push_dispatch_log`, which links to the
+  buyer only through `hbe_push_dispatch_log.alert_id` = `hbe_push_alerts.id` (`schema.sql`). Delete the
+  dispatch log rows **before** `hbe_push_alerts`, because the subquery finds them through the buyer's alert
+  IDs. The log holds delivery outcome and subscription ID only, no buyer content.
+- **`buyer_sessions`, as observed:** the schema declares `ON DELETE CASCADE`, so B2 leaves it to the
+  `buyers` delete. On the Nov 21, 2026 ZZTEST smoke-test purge, the operator also ran
+  `DELETE FROM buyer_sessions WHERE buyer_id='__BUYER_ID__';` just before the `buyers` delete. It removed 1
+  row per buyer, and B1 afterwards showed 0 sessions. So that run did not exercise the cascade itself.
+  Either way is fine: rerun B1 and confirm `sessions` is 0.
 
 Some tables come from optional schema files (`schema-issue29.sql`, `schema-issue33.sql`,
 `schema-stage4.sql`) and migrations (`migrations/hbe-*.sql`), and may not exist in production.
@@ -212,11 +238,12 @@ SELECT
  (SELECT COUNT(*) FROM bimatrix_freshness_checks WHERE requested_by_buyer_id='__BUYER_ID__') AS bimatrix_freshness_setnull,
  (SELECT COUNT(*) FROM hbe_lead_events WHERE buyer_id='__BUYER_ID__') AS lead_events,
  (SELECT COUNT(*) FROM hbe_lead_status WHERE buyer_id='__BUYER_ID__') AS lead_status,
+ (SELECT COUNT(*) FROM hbe_push_dispatch_log WHERE alert_id IN (SELECT id FROM hbe_push_alerts WHERE buyer_id='__BUYER_ID__')) AS push_dispatch_log,
  (SELECT COUNT(*) FROM hbe_push_alerts WHERE buyer_id='__BUYER_ID__') AS push_alerts,
  (SELECT COUNT(*) FROM hbe_buyer_journeys WHERE buyer_id='__BUYER_ID__') AS journeys,
  (SELECT COUNT(*) FROM hbe_buyer_journey_generations WHERE buyer_id='__BUYER_ID__') AS journey_generations;
 SQL
-run_purge_sql
+run_select_sql
 ```
 
 **B2. Delete** (WRITE: needs Sebastian's approval). Tables without a foreign key go first, then the
@@ -226,6 +253,7 @@ notification children, then `buyers` (the cascade and SET NULL rules handle the 
 cat > "$PURGE_SQL" <<'SQL'
 DELETE FROM hbe_lead_events WHERE buyer_id='__BUYER_ID__';
 DELETE FROM hbe_lead_status WHERE buyer_id='__BUYER_ID__';
+DELETE FROM hbe_push_dispatch_log WHERE alert_id IN (SELECT id FROM hbe_push_alerts WHERE buyer_id='__BUYER_ID__');
 DELETE FROM hbe_push_alerts WHERE buyer_id='__BUYER_ID__';
 DELETE FROM hbe_buyer_journeys WHERE buyer_id='__BUYER_ID__';
 DELETE FROM hbe_buyer_journey_generations WHERE buyer_id='__BUYER_ID__';
@@ -291,7 +319,7 @@ SELECT
     AND (json_extract(payload_json,'$.story_text') IS NOT NULL OR json_extract(payload_json,'$.source')='buyer_story')) AS story_rows,
  (SELECT COUNT(*) FROM buyers WHERE id='__BUYER_ID__' AND json_extract(answers_json,'$.source')='buyer_story') AS flagged;
 SQL
-run_purge_sql
+run_select_sql
 ```
 
 Option B: rerun B1. Every column must be 0.
