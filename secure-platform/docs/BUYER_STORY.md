@@ -26,7 +26,8 @@ intake), `submission-alerts.js` (adds the story to the existing lead email).
   `story_text`) and the `notification_deliveries` row in one D1 batch, and only then sends the
   existing alert email to the existing recipients, with the story after the lead summary. As with any
   submission, the buyer's full questionnaire answers (free text included) are stored on the lead in
-  `buyers.answers_json`; the email does not copy them, only the approved story text.
+  `buyers.answers_json`; the email copies none of them other than the buyer's contact details (name, email, phone),
+  plus the approved story text.
 
 ## Why print-to-PDF instead of a PDF library
 No new dependency, no CDN, no CSP change (the page CSP is unchanged), text stays selectable and
