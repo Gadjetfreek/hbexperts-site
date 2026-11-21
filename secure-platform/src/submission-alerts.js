@@ -21,7 +21,7 @@ export async function deliverSubmissionAlert(env, notificationId) {
     .bind(nowIso, leaseUntil, notificationId, nowIso).run();
   if (!claim?.meta?.changes) return { status: 'skipped' };
 
-  const row = await env.BUYER_DB.prepare(`SELECT n.id,n.created_at,b.first_name,b.last_name,b.email,b.phone
+  const row = await env.BUYER_DB.prepare(`SELECT n.id,n.created_at,n.payload_json,b.first_name,b.last_name,b.email,b.phone
     FROM notifications n JOIN buyers b ON b.id=n.buyer_id WHERE n.id=? AND n.type='buyer_experience_submitted' LIMIT 1`)
     .bind(notificationId).first();
   if (!row) return failDelivery(env, notificationId, 'NOTIFICATION_NOT_FOUND');
@@ -32,7 +32,7 @@ export async function deliverSubmissionAlert(env, notificationId) {
       to: alertRecipients(env),
       from: env.HBE_ALERT_FROM || 'buyer-alerts@hbexperts.com',
       subject: 'New HBE Buyer Experience submitted',
-      text: `A new Buyer Experience was submitted to HomeBuyer Experts.\n\nBuyer: ${row.first_name} ${row.last_name}\nEmail: ${row.email}\nPhone: ${row.phone || 'Not provided'}\nSubmitted: ${row.created_at}\n\nOpen the protected HBEUI to review the submission. Questionnaire answers are intentionally not copied into this email.`,
+      text: submissionAlertText(row),
       headers: { 'X-HBE-Notification-ID': String(row.id) }
     });
     await env.BUYER_DB.prepare(`UPDATE notification_deliveries
@@ -78,4 +78,21 @@ async function failDelivery(env, notificationId, code) {
 function safeErrorCode(error) {
   const code = String(error?.code || '').toUpperCase();
   return /^E_[A-Z0-9_]{1,60}$/.test(code) ? code : 'EMAIL_SEND_FAILED';
+}
+
+// The buyer explicitly consented to share their Buyer Story, so its text (as they approved it) is
+// included after the usual lead summary. Ordinary submissions keep answers out of email.
+export function buyerStoryFromPayload(payloadJson) {
+  try {
+    const p = JSON.parse(payloadJson || '{}');
+    if (p && p.source === 'buyer_story' && p.story_consent === true && typeof p.story_text === 'string' && p.story_text.trim()) return p.story_text.trim();
+  } catch { /* malformed payload: treat as an ordinary submission */ }
+  return '';
+}
+
+export function submissionAlertText(row) {
+  const summary = `A new Buyer Experience was submitted to HomeBuyer Experts.\n\nBuyer: ${row.first_name} ${row.last_name}\nEmail: ${row.email}\nPhone: ${row.phone || 'Not provided'}\nSubmitted: ${row.created_at}`;
+  const story = buyerStoryFromPayload(row.payload_json);
+  if (!story) return `${summary}\n\nOpen the protected HBEUI to review the submission. Questionnaire answers are intentionally not copied into this email.`;
+  return `${summary}\nSource: Buyer Story (the buyer turned on sharing and chose to send it)\n\nOpen the protected HBEUI to review the full submission.\n\n---------- THEIR BUYER STORY, AS THEY APPROVED IT ----------\n\n${story}\n`;
 }

@@ -276,3 +276,7 @@ test('lead panel refresh route is owner-only and returns fresh HTML and counts',
   assert.equal(d.ok, true); assert.match(d.html, /id="lead-response"/); assert.match(d.html, /Unacknowledged leads:/);
   assert.match(d.html, new RegExp(await mutationCsrfToken('synthetic.jwt.token')));
 });
+
+// CI runs this file by name; it also runs the Buyer Story suite until the workflow gets its own step
+// (adding a workflow step needs a token with workflow scope).
+import './buyer-story.test.mjs';

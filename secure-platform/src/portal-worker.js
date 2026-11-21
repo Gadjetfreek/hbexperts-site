@@ -1,4 +1,5 @@
 import uiWorker from './ui-worker.js';
+import { readStorySubmission, STORY_CONSENT_ERROR, STORY_SOURCE } from './buyer-story.js';
 
 const DRAFT_KEY = 'hbe:buyer-experience:draft';
 
@@ -51,6 +52,14 @@ async function handleIntake(request, env, ctx) {
   baseForm.set('concerns', answers.concerns.join('; '));
   baseForm.set('notes', clean(form.get('notes')));
   if (form.get('remember_device') === 'yes') baseForm.set('remember_device', 'yes');
+  // Your Buyer Story (consented path only): pass the story through the existing lead flow.
+  const story = readStorySubmission(form);
+  if (story.ok) {
+    baseForm.set('story_source', STORY_SOURCE);
+    baseForm.set('story_consent', 'yes');
+    baseForm.set('story_text', story.text);
+    answers.source = STORY_SOURCE;
+  }
 
   const headers = new Headers(request.headers);
   headers.delete('content-type');
@@ -93,6 +102,9 @@ function validateSubmission(form) {
   for (const [name, message] of required) {
     if (!clean(form.get(name))) return message;
   }
+
+  const story = readStorySubmission(form);
+  if (story.present && !story.ok) return STORY_CONSENT_ERROR;
 
   if (values(form, 'priorities').length > 3) {
     return 'Please choose up to three priorities.';

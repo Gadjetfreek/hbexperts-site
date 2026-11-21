@@ -10,6 +10,7 @@ import { BIMATRIX_CSS, buyerBimatrixPanel, handleBuyerBimatrixRefresh } from './
 import { buyerGuidanceRuntimeScript } from './buyer-guidance.js';
 import { processSubmissionAlertBacklog, submissionAlertHealth } from './submission-alerts.js';
 import { JOURNEY_PATH, handleJourney } from './buyer-journey.js';
+import { addBuyerStoryStep } from './buyer-story.js';
 import { isHbeAppPath, handleHbeApp, enqueuePushAlert, deliverPushAlert, processPushBacklog, pushHealth } from './hbe-push.js';
 import { processAlertEscalations, isLeadActionPath, handleLeadAction, leadPanelForRequest, leadCounts, unacknowledgedBanner, flagSuspectedSpam, LEAD_PANEL_CSS } from './lead-response.js';
 import { guardIntake, findNewLeadBuyerId, turnstileConfig, addTurnstileWidget, allowTurnstileCsp } from './intake-guard.js';
@@ -363,6 +364,7 @@ const productionWorker = {
       }
       if (url.pathname === '/questionnaire') {
         text = confineOrientationCardsToPage1(text);
+        text = addBuyerStoryStep(text);
         const ts = turnstileConfig(env);
         if (ts) { text = addTurnstileWidget(text, ts); allowTurnstileCsp(headers); }
       }
