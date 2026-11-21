@@ -4,6 +4,12 @@ compatibility_date = "2026-08-26"
 workers_dev = false
 preview_urls = false
 keep_vars = true
+# Do not let the bundler keep function names. With keep_names on (the Wrangler default), esbuild
+# wraps functions in __name(fn, "name") calls. Several pages serialize functions with
+# Function.prototype.toString() into inline <script> tags (the Buyer Story script and the guided
+# answer script), and the browser has no __name helper, so those scripts throw
+# "ReferenceError: __name is not defined" and never run. Guarded by tests/worker-bundle.test.mjs.
+keep_names = false
 
 [[routes]]
 pattern = "buyer.hbexperts.com"
