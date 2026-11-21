@@ -46,7 +46,8 @@ advocate rule table, and the UI labels. Bump `version` / `phraseBankVersion` whe
   contain anything the buyer typed into the preview.
 - Deletion requests (Sentinel R29 L3): the shared story lives in `notifications.payload_json` (`story_text`) for the
   `buyer_experience_submitted` notification, as well as in the alert email. Any deletion of a buyer must also purge or
-  null that payload, not just the `buyers` row. There is no deletion tool in this repo yet; see the TODO in `worker.js`.
+  null that payload, not just the `buyers` row. Follow the manual runbook:
+  [runbooks/BUYER_STORY_PURGE.md](runbooks/BUYER_STORY_PURGE.md).
 - Story fields without `story_consent=yes` (or with empty text) are dropped; the lead is saved as an ordinary submission.
 
 ## Follow-ups (not built)
