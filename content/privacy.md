@@ -32,10 +32,10 @@ We aim to ask for information only when it has a clear buyer-serving purpose.
 
 ### Your Buyer Story
 
-At the end of the Buyer Experience you can create an optional "Buyer Story" from your own answers.
+At the end of the Buyer Experience you can create an optional "Buyer Story." It describes what you told us matters in general terms, using fixed wording chosen from your multiple-choice answers. It does not quote what you typed into free-text boxes, though you can edit the wording yourself before you save or share it.
 
 - **Download my story.** The story is built on your device and saved or printed through your browser. It is not sent to or stored by HBE, no analytics or advertising tags run on that step, and the temporary draft of your answers is cleared from your browser afterward.
-- **Share my story with HBE.** Only if you turn on the sharing switch and send your Buyer Experience, the story text you approved (including any edits you made to it) is saved with your buyer record and included in the internal email alert HBE receives about your submission. If the switch is off, the story is not saved or emailed.
+- **Share my story with HBE.** Only if you turn on the sharing switch and send your Buyer Experience, the story text you approved (including any edits you made to it) is saved with your buyer record and included in the internal email alert HBE receives about your submission. Sending your Buyer Experience also saves all of your questionnaire answers, including anything you typed, with your buyer record, the same as any submission; those answers are not copied into the email. If the switch is off, the story is not saved or emailed.
 
 ### Buyer Journey Account and Session Information
 

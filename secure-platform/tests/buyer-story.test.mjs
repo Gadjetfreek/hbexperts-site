@@ -21,18 +21,21 @@ const withMoney = on => ({ ...STORY_COPY, config: { ...STORY_COPY.config, moneyI
 const FULL = {
   first_name: ['Synthetic'], last_name: ['Tester'], email: ['synthetic.tester@example.test'], phone: ['555-0100'],
   has_other_buyer: ['no'],
-  why: ['Our lease ends and we want a place that feels calm.'],
-  success_definition: ['Less time in the car and more time outside.'],
+  why: ['ZQXSENTINEL-WHY lease ends calm street'],
+  success_definition: ['ZQXSENTINEL-SUCCESS less driving'],
   priorities: ['Commute', 'Yard / outdoor space', 'Price / monthly cost'],
-  non_negotiables: ['A busy road right outside.'],
+  non_negotiables: ['ZQXSENTINEL-RULEOUT busy road'],
   lifestyle_pace: ['Work-from-home life — the space has to function for living and working'],
   space_priority: ['More outdoor space, even if the house is smaller'],
   info_preference: ['Walk me through it step by step'],
   uncertainty_style: ['Keep gathering information until the uncertainty is smaller'],
   disagreement_style: ['Put the evidence side by side'],
-  past_experience_detail: ['Explain each form before I sign it.'],
+  past_experience_detail: ['ZQXSENTINEL-PAST explain forms'],
   timeline: ['6–12 months'],
-  location: ['Synthetic Town or nearby'],
+  location: ['ZQXSENTINEL-LOCATION Synthetic Town'],
+  budget_comfort: ['ZQXSENTINEL-BUDGET 1234'],
+  unknowns: ['ZQXSENTINEL-UNKNOWNS'],
+  home_feeling: ['ZQXSENTINEL-FEELING'],
   financing: ['Preapproved'],
   concerns: ['Inspection issues', 'Paying too much', 'Financing / monthly cost', 'I do not know what I do not know'],
   consultation_success: ['A synthetic consult note'],
@@ -41,19 +44,17 @@ const FULL = {
 const textOf = story => E.toText(story);
 const ids = story => story.sections.map(s => s.id);
 
-test('full answers stitch into Vera’s section order, quoting free text verbatim', () => {
+const SENTINEL = /ZQXSENTINEL|synthetic private note|synthetic consult note|lease ends|busy road|Synthetic Town|1234/i;
+
+test('full answers stitch into Vera’s section order from structured choices only', () => {
   const story = E.build(FULL, { anonymous: true, date: DATE });
   assert.deepEqual(ids(story), ['story', 'matters', 'needs', 'mind', 'known', 'options', 'decide', 'advocate']);
   const txt = textOf(story);
-  assert.match(txt, /You said: "Our lease ends and we want a place that feels calm\."/);
-  assert.match(txt, /"Less time in the car and more time outside\."/);
-  assert.match(txt, /\[Need\] You said this would rule a home out: "A busy road right outside\."/);
+  assert.match(txt, /This is a snapshot of what you told us matters, in general terms/);
   assert.match(txt, /\n- You'd take a smaller house for more outdoor space\./, 'no tag on space_priority');
   assert.match(txt, /\n- You work from home, so the space has to work for living and working\./, 'no tag on lifestyle_pace');
-  assert.equal((txt.match(/\[Need\]/g) || []).length, 1, 'Need tag only on non_negotiables');
-  assert.doesNotMatch(txt, /\[Flexible\]/);
+  assert.doesNotMatch(txt, /\[Need\]|\[Flexible\]|You said:|"/, 'no tags, no reflected quotes');
   assert.match(txt, /You'd like to move in about 6 to 12 months\./, 'timing stays in What You Know');
-  assert.match(txt, /Explain each form before I sign it\./);
   assert.match(txt, /Generated on January 2, 2030\./);
   assert.match(txt, /Created on your device\. Nothing was sent to us\./);
   for (const s of story.sections) {
@@ -72,10 +73,11 @@ test('contact details, financing, notes and consult notes never reach the story'
   }
 });
 
-test('missing answers drop their sections silently; Your Story uses the fallback line', () => {
+test('missing answers drop their sections silently; Your Story uses the general framing line', () => {
   const story = E.build({}, { anonymous: true, date: DATE });
   assert.deepEqual(ids(story), ['story', 'advocate']);
-  assert.equal(story.sections[0].intro_sentence, 'This is a snapshot of what you told us matters, in your words.');
+  assert.equal(story.sections[0].intro_sentence, STORY_COPY.intros.story);
+  assert.doesNotMatch(STORY_COPY.intros.story, /your words/);
   assert.equal(story.sections[0].items.length, 0);
   const html = E.toHtml(story);
   assert.doesNotMatch(html, /<ul><\/ul>|undefined|null/);
@@ -84,22 +86,35 @@ test('missing answers drop their sections silently; Your Story uses the fallback
   assert.deepEqual(ids(s2), ['story', 'advocate']);
 });
 
-test('free text is escaped in HTML, kept verbatim in text, and capped with ...', () => {
-  const nasty = '<script>alert(1)</script> & "quotes" \'single\'';
-  const story = E.build({ why: [nasty] }, { anonymous: true, date: DATE });
-  const html = E.toHtml(story);
+test('no free-text answer ever appears anywhere in the story (text, HTML, headings, fallbacks)', () => {
+  for (const anonymous of [true, false]) for (const on of [false, true]) {
+    const eng = createStoryEngine(withMoney(on));
+    const story = eng.build(FULL, { anonymous, date: DATE });
+    assert.doesNotMatch(eng.toText(story), SENTINEL);
+    assert.doesNotMatch(eng.toHtml(story), SENTINEL);
+    assert.doesNotMatch(JSON.stringify(story), SENTINEL);
+  }
+  // Free text alone produces only the general framing plus the advocate steps.
+  const onlyFree = E.build({ why: FULL.why, success_definition: FULL.success_definition, non_negotiables: FULL.non_negotiables, location: FULL.location, past_experience_detail: FULL.past_experience_detail, notes: FULL.notes }, { anonymous: true, date: DATE });
+  assert.deepEqual(ids(onlyFree), ['story', 'advocate']);
+  assert.doesNotMatch(JSON.stringify(onlyFree), SENTINEL);
+  // HTML still escapes everything it renders (copy and date included).
+  const html = E.toHtml(E.build({}, { date: '<script>x</script>' }));
   assert.ok(!html.includes('<script>'));
-  assert.match(html, /&lt;script&gt;alert\(1\)&lt;\/script&gt; &amp; &quot;quotes&quot; &#39;single&#39;/);
-  assert.ok(textOf(story).includes(nasty), 'plain text keeps their wording');
-  const long = 'word '.repeat(200);
-  const it = E.build({ why: [long] }, {}).sections[0].items[0];
-  assert.equal(it.truncated, true);
-  assert.ok(it.quote.endsWith('...') && it.quote.length <= STORY_COPY.limits.freeTextChars + 3);
-  assert.match(E.toHtml(E.build({ why: [long] }, {})), /see your full answers/);
+  assert.match(html, /&lt;script&gt;x&lt;\/script&gt;/);
+});
+
+test('money worry phrases are general: no figures, currency, or financing/loan type', () => {
+  const moneyPhrases = [STORY_COPY.phrases.concerns['Paying too much'], STORY_COPY.phrases.concerns['Financing / monthly cost'], ...Object.values(STORY_COPY.phrases.moneyPriorities)];
+  assert.deepEqual(moneyPhrases.slice(0, 2), ['Paying more than a home is worth', 'Making the costs of buying work for you']);
+  for (const p of moneyPhrases) assert.doesNotMatch(p, /\d|\$|€|£|FHA|\bVA\b|USDA|conventional|jumbo|loan|mortgage|financ|pre-?approv|cash|budget|down payment|credit|income|interest rate|percent|%/i, p);
+  assert.equal(STORY_COPY.config.moneyInSummaryAndAdvocate, false);
+  const txt = textOf(E.build(FULL, { anonymous: true, date: DATE }));
+  assert.doesNotMatch(txt, /\$|FHA|\bVA\b|conventional|loan|mortgage|Preapproved|financ/i);
 });
 
 test('story sections stay money-free except the two approved worries in What’s on Your Mind', () => {
-  const money = /monthly cost|paying|financ|lender|credit|income|down payment|assistance|\bfees?\b|price|\$|budget|investment|resale|worth|school|family/i;
+  const money = /monthly cost|costs|paying|financ|lender|credit|income|down payment|assistance|\bfees?\b|price|\$|budget|investment|resale|worth|school|family/i;
   for (const on of [false, true]) {
     const eng = createStoryEngine(withMoney(on));
     const story = eng.build({ ...FULL, priorities: ['Price / monthly cost', 'Schools', 'Space for family', 'Investment potential', 'Future resale'], budget_comfort: ['Synthetic comfortable range'] }, { anonymous: true, date: DATE });
@@ -108,8 +123,8 @@ test('story sections stay money-free except the two approved worries in What’s
     }
     const mind = story.sections.find(s => s.id === 'mind').items.map(i => i.text);
     assert.ok(mind.includes('Paying more than a home is worth'));
-    assert.ok(mind.includes('Financing and the monthly cost'));
-    for (const m of mind.filter(t => money.test(t))) assert.ok(['Paying more than a home is worth', 'Financing and the monthly cost'].includes(m), m);
+    assert.ok(mind.includes('Making the costs of buying work for you'));
+    for (const m of mind.filter(t => money.test(t))) assert.ok(['Paying more than a home is worth', 'Making the costs of buying work for you'].includes(m), m);
     const glance = story.sections.find(s => s.id === 'glance');
     assert.doesNotMatch(glance ? JSON.stringify(glance) : '', /school|family|preapproved|financ/i);
   }
@@ -124,21 +139,18 @@ test('money worries never change the advocate steps unless the money switch is o
   assert.ok(steps(createStoryEngine(withMoney(true)), withMoneyWorries).includes('lender'));
 });
 
-test('money switch (default OFF) gates budget comfort in the summary and the generic lender step', () => {
+test('money switch (default OFF) gates the at-a-glance summary and the generic lender step', () => {
   assert.equal(STORY_COPY.config.moneyInSummaryAndAdvocate, false);
-  const answers = { ...FULL, budget_comfort: ['Synthetic comfortable range'] };
+  const answers = { ...FULL };
   const offStory = E.build(answers, {});
   assert.ok(!ids(offStory).includes('glance'), 'glance renders only with the money switch on');
   const off = textOf(offStory);
-  assert.doesNotMatch(off, /lender|Monthly cost|Synthetic comfortable range/);
+  assert.doesNotMatch(off, /lender|Monthly cost/);
   const onE = createStoryEngine(withMoney(true));
   const on = onE.toText(onE.build(answers, {}));
   assert.match(on, /Priorities you picked: Commute, Yard \/ outdoor space, Monthly cost/);
-  assert.match(on, /Budget you said feels comfortable: "Synthetic comfortable range"/);
+  assert.doesNotMatch(on, /Budget|ZQXSENTINEL/, 'budget free text never shown, even with the switch on');
   assert.match(on, /talk with a lender early/);
-  // budget comfort renders only when the buyer gave one
-  const none = onE.toText(onE.build(FULL, {}));
-  assert.doesNotMatch(none, /Budget you said feels comfortable/);
 });
 
 test('advocate steps come from the fixed rule table, in order, max 5, with a not-yet path', () => {
@@ -177,7 +189,7 @@ test('the anonymous line appears only on the on-device version', () => {
 test('copy follows Vera’s tone rules: no banned words, exclamation marks, or emoji', () => {
   const answers = { ...FULL, concerns: Object.keys(STORY_COPY.phrases.concerns), priorities: Object.keys(STORY_COPY.phrases.priorities) };
   const out = textOf(createStoryEngine(withMoney(true)).build(answers, { anonymous: true, date: DATE })) + JSON.stringify(STORY_COPY.ui);
-  assert.doesNotMatch(out.replace(/Our lease[^"]*|A busy road[^"]*/g, ''), /property|price point|\bleads?\b|!|\p{Extended_Pictographic}|score|readiness|best in|#1|guarantee|act now|limited time|free\b|claim\b|submit\b|get started/iu);
+  assert.doesNotMatch(out, /property|price point|\bleads?\b|!|\p{Extended_Pictographic}|score|readiness|best in|#1|guarantee|act now|limited time|free\b|claim\b|submit\b|get started/iu);
 });
 
 test('every multiple-choice option on the live questionnaire is in the versioned phrase bank', async () => {
@@ -411,8 +423,8 @@ test('download needs no contact details; share/submit is gated on them', async (
   const filled = intakeForm();
   assert.deepEqual(missingContactFields(n => filled.get(n), CONTACT_FIELDS), []);
   // Download works from empty contact fields: the story ignores them and the handler never gates.
-  const story = E.build({ why: ['A synthetic reason.'] }, { anonymous: true, date: DATE });
-  assert.match(textOf(story), /A synthetic reason/);
+  const story = E.build({ priorities: ['Commute'] }, { anonymous: true, date: DATE });
+  assert.match(textOf(story), /A commute that works for you/);
   const script = buyerStoryScriptSource();
   const dlHandler = script.slice(script.indexOf("dl.addEventListener('click'"), script.indexOf("const reviewBtn="));
   assert.doesNotMatch(dlHandler, /gateShare|missingContact|restoreContact/);
@@ -462,4 +474,15 @@ test('#108 conversion on the shared path carries only the click id, and story te
   for (const line of logs) assert.ok(!line.includes('A synthetic reason') && !line.includes('YOUR STORY'), `log leaked story: ${line}`);
   assert.equal(failed.res.status, 200);
   assert.doesNotMatch(SRC, /console\./, 'story module never logs');
+});
+
+test('the story stays editable before download or share, and both paths use the edited text', () => {
+  const page = addBuyerStoryStep('<html><head></head><body><form id="buyerExperienceForm"><div class="submitbox">x</div></form></body></html>');
+  assert.match(page, /<article id="buyer-story-doc" contenteditable="true"/);
+  assert.match(page, /id="buyer-story-refresh"/);
+  const script = buyerStoryScriptSource();
+  assert.match(script, /p\.innerHTML=doc\.innerHTML/, 'download prints the edited preview');
+  assert.match(script, /const clone=doc\.cloneNode\(true\)/, 'share sends the edited preview');
+  assert.match(fillUi(STORY_COPY).editHint, /change any wording/);
+  assert.equal(STORY_COPY.names, 'Jen and Chris');
 });

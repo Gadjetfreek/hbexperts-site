@@ -1,7 +1,8 @@
 // "Your Buyer Story" — the optional last step of the Stage 1 Buyer Experience questionnaire.
 //
 // Everything a buyer reads in the story comes from STORY_COPY (the single copy module Vera and
-// Homey revise) plus the buyer's own answers. createStoryEngine() is self-contained so the exact
+// Homey revise), selected by the buyer's multiple-choice answers. It speaks in generalities and
+// never quotes or echoes free-text answers. createStoryEngine() is self-contained so the exact
 // same code runs in the browser (embedded via Function#toString) and in node tests.
 //
 // Privacy contract for this module (enforced by tests/buyer-story.test.mjs):
@@ -11,8 +12,8 @@
 // - The shared path only adds three hidden fields to the existing questionnaire form, which then
 //   goes through the existing /api/intake lead flow after the buyer's explicit consent.
 
-export const STORY_COPY_VERSION = 'buyer-story-copy-v2-2026-11-20';
-export const PHRASE_BANK_VERSION = 'buyer-story-phrases-v2-2026-11-20';
+export const STORY_COPY_VERSION = 'buyer-story-copy-v3-2026-11-21';
+export const PHRASE_BANK_VERSION = 'buyer-story-phrases-v3-2026-11-21';
 export const STORY_SOURCE = 'buyer_story';
 export const STORY_TEXT_MAX = 12000;
 export const QUESTIONNAIRE_DRAFT_KEY = 'hbe:buyer-experience:draft';
@@ -21,15 +22,20 @@ export const STORY_COPY = {
   version: STORY_COPY_VERSION,
   phraseBankVersion: PHRASE_BANK_VERSION,
   config: {
-    // OPEN QUESTION FOR SEBASTIAN. One switch for both money-adjacent items:
-    // the buyer's own stated budget comfort in the "at a glance" summary (only if they gave one),
-    // and the generic "talk with a lender" advocate step. The story sections never mention money
-    // either way. Default OFF (the stricter of Homey's and Vera's rules).
+    // OPEN QUESTION FOR SEBASTIAN. One switch for two money-adjacent extras: the "at a glance"
+    // summary (which can list money-related priorities) and the generic "talk with a lender"
+    // advocate step. With the switch OFF, money appears in the story only as the general,
+    // non-specific worry phrases in "What's on Your Mind" when the buyer selected those worries.
+    // No figures, prices, budget amounts, or financing/loan type ever appear. Default OFF.
     moneyInSummaryAndAdvocate: false
   },
-  limits: { freeTextChars: 400, itemsPerSection: 5, advocateSteps: 5, advocateUnpinned: 4, shareChars: 12000 },
-  // Fields the story never reads, whatever the form contains.
-  excludeFields: ['first_name', 'last_name', 'email', 'phone', 'remember_device', 'household_invite_token', 'financing', 'notes', 'consultation_success', 'story_source', 'story_consent', 'story_text'],
+  limits: { itemsPerSection: 5, advocateSteps: 5, advocateUnpinned: 4, shareChars: 12000 },
+  // The ONLY answers the story reads: multiple-choice fields mapped through the phrase bank.
+  // Free-text answers (why, success_definition, non_negotiables, location, past_experience_detail,
+  // notes, ...) are never read, quoted, or echoed.
+  structuredFields: ['has_other_buyer', 'priorities', 'lifestyle_pace', 'space_priority', 'info_preference', 'uncertainty_style', 'disagreement_style', 'timeline', 'concerns'],
+  // Also never read (kept as a second guard; the client strips these before building).
+  excludeFields: ['first_name', 'last_name', 'email', 'phone', 'remember_device', 'household_invite_token', 'financing', 'notes', 'consultation_success', 'story_source', 'story_consent', 'story_text', 'why', 'success_definition', 'non_negotiables', 'location', 'past_experience_detail', 'budget_comfort'],
   // NAMES PLACEHOLDER: default 'Jen and Chris' until the owner picks. The public site's own copy
   // uses 'Christopher' (about.md, licensing.md) and 'Jen' / 'Meet Jennifer' (about.md).
   // Homey is confirming the final form with the owner; change it here only.
@@ -48,8 +54,7 @@ export const STORY_COPY = {
     advocate: "What a Buyer's Advocate Would Do Next"
   },
   intros: {
-    storyWithWhy: 'You told us what is prompting your move.',
-    storyFallback: 'This is a snapshot of what you told us matters, in your words.',
+    story: 'This is a snapshot of what you told us matters, in general terms, based on the choices you made.',
     matters: 'These are the things you said matter most.',
     needs: 'Here is what you said a home needs to do for you.',
     mind: 'You named these worries. Having them is normal.',
@@ -60,16 +65,9 @@ export const STORY_COPY = {
     advocate: "Whoever helps you, or if you go it alone, here's what a good buyer's advocate would do with what you've shared."
   },
   leads: {
-    why: 'You said:',
-    success: 'You hope daily life gets better like this:',
-    ruleOut: 'You said this would rule a home out:',
-    location: "Where you're considering:",
-    past: 'What you would like done differently this time:',
     glancePriorities: 'Priorities you picked:',
-    glanceTiming: 'Timing:',
-    glanceBudget: 'Budget you said feels comfortable:'
+    glanceTiming: 'Timing:'
   },
-  tags: { need: 'Need' },
   lines: {
     otherBuyer: 'You told us another buyer is part of this decision. This story shows only your answers. They can share their own.',
     unknownUnknowns: "You said you don't know what you don't know yet. That is a normal place to start.",
@@ -77,7 +75,6 @@ export const STORY_COPY = {
     optionRent: 'Renting a while longer can be a real option, if it fits your life.',
     optionChange: 'You can change direction at any point. That is part of deciding well.'
   },
-  truncated: '(see your full answers)',
   advocateRules: [
     { id: 'listen', when: 'always', text: 'Start by listening, then repeat back what you shared to make sure they understood it.' },
     { id: 'checklist', when: 'hasNeeds', text: 'Turn what matters most to you into a short checklist to hold every home up against.' },
@@ -163,7 +160,7 @@ export const STORY_COPY = {
       'Paying too much': 'Paying more than a home is worth',
       'Choosing the wrong area': 'Choosing the wrong area',
       'Hidden property problems': 'Problems with a home that are hard to see',
-      'Financing / monthly cost': 'Financing and the monthly cost',
+      'Financing / monthly cost': 'Making the costs of buying work for you',
       'Negotiating effectively': 'Negotiating well',
       'Timing / market conditions': 'Timing, and what the market is doing',
       'Inspection issues': 'What an inspection might find',
@@ -182,7 +179,7 @@ export const STORY_COPY = {
   ui: {
     eyebrow: 'Optional · Your Buyer Story',
     heading: 'Get your story',
-    intro: 'Turn your answers into a short story you can keep. It is built right here in your browser, only from what you wrote.',
+    intro: 'Turn your answers into a short story you can keep. It is built right here in your browser, in general terms, from the choices you made.',
     show: 'Show my story',
     refresh: 'Refresh my story',
     editHint: 'You can change any wording below before you save or share it. To change an answer, go back to that part, then refresh your story.',
@@ -211,13 +208,12 @@ export const STORY_COPY = {
 
 // ---- Story engine (self-contained; embedded verbatim in the page) -------------------------
 export function createStoryEngine(copy) {
-  const MAX = copy.limits.freeTextChars;
   const PER = copy.limits.itemsPerSection;
   const own = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
   const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const squash = v => String(v == null ? '' : v).replace(/\s+/g, ' ').trim();
   function list(a, k) {
-    if (copy.excludeFields.indexOf(k) !== -1 || !own(a, k)) return [];
+    if (copy.structuredFields.indexOf(k) === -1 || copy.excludeFields.indexOf(k) !== -1 || !own(a, k)) return [];
     const v = a[k];
     return (Array.isArray(v) ? v : [v]).map(squash).filter(Boolean);
   }
@@ -226,15 +222,7 @@ export function createStoryEngine(copy) {
     const bank = copy.phrases[field];
     return own(bank, value) ? bank[value] : null;
   }
-  function quote(lead, raw, tag) {
-    const s = squash(raw);
-    if (!s) return null;
-    const cut = s.length > MAX;
-    const item = { lead, quote: cut ? s.slice(0, MAX).trimEnd() + '...' : s, truncated: cut };
-    if (tag) item.tag = tag;
-    return item;
-  }
-  const line = (text, tag) => (text ? (tag ? { text, tag } : { text }) : null);
+  const line = text => (text ? { text } : null);
 
   function build(answers, opts) {
     const a = answers || {};
@@ -252,20 +240,17 @@ export function createStoryEngine(copy) {
     const tl = phrase('timeline', timeline);
     const longTimeline = copy.rules.longTimelines.indexOf(timeline) !== -1;
 
-    // 1. Your Story (always; fallback framing when "why" is blank)
-    const why = one(a, 'why');
-    add('story', why ? copy.intros.storyWithWhy : copy.intros.storyFallback, [
-      quote(copy.leads.why, why),
+    // 1. Your Story (always; general framing, no free text)
+    add('story', copy.intros.story, [
       one(a, 'has_other_buyer') === 'yes' ? line(copy.lines.otherBuyer) : null
     ], true);
 
     // 2. What Matters Most
     const priorities = list(a, 'priorities').map(v => phrase('priorities', v)).filter(Boolean);
-    add('matters', copy.intros.matters, [...priorities.map(p => line(p)), quote(copy.leads.success, one(a, 'success_definition'))]);
+    add('matters', copy.intros.matters, priorities.map(p => line(p)));
 
-    // 3. What a Home Needs to Do for You (needs vs. flexible)
+    // 3. What a Home Needs to Do for You
     add('needs', copy.intros.needs, [
-      quote(copy.leads.ruleOut, one(a, 'non_negotiables'), copy.tags.need),
       line(phrase('lifestyle_pace', one(a, 'lifestyle_pace'))),
       line(phrase('space_priority', one(a, 'space_priority')))
     ]);
@@ -276,7 +261,6 @@ export function createStoryEngine(copy) {
     // 5. What You Know and What You're Still Figuring Out
     add('known', copy.intros.known, [
       tl ? line(tl.text) : null,
-      quote(copy.leads.location, one(a, 'location')),
       concerns.indexOf(copy.rules.unknownWorry) !== -1 ? line(copy.lines.unknownUnknowns) : null
     ]);
 
@@ -292,20 +276,18 @@ export function createStoryEngine(copy) {
     add('decide', copy.intros.decide, [
       line(phrase('info_preference', one(a, 'info_preference'))),
       line(phrase('uncertainty_style', one(a, 'uncertainty_style'))),
-      line(phrase('disagreement_style', one(a, 'disagreement_style'))),
-      quote(copy.leads.past, one(a, 'past_experience_detail'))
+      line(phrase('disagreement_style', one(a, 'disagreement_style')))
     ]);
 
-    // Plain summary of priorities (and budget comfort only behind the money switch)
+    // Plain summary of priorities, only behind the money switch
     const picked = list(a, 'priorities').map(v => phrase('priorities', v) ? v : (money && own(copy.phrases.moneyPriorities, v) ? copy.phrases.moneyPriorities[v] : null)).filter(Boolean);
     if (money) add('glance', copy.intros.glance, [
       picked.length ? { lead: copy.leads.glancePriorities, text: picked.join(', ') } : null,
-      tl ? { lead: copy.leads.glanceTiming, text: timeline } : null,
-      money ? quote(copy.leads.glanceBudget, one(a, 'budget_comfort')) : null
+      tl ? { lead: copy.leads.glanceTiming, text: tl.text } : null
     ]);
 
     // 8. Advocate: deterministic rule table, fixed order, max N
-    const hasNeeds = priorities.length > 0 || !!one(a, 'non_negotiables') || !!phrase('space_priority', one(a, 'space_priority'));
+    const hasNeeds = priorities.length > 0 || !!phrase('lifestyle_pace', one(a, 'lifestyle_pace')) || !!phrase('space_priority', one(a, 'space_priority'));
     const cond = {
       always: true,
       hasNeeds,
@@ -336,12 +318,8 @@ export function createStoryEngine(copy) {
   }
 
   function itemHtml(it) {
-    const tag = it.tag ? '<span class="story-tag">' + esc(it.tag) + '</span> ' : '';
     const lead = it.lead ? '<span class="story-lead">' + esc(it.lead) + '</span> ' : '';
-    const body = it.quote != null
-      ? '<span class="story-quote">\u201c' + esc(it.quote) + '\u201d</span>' + (it.truncated ? ' <span class="story-more">' + esc(copy.truncated) + '</span>' : '')
-      : esc(it.text);
-    return '<li>' + tag + lead + body + '</li>';
+    return '<li>' + lead + esc(it.text) + '</li>';
   }
   function toHtml(story) {
     let h = '<header class="story-head"><p class="story-brand">' + esc(copy.brand) + '</p><h1>' + esc(story.title) + '</h1></header>';
@@ -358,8 +336,7 @@ export function createStoryEngine(copy) {
     return h;
   }
   function itemText(it) {
-    const body = it.quote != null ? '"' + it.quote + '"' + (it.truncated ? ' ' + copy.truncated : '') : it.text;
-    return [it.tag ? '[' + it.tag + ']' : '', it.lead || '', body].filter(Boolean).join(' ');
+    return [it.lead || '', it.text].filter(Boolean).join(' ');
   }
   function toText(story) {
     const out = [story.title, ''];
@@ -431,8 +408,7 @@ const STORY_CSS = `<style id="buyer-story-css">
 #buyer-story-doc ul,#buyer-story-doc ol,#buyer-story-print ul,#buyer-story-print ol{margin:.3rem 0 .3rem 1.2rem;padding:0}
 #buyer-story-doc li,#buyer-story-print li{margin:.2rem 0}
 .story-brand{font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;color:#2d5a3d;margin:0}
-.story-tag{display:inline-block;font-size:.72rem;font-weight:700;border:1px solid #2d5a3d;color:#2d5a3d;border-radius:999px;padding:0 .45rem;margin-right:.2rem}
-.story-lead{color:#444}.story-more,.story-foot,.story-contact{color:#666;font-size:.88rem}
+.story-lead{color:#444}.story-foot,.story-contact{color:#666;font-size:.88rem}
 .story-note{font-size:.92rem;color:#333;border-left:3px solid #2d5a3d;padding-left:.6rem}
 .story-closing{font-style:italic;margin-top:1rem}
 .story-switch{display:flex;gap:.7rem;align-items:flex-start;margin:.9rem 0;cursor:pointer;line-height:1.5}
@@ -456,7 +432,6 @@ html.hbe-story-printing,html.hbe-story-printing body{background:#fff!important}
 html.hbe-story-printing #buyer-story-print{display:block!important;color:#1a1a2e;background:#fff;font:11.5pt/1.5 Georgia,"Times New Roman",serif}
 #buyer-story-print .story-sec{break-inside:avoid-page;page-break-inside:avoid}
 #buyer-story-print h2{break-after:avoid;page-break-after:avoid}
-#buyer-story-print .story-tag{border-color:#555;color:#333}
 }
 </style>`;
 
