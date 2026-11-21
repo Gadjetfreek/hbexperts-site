@@ -44,7 +44,8 @@ export default { async fetch(request, env, ctx) {
 async function createBuyer(request,env,ctx){
   const form=await request.formData(), first=clean(form.get('first_name')), last=clean(form.get('last_name')), email=clean(form.get('email')).toLowerCase(), remember=form.get('remember_device')==='yes';
   if(!first||!last||!email) return html(questionnaire('Please provide your first name, last name, and email.'),400);
-  // TODO(R29 L3): buyer deletion requests must also purge notifications.payload_json, where a shared story_text lives.
+  // Deletion requests must also purge notifications.payload_json, where a shared story_text lives:
+  // see secure-platform/docs/runbooks/BUYER_STORY_PURGE.md (manual, approval-gated).
   const story=readStorySubmission(form); // never rejects the lead: without valid consent the story is simply dropped
   if(env.SUBMIT_RATE_LIMITER){const {success}=await env.SUBMIT_RATE_LIMITER.limit({key:await sha256(`submit:${email}`)});if(!success)return html(questionnaire('Please wait a moment before submitting again.'),429)}
   const id=crypto.randomUUID(), notificationId=crypto.randomUUID(), accessCode=readableAccessCode(), accessCodeHash=await sha256(`${email}:${normalizeAccessCode(accessCode)}`), now=new Date().toISOString();
