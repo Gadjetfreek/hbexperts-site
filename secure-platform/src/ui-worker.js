@@ -77,7 +77,7 @@ export default {
 async function submitRichIntake(request, env, ctx){
   const src = await request.formData();
   const f = new FormData();
-  for (const key of ['first_name','last_name','email','phone','remember_device']) if (src.get(key)) f.set(key, src.get(key));
+  for (const key of ['first_name','last_name','email','phone','remember_device','story_source','story_consent','story_text']) if (src.get(key)) f.set(key, src.get(key));
   f.set('why', text(src,'why_now'));
   f.set('timeline', text(src,'timeline'));
   f.set('location', text(src,'location'));

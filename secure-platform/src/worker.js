@@ -1,4 +1,5 @@
 import { deliverSubmissionAlert } from './submission-alerts.js';
+import { readStorySubmission, STORY_SOURCE } from './buyer-story.js';
 
 const enc = new TextEncoder();
 
@@ -43,12 +44,14 @@ export default { async fetch(request, env, ctx) {
 async function createBuyer(request,env,ctx){
   const form=await request.formData(), first=clean(form.get('first_name')), last=clean(form.get('last_name')), email=clean(form.get('email')).toLowerCase(), remember=form.get('remember_device')==='yes';
   if(!first||!last||!email) return html(questionnaire('Please provide your first name, last name, and email.'),400);
+  // TODO(R29 L3): buyer deletion requests must also purge notifications.payload_json, where a shared story_text lives.
+  const story=readStorySubmission(form); // never rejects the lead: without valid consent the story is simply dropped
   if(env.SUBMIT_RATE_LIMITER){const {success}=await env.SUBMIT_RATE_LIMITER.limit({key:await sha256(`submit:${email}`)});if(!success)return html(questionnaire('Please wait a moment before submitting again.'),429)}
   const id=crypto.randomUUID(), notificationId=crypto.randomUUID(), accessCode=readableAccessCode(), accessCodeHash=await sha256(`${email}:${normalizeAccessCode(accessCode)}`), now=new Date().toISOString();
   const answers={phone:clean(form.get('phone')),why:clean(form.get('why')),timeline:clean(form.get('timeline')),location:clean(form.get('location')),financing:clean(form.get('financing')),concerns:clean(form.get('concerns')),notes:clean(form.get('notes'))};
   await env.BUYER_DB.batch([
     env.BUYER_DB.prepare(`INSERT INTO buyers (id,created_at,submitted_at,updated_at,first_name,last_name,email,phone,stage,completed_stages,answers_json,access_code_hash) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`).bind(id,now,now,now,first,last,email,answers.phone,'consultation',JSON.stringify(['buyerExperience']),JSON.stringify(answers),accessCodeHash),
-    env.BUYER_DB.prepare(`INSERT INTO notifications (id,buyer_id,type,created_at,payload_json) VALUES (?,?,?,?,?)`).bind(notificationId,id,'buyer_experience_submitted',now,JSON.stringify({first_name:first,last_name:last,email})),
+    env.BUYER_DB.prepare(`INSERT INTO notifications (id,buyer_id,type,created_at,payload_json) VALUES (?,?,?,?,?)`).bind(notificationId,id,'buyer_experience_submitted',now,JSON.stringify(story.ok?{first_name:first,last_name:last,email,source:STORY_SOURCE,story_consent:true,story_text:story.text}:{first_name:first,last_name:last,email})),
     env.BUYER_DB.prepare(`INSERT INTO notification_deliveries (notification_id,status,attempts,created_at) VALUES (?,'pending',0,?)`).bind(notificationId,now)
   ]);
   const session=await createBuyerSession(env,id,remember);
